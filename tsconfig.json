@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "lib": ["es6"],
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "declaration": true,
+    "noImplicitAny": false,
+    "rootDir": "src",
+    "outDir": "lib",
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "pretty": true,
+    "removeComments": true
+  },
+  "include": [
+    "./src/index.ts",
+    "./src/webpack.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "lib"
+   ]
+}
