@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "lib": ["es6"],
+    "lib": ["es2016"],
     "moduleResolution": "node",
     "sourceMap": true,
     "declaration": true,
@@ -16,7 +16,8 @@
   },
   "include": [
     "./src/index.ts",
-    "./src/config.ts"
+    "./src/config.ts",
+    "./src/react-native/*.ts"
   ],
   "exclude": [
     "node_modules",

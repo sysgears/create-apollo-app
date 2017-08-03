@@ -5,6 +5,7 @@ const pkg = requireModule('./package.json');
 const spinConfig = pkg.spin;
 
 const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
+let babelUsed = false;
 
 class Platform {
     features: string[];
@@ -33,6 +34,20 @@ class Platform {
         return false;
     }
 }
+
+const useBabel = () => {
+    if (!babelUsed) {
+        require('babel-register')({
+            presets: ['es2015', 'flow'],
+            ignore: /node_modules(?!\/(haul|react-native))/,
+            retainLines: true,
+            sourceMaps: 'inline',
+        });
+        require('babel-polyfill');
+
+        babelUsed = true;
+    }
+};
 
 const createBaseConfig = (platform: Platform, watch, options) => {
     const babelRule = {
@@ -286,6 +301,11 @@ const createConfig = (preset, watch, options, depPlatforms) => {
     };
 
     let config;
+
+    if (platform.hasAny(['ios', 'android'])) {
+        useBabel();
+    }
+
     const plugins = createPlugins(platform, watch, options);
     if (platform.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');

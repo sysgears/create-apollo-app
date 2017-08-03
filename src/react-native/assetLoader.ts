@@ -43,6 +43,12 @@ type Config = {
   publicPath?: string | ((path: string) => string),
 };
 
+type Info = {
+  width: number,
+  height: number,
+  type: string
+};
+
 module.exports = async function assetLoader() {
   this.cacheable();
 
@@ -50,9 +56,9 @@ module.exports = async function assetLoader() {
 
   const query = utils.getOptions(this) || {};
   const options = this.options[query.config] || {};
-  const config: Config = Object.assign({}, options, query);
+  const config: Config = {...options, ...query} as Config;
 
-  let info: ?{ width: number, height: number, type: string };
+  let info: Info;
 
   try {
     info = size(this.resourcePath);
@@ -140,7 +146,7 @@ module.exports = async function assetLoader() {
     }),
   );
 
-  pairs.forEach(item => {
+  pairs.forEach((item: any) => {
     let dest = item.destination;
 
     if (config.outputPath) {
@@ -164,9 +170,9 @@ module.exports = async function assetLoader() {
     );
   }
 
-  const hashes = pairs.map(item => hasha(item.content, { algorithm: 'md5' }));
+  const hashes = pairs.map((item: any) => hasha(item.content, { algorithm: 'md5' }));
 
-  const asset = {
+  const asset: any = {
     __packager_asset: true,
     scales: scales,
     name: filename,
