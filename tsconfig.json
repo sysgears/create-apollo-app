@@ -16,7 +16,7 @@
   },
   "include": [
     "./src/index.ts",
-    "./src/webpack.config.ts"
+    "./src/config.ts"
   ],
   "exclude": [
     "node_modules",

@@ -1,5 +1,5 @@
 import requireModule from './requireModule';
-import createConfig from './generator';
+import generateConfig from './generator';
 
 const pkg = requireModule('./package.json');
 const spinConfig = pkg.spin;
@@ -9,9 +9,13 @@ const createConfig = cmd => {
 
   for (let preset of Object.keys(spinConfig.presets)) {
     if (spinConfig.presets[preset]) {
-      config[preset] = createConfig();
-      console.log("Found preset:", preset);
+      const watch = cmd === 'watch';
+      config[preset] = generateConfig(preset, watch, spinConfig.options, {});
     }
   }
+
+  return config;
 };
+
+export default createConfig;
 

@@ -5,4 +5,4 @@ const requireModule = name => {
     return require(modulePath);
 };
 
-export default requireModule;
+ export default requireModule;

@@ -7,8 +7,8 @@ const spinConfig = pkg.spin;
 const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
 
 class Platform {
-    features: String[];
-    target: String;
+    features: string[];
+    target: string;
 
     constructor(preset) {
         this.features = preset.split('-');
@@ -24,7 +24,7 @@ class Platform {
     }
 
     hasAny(arg): Boolean {
-        const array = arg.length ? arg : [arg];
+        const array = arg.constructor === Array ? arg : [arg];
         for (let feature of array) {
             if (this.features.indexOf(feature) >= 0) {
                 return true;
@@ -56,7 +56,7 @@ const createBaseConfig = (platform: Platform, watch, options) => {
             cacheDirectory: watch,
             presets: ["react-native"],
             plugins: [
-                require.resolve('haul/src/utils/fixRequireIssues')
+                path.join(process.cwd(), 'node_modules/haul/src/utils/fixRequireIssues')
             ]
         }
     };
@@ -71,7 +71,7 @@ const createBaseConfig = (platform: Platform, watch, options) => {
                         /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
                         /node_modules/,
                     use: [
-                        (platform.hasAny(['ios', 'android']) >= 0 ?
+                        (platform.hasAny(['ios', 'android']) ?
                             function (req) {
                                 let result;
                                 if (req.resource.indexOf('node_modules') >= 0) {
@@ -137,7 +137,7 @@ const createBaseConfig = (platform: Platform, watch, options) => {
             {
                 test: mobileAssetTest,
                 use: {
-                    loader: require.resolve('./loaders/assetLoader'),
+                    loader: require.resolve('./react-native/assetLoader'),
                     query: {platform: platform.target, root: path.resolve('.'), bundle: false},
                 }
             }
@@ -236,6 +236,7 @@ const createPlugins = (platform: Platform, watch, options) => {
     }
 
     if (platform.hasAny('dll')) {
+        const name = `vendor_${platform.target}`;
         plugins = [
             new webpack.DefinePlugin({
                 __DEV__: watch, 'process.env.NODE_ENV': `"${buildNodeEnv}"`
@@ -304,7 +305,7 @@ const createConfig = (preset, watch, options, depPlatforms) => {
                     if (request.indexOf('react-native') >= 0) {
                         return callback(null, 'commonjs ' + request + '-web');
                     } else {
-                        return callback(...arguments);
+                        return callback.apply(this, arguments);
                     }
                 });
             },
