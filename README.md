@@ -31,3 +31,4 @@ This project follows the [all-contributors](https://github.com/kentcdodds/all-co
 Copyright © 2017 [SysGears INC]. This source code is licensed under the [MIT] license.
 
 [MIT]: LICENSE
+[SysGears INC]: http://sysgears.com
