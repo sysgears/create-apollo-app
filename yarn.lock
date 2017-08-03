@@ -2,6 +2,16 @@
 # yarn lockfile v1
 
 
+"@types/mkdirp@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@types/mkdirp/-/mkdirp-0.5.0.tgz#31fe3dbf963048a53fbc433bab9de376c276182e"
+  dependencies:
+    "@types/node" "*"
+
+"@types/node@*":
+  version "8.0.19"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.19.tgz#e46e2b0243de7d03f15b26b45c59ebb84f657a4e"
+
 "@types/node@^7.0.18":
   version "7.0.35"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.35.tgz#04b7f487146619c685440c3428b51c5257ffa7a6"

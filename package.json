@@ -11,6 +11,7 @@
     "spin": "./spin.js"
   },
   "devDependencies": {
+    "@types/mkdirp": "^0.5.0",
     "@types/node": "^7.0.18",
     "tslint": "^5.2.0",
     "typescript": "^2.4.1",
@@ -22,6 +23,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-flow": "^6.23.0",
     "babel-register": "^6.24.1",
+    "mkdirp": "^0.5.1",
     "source-map-support": "^0.4.15"
   }
 }
