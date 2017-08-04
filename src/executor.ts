@@ -1,3 +1,6 @@
+import requireModule from 'requireModule';
+import * as http from 'http';
+import * as path from 'path';
 import * as fs from 'fs';
 import mkdirp from 'mkdirp';
 import { spawn } from 'child_process';
@@ -5,8 +8,6 @@ import { spawn } from 'child_process';
 // import webpackDevMiddleware from 'webpack-dev-middleware';
 // import webpackHotMiddleware from 'webpack-hot-middleware';
 // import httpProxyMiddleware from 'http-proxy-middleware';
-// import http from 'http';
-// import path from 'path';
 // import minilog from 'minilog';
 // import mime from 'mime';
 // import _ from 'lodash';
@@ -23,7 +24,8 @@ import { spawn } from 'child_process';
 // import connect from 'connect';
 // import compression from 'compression';
 // import ip from 'ip';
-// import url from 'url';
+import url from 'url';
+import { Platform } from "./generator";
 //
 // import liveReloadMiddleware from './middleware/liveReloadMiddleware';
 // // eslint-disable-next-line import/named
@@ -263,14 +265,14 @@ const expoPorts = {};
 //   } catch (e) { console.error(e.stack); }
 // }
 //
-// function debugMiddleware(req, res, next) {
-//   if (['/debug', '/debug/bundles'].indexOf(req.path) >= 0) {
-//     res.writeHead(200, {"Content-Type": "text/html"});
-//     res.end('<!doctype html><div><a href="/debug/bundles">Cached Bundles</a></div>');
-//   } else {
-//     next();
-//   }
-// }
+function debugMiddleware(req, res, next) {
+  if (['/debug', '/debug/bundles'].indexOf(req.path) >= 0) {
+    res.writeHead(200, {"Content-Type": "text/html"});
+    res.end('<!doctype html><div><a href="/debug/bundles">Cached Bundles</a></div>');
+  } else {
+    next();
+  }
+}
 //
 // function startWebpackDevServer(config, dll, platform, reporter, logger) {
 //   const configOutputPath = config.output.path;
@@ -514,81 +516,83 @@ const expoPorts = {};
 //   }
 // }
 //
-// function buildDll(node) {
-//   return new Promise(done => {
-//     const name = `vendor_${node.platform}`;
-//     const logger = minilog(`webpack-for-${node.dll.name}`);
-//     const reporter = (...args) => webpackReporter(node.dll.output.path, logger, ...args);
-//
-//     if (!isDllValid(node)) {
-//       console.log(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(node.dll.entry.vendor)}`);
-//
-//       mkdirp.sync(settings.dllBuildDir);
-//       const compiler = webpack(node.dll);
-//
-//       compiler.plugin('done', stats => {
-//         let json = JSON.parse(fs.readFileSync(path.join(settings.dllBuildDir, `${name}_dll.json`)));
-//         const vendorKey = _.findKey(stats.compilation.assets,
-//           (v, key) => key.startsWith('vendor') && key.endsWith('_dll.js'));
-//         let assets = [];
-//         stats.compilation.modules.forEach(function(module) {
-//           if (module._asset) {
-//             assets.push(module._asset);
-//           }
-//         });
-//         fs.writeFileSync(path.join(settings.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
-//
-//         const meta = { name: vendorKey, hashes: {}, modules: node.dll.entry.vendor };
-//         for (let filename of Object.keys(json.content)) {
-//           if (filename.indexOf(' ') < 0) {
-//             meta.hashes[filename] = crypto.createHash('md5').update(fs.readFileSync(filename)).digest('hex');
-//             fs.writeFileSync(path.join(settings.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
-//           }
-//         }
-//         done();
-//       });
-//
-//       compiler.run(reporter);
-//     } else {
-//       done();
-//     }
-//   });
-// }
-//
-function setupExpoDir(dir, platform) {
-  const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
-  mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
-  fs.writeFileSync(path.join(reactNativeDir, 'package.json'),
-    fs.readFileSync('node_modules/react-native/package.json'));
-  fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
-  const pkg = JSON.parse(fs.readFileSync('package.json').toString());
-  const origDeps = pkg.dependencies;
-  pkg.dependencies = {'react-native': origDeps['react-native']};
-  if (platform !== 'all') {
-    pkg.name = pkg.name + '-' + platform;
-  }
-  pkg.main = `index.mobile`;
-  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
-  const appJson = JSON.parse(fs.readFileSync('app.json').toString());
-  if (appJson.expo.icon) {
-    appJson.expo.icon = path.join(path.resolve('.'), appJson.expo.icon);
-  }
-  fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
-  if (platform !== 'all') {
-    fs.writeFileSync(path.join(dir, '.exprc'), JSON.stringify({manifestPort: expoPorts[platform]}));
-  }
+function buildDll(node) {
+  return new Promise(done => {
+    const name = `vendor_${node.platform}`;
+    const logger = minilog(`webpack-for-${node.dll.name}`);
+    const reporter = (...args) => webpackReporter(node.dll.output.path, logger, ...args);
+
+    if (!isDllValid(node)) {
+      console.log(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(node.dll.entry.vendor)}`);
+
+      mkdirp.sync(settings.dllBuildDir);
+      const compiler = webpack(node.dll);
+
+      compiler.plugin('done', stats => {
+        let json = JSON.parse(fs.readFileSync(path.join(settings.dllBuildDir, `${name}_dll.json`)));
+        const vendorKey = _.findKey(stats.compilation.assets,
+          (v, key) => key.startsWith('vendor') && key.endsWith('_dll.js'));
+        let assets = [];
+        stats.compilation.modules.forEach(function(module) {
+          if (module._asset) {
+            assets.push(module._asset);
+          }
+        });
+        fs.writeFileSync(path.join(settings.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
+
+        const meta = { name: vendorKey, hashes: {}, modules: node.dll.entry.vendor };
+        for (let filename of Object.keys(json.content)) {
+          if (filename.indexOf(' ') < 0) {
+            meta.hashes[filename] = crypto.createHash('md5').update(fs.readFileSync(filename)).digest('hex');
+            fs.writeFileSync(path.join(settings.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
+          }
+        }
+        done();
+      });
+
+      compiler.run(reporter);
+    } else {
+      done();
+    }
+  });
 }
-//
-// async function startExpoServer(projectRoot, packagerPort) {
-//   Config.validation.reactNativeVersionWarnings = false;
-//   Config.developerTool = 'crna';
-//   Config.offline = true;
-//
-//   await Project.startExpoServerAsync(projectRoot);
-//   await ProjectSettings.setPackagerInfoAsync(projectRoot, {
-//     packagerPort
-//   });
-// }
+
+function setupExpoDir(dir, platform) {
+    const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
+    mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
+    fs.writeFileSync(path.join(reactNativeDir, 'package.json'),
+        fs.readFileSync('node_modules/react-native/package.json'));
+    fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
+    const pkg = JSON.parse(fs.readFileSync('package.json').toString());
+    const origDeps = pkg.dependencies;
+    pkg.dependencies = {'react-native': origDeps['react-native']};
+    if (platform !== 'all') {
+        pkg.name = pkg.name + '-' + platform;
+    }
+    pkg.main = `index.mobile`;
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
+    const appJson = JSON.parse(fs.readFileSync('app.json').toString());
+    if (appJson.expo.icon) {
+        appJson.expo.icon = path.join(path.resolve('.'), appJson.expo.icon);
+    }
+    fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
+    if (platform !== 'all') {
+        fs.writeFileSync(path.join(dir, '.exprc'), JSON.stringify({manifestPort: expoPorts[platform]}));
+    }
+}
+
+async function startExpoServer(projectRoot, packagerPort) {
+    const { Config, Project, ProjectSettings } = requireModule('xdl');
+
+    Config.validation.reactNativeVersionWarnings = false;
+    Config.developerTool = 'crna';
+    Config.offline = true;
+
+    await Project.startExpoServerAsync(projectRoot);
+    await ProjectSettings.setPackagerInfoAsync(projectRoot, {
+        packagerPort
+    });
+}
 //
 // async function startExpoProject(config, platform) {
 //   try {
@@ -637,92 +641,106 @@ function setupExpoDir(dir, platform) {
 //   .concat(settings.android ? [android] : [])
 //   .concat(settings.ios ? [ios]: []);
 //
-// async function allocateExpoPorts() {
-//   const expoPlatforms = []
-//     .concat(settings.android ? ['android'] : [])
-//     .concat(settings.ios ? ['ios']: []);
-//
-//   let startPort = 19000;
-//   for (const platform of expoPlatforms) {
-//     const expoPort = await freeportAsync(startPort);
-//     expoPorts[platform] = expoPort;
-//     startPort = expoPort + 1;
-//   }
-// }
-
-async function startExpoProdServer() {
-  // console.log(`Starting Expo prod server`);
-  // const packagerPort = 3030;
-  // const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
-  // startExpoServer(projectRoot, packagerPort);
-  //
-  // const app = connect();
-  // app
-  //   .use(function(req, res, next) {
-  //     req.path = req.url.split('?')[0];
-  //     console.log("req:", req.url);
-  //     next();
-  //   })
-  //   .use(compression())
-  //   .use(debugMiddleware)
-  //   .use(function(req, res, next) {
-  //     var platform = url.parse(req.url, true).query.platform;
-  //     if (platform) {
-  //       const filePath = path.join(settings.frontendBuildDir, platform, req.path);
-  //       if (fs.existsSync(filePath)) {
-  //         res.writeHead(200, {"Content-Type": mime.lookup(filePath)});
-  //         fs.createReadStream(filePath)
-  //           .pipe(res);
-  //       } else {
-  //         res.writeHead(404, {"Content-Type": "application/json"});
-  //         res.end(`{"message": "File not found: ${filePath}"}`);
-  //       }
-  //     } else {
-  //       next();
-  //     }
-  //   });
-  //
-  // const serverInstance = http.createServer(app);
-  //
-  // console.log(`Production mobile packager listening on http://${ip.address()}:${packagerPort}`);
-  // serverInstance.listen(packagerPort);
-  // serverInstance.timeout = 0;
-  // serverInstance.keepAliveTimeout = 0;
+async function allocateExpoPorts(expoPlatforms) {
+    let startPort = 19000;
+    const freeportAsync = requireModule('freeport-async');
+    for (const platform of expoPlatforms) {
+        const expoPort = await freeportAsync(startPort);
+        expoPorts[platform] = expoPort;
+        startPort = expoPort + 1;
+    }
 }
 
-async function startExp() {
-  const projectRoot = path.join(process.cwd(), '.expo', 'all');
-  setupExpoDir(projectRoot, 'all');
-  if (['ba', 'bi', 'build:android', 'build:ios'].indexOf(process.argv[3]) >= 0) {
-    await startExpoProdServer();
-  }
-  const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
-    cwd: projectRoot,
-    stdio: [0, 1, 2]
-  });
-  exp.on('exit', code => {
-    process.exit(code);
-  });
+async function startExpoProdServer(options) {
+    const connect = requireModule('connect');
+    const mime = requireModule('mime');
+    const compression = requireModule('compression');
+    const ip = requireModule('ip');
+
+    console.log(`Starting Expo prod server`);
+    const packagerPort = 3030;
+    const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
+    startExpoServer(projectRoot, packagerPort);
+
+    const app = connect();
+    app
+        .use(function (req, res, next) {
+            req.path = req.url.split('?')[0];
+            console.log("req:", req.url);
+            next();
+        })
+        .use(compression())
+        .use(debugMiddleware)
+        .use(function (req, res, next) {
+            var platform = url.parse(req.url, true).query.platform;
+            if (platform) {
+                const filePath = path.join(options.frontendBuildDir, platform, req.path);
+                if (fs.existsSync(filePath)) {
+                    res.writeHead(200, {"Content-Type": mime.lookup(filePath)});
+                    fs.createReadStream(filePath)
+                        .pipe(res);
+                } else {
+                    res.writeHead(404, {"Content-Type": "application/json"});
+                    res.end(`{"message": "File not found: ${filePath}"}`);
+                }
+            } else {
+                next();
+            }
+        });
+
+    const serverInstance = http.createServer(app);
+
+    console.log(`Production mobile packager listening on http://${ip.address()}:${packagerPort}`);
+    serverInstance.listen(packagerPort);
+    serverInstance.timeout = 0;
+    serverInstance.keepAliveTimeout = 0;
 }
 
-// if (process.argv.length >= 3 && process.argv[2] === 'exp') {
-//   startExp();
-// } else {
-//   allocateExpoPorts().then(() => {
-//     nodes.forEach(node =>
-//       ((__DEV__ && settings.webpackDll && node.dll) ? buildDll(node) : Promise.resolve({}))
-//         .then(() => startWebpack(node))
-//     );
-//   });
-// }
+async function startExp(options) {
+    const projectRoot = path.join(process.cwd(), '.expo', 'all');
+    setupExpoDir(projectRoot, 'all');
+    if (['ba', 'bi', 'build:android', 'build:ios'].indexOf(process.argv[3]) >= 0) {
+        await startExpoProdServer(options);
+    }
+    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
+        cwd: projectRoot,
+        stdio: [0, 1, 2]
+    });
+    exp.on('exit', code => {
+        process.exit(code);
+    });
+}
 
-const execute = (cmd, config?) => {
-  console.log(`Execute '${cmd}', config: ${config}`);
-  if (cmd === 'exp') {
-    startExp();
-  } else {
-
-  }
+const execute = (cmd, config, options) => {
+    console.log(`Execute '${cmd}', config: ${config}`);
+    if (cmd === 'exp') {
+        startExp(options);
+    } else {
+        let prepareExpoPromise;
+        const expoPlatforms = [];
+        if (cmd === 'watch') {
+            for (let preset of Object.keys(config)) {
+                const platform = new Platform(preset);
+                if (platform.hasAny('ios')) {
+                    expoPlatforms.push('ios');
+                } else if (platform.hasAny('android')) {
+                    expoPlatforms.push('android');
+                }
+            }
+        }
+        if (expoPlatforms.length > 0) {
+            prepareExpoPromise = allocateExpoPorts(expoPlatforms);
+        } else {
+            prepareExpoPromise = Promise.resolve();
+        }
+        prepareExpoPromise.then(() => {
+            for (let preset of Object.keys(config)) {
+                const prepareDllPromise = (cmd === 'watch' && options.webpackDll && config[`${preset}-dll`]) ?
+                    buildDll(config[`${preset}-dll`]) : Promise.resolve();
+                prepareDllPromise.then(() => startWebpack(config[preset]))
+            }
+        });
+    }
 };
 
 export default execute;

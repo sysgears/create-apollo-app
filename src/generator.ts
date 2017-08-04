@@ -7,7 +7,7 @@ const spinConfig = pkg.spin;
 const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
 let babelUsed = false;
 
-class Platform {
+export class Platform {
     features: string[];
     target: string;
 
@@ -279,16 +279,15 @@ const getDepsForPlatform = (platform: Platform, depPlatforms) => {
     return deps;
 };
 
-const createConfig = (preset, watch, options, depPlatforms) => {
+const createConfig = (preset, watch, opts, depPlatforms) => {
     const platform = new Platform(preset);
+
+    const options: any = {...opts};
 
     if (platform.hasAny('test')) {
         options.ssr = false;
         options.persistGraphQL = false;
     }
-    options.backendBuildDir = options.backendBuildDir || 'build/server';
-    options.frontendBuildDir = options.frontendBuildDir || 'build/client';
-    options.webpackDevPort = options.webpackDevPort || 3000;
 
     const baseDevServerConfig = {
         hot: true,

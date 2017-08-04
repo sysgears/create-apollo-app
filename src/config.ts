@@ -5,17 +5,25 @@ const pkg = requireModule('./package.json');
 const spinConfig = pkg.spin;
 
 const createConfig = cmd => {
-  let config = {};
+    let config = {};
 
-  for (let preset of Object.keys(spinConfig.presets)) {
-    if (spinConfig.presets[preset]) {
-      const watch = cmd === 'watch';
-      config[preset] = generateConfig(preset, watch, spinConfig.options, {});
+    const options: any = spinConfig.options;
+
+    options.backendBuildDir = options.backendBuildDir || 'build/server';
+    options.frontendBuildDir = options.frontendBuildDir || 'build/client';
+    options.webpackDevPort = options.webpackDevPort || 3000;
+
+    for (let preset of Object.keys(spinConfig.presets)) {
+        if (spinConfig.presets[preset]) {
+            const watch = cmd === 'watch';
+            config[preset] = generateConfig(preset, watch, options, {});
+            if (options.webpackDll) {
+                config[`${preset}-dll`] = generateConfig(`${preset}-dll`, watch, options, {});
+            }
+        }
     }
-  }
 
-  return config;
+    return { config, options };
 };
 
 export default createConfig;
-

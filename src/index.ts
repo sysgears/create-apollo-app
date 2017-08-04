@@ -14,5 +14,5 @@ if (process.argv.length >= 3) {
         }
         config = createConfig(cmd);
     }
-    execute(cmd, config);
+    execute(cmd, config.config, config.options);
 }

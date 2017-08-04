@@ -39,8 +39,8 @@ type Config = {
   platform: string,
   bundle?: boolean,
   root: string,
-  outputPath?: string | ((path: string) => string),
-  publicPath?: string | ((path: string) => string),
+  outputPath?: any,
+  publicPath?: any,
 };
 
 type Info = {
