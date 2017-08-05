@@ -11,6 +11,7 @@ const createConfig = cmd => {
 
     options.backendBuildDir = options.backendBuildDir || 'build/server';
     options.frontendBuildDir = options.frontendBuildDir || 'build/client';
+    options.dllBuildDir = options.dllBuildDir || 'build/dll';
     options.webpackDevPort = options.webpackDevPort || 3000;
 
     for (let preset of Object.keys(spinConfig.presets)) {

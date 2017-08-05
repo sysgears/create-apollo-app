@@ -7,7 +7,7 @@ function notifyWatcher(watcher) {
   watcher.res.end(JSON.stringify({ changed: true }));
 }
 
-function liveReloadMiddleware(compiler) {
+export default function liveReloadMiddleware(compiler) {
   let watchers = [];
   let notify = false;
 
@@ -46,5 +46,3 @@ function liveReloadMiddleware(compiler) {
     }
   };
 }
-
-module.exports = liveReloadMiddleware;

@@ -1,3 +1,13 @@
+declare module NodeJS  {
+    interface Global {
+        self: any;
+        __BUNDLE_START_TIME__: any;
+    }
+}
+
+declare var __DEV__: boolean;
+declare var global: NodeJS.Global;
+
 require('react-native/packager/src/Resolver/polyfills/polyfills.js');
 require('react-native/packager/src/Resolver/polyfills/console.js');
 require('react-native/packager/src/Resolver/polyfills/error-guard.js');
@@ -12,6 +22,6 @@ global['__DEV__'] = __DEV__;
 global.__BUNDLE_START_TIME__ = Date.now();
 
 if (!global.self) {
-  global.self = global;
+    global.self = global;
 }
 require("react-native/Libraries/Core/InitializeCore.js");

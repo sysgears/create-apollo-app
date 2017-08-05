@@ -418,7 +418,7 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         config = {
             ...config,
             devtool: '#cheap-module-source-map',
-            name: `${platform}-dll`,
+            name: `${platform.target}-dll`,
             entry: {
                 vendor: getDepsForPlatform(platform, depPlatforms),
             },
