@@ -1,4 +1,6 @@
 import * as path from 'path';
+import * as ip from 'ip';
+import * as url from 'url';
 
 import requireModule from './requireModule';
 const pkg = requireModule('./package.json');
@@ -195,6 +197,8 @@ const createPlugins = (platform: Platform, watch, options) => {
         plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
     }
 
+    const backendUrl = options.backendUrl.replace('{ip}', ip.address());
+
     if (platform.hasAny('server')) {
         plugins = plugins.concat([
             new webpack.BannerPlugin({
@@ -204,7 +208,8 @@ const createPlugins = (platform: Platform, watch, options) => {
             new webpack.DefinePlugin({
                 __CLIENT__: false, __SERVER__: true, __SSR__: options.ssr,
                 __DEV__: watch, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                __PERSIST_GQL__: options.persistGraphQL
+                __PERSIST_GQL__: options.persistGraphQL,
+                __BACKEND_URL__: `"${backendUrl}"`
             }),
             persistPlugins.server
         ]);
@@ -213,7 +218,11 @@ const createPlugins = (platform: Platform, watch, options) => {
             new webpack.DefinePlugin({
                 __CLIENT__: true, __SERVER__: false, __SSR__: options.ssr,
                 __DEV__: watch, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                __PERSIST_GQL__: options.persistGraphQL
+                __PERSIST_GQL__: options.persistGraphQL,
+                __BACKEND_URL__: (
+                    platform.target !== 'web' ||
+                    url.parse(backendUrl).hostname !== 'localhost'
+                ) ? `"${backendUrl}"` : false,
             }),
             persistPlugins.client
         ]);
@@ -314,6 +323,12 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         config = {
             ...createBaseConfig(platform, watch, options),
             name: 'backend',
+            entry: {
+                index: [
+                    'babel-polyfill',
+                    './src/server/index.js'
+                ]
+            },
             target: 'node',
             node: {
                 __dirname: true,
@@ -328,19 +343,6 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
                     }
                 });
             },
-            module: {
-                rules: [
-                    {
-                        test: /\.scss$/,
-                        use: watch ? [
-                            {loader: 'isomorphic-style-loader'},
-                            {loader: 'css-loader', options: {sourceMap: true}},
-                            {loader: 'postcss-loader', options: {sourceMap: true}},
-                            {loader: 'sass-loader', options: {sourceMap: true}}] :
-                            [{loader: 'ignore-loader'}]
-                    }
-                ]
-            },
             output: {
                 devtoolModuleFilenameTemplate: watch ? '../../[resource-path]' : undefined,
                 devtoolFallbackModuleFilenameTemplate: watch ? '../../[resource-path];[hash]' : undefined,
@@ -351,24 +353,23 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
             },
             plugins
         };
+        config.module.rules = config.module.rules.concat([{
+            test: /\.scss$/,
+            use: watch ? [
+                {loader: 'isomorphic-style-loader'},
+                {loader: 'css-loader', options: {sourceMap: true}},
+                {loader: 'postcss-loader', options: {sourceMap: true}},
+                {loader: 'sass-loader', options: {sourceMap: true}}] :
+                [{loader: 'ignore-loader'}]
+        }]);
     } else if (platform.hasAny('web')) {
         config = {
             ...createBaseConfig(platform, watch, options),
             name: 'web-frontend',
-            module: {
-                rules: [
-                    {
-                        test: /\.scss$/,
-                        use: watch ? [
-                            {loader: 'style-loader'},
-                            {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
-                            {loader: 'postcss-loader', options: {sourceMap: true}},
-                            {loader: 'sass-loader', options: {sourceMap: true}},
-                        ] : ExtractTextPlugin.extract({
-                            fallback: "style-loader",
-                            use: ['css-loader', 'postcss-loader', 'sass-loader']
-                        })
-                    }
+            entry: {
+                index: [
+                    'babel-polyfill',
+                    './src/client/index.jsx'
                 ]
             },
             output: {
@@ -382,33 +383,49 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
                 port: options.webpackDevPort
             }
         };
+        config.module.rules = config.module.rules.concat([{
+            test: /\.scss$/,
+            use: watch ? [
+                {loader: 'style-loader'},
+                {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
+                {loader: 'postcss-loader', options: {sourceMap: true}},
+                {loader: 'sass-loader', options: {sourceMap: true}},
+            ] : ExtractTextPlugin.extract({
+                fallback: "style-loader",
+                use: ['css-loader', 'postcss-loader', 'sass-loader']
+            })
+        }]);
     } else if (platform.hasAny(['android', 'ios'])) {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
             ...createBaseConfig(platform, watch, options),
-          name: `${platform.target}-frontend`,
-          output: {
-            filename: `index.mobile.bundle`,
-            publicPath: '/',
-            path: path.resolve(path.join(options.frontendBuildDir, platform.target)),
-          },
-          devServer: {
-              ...baseDevServerConfig,
-            hot: false,
-            port: platform.hasAny('android') ? 3010 : 3020
-          },
-          resolve: {
-            plugins: [
-              new HasteResolver({
+            name: `${platform.target}-frontend`,
+            entry: {
+                index: [
+                    require.resolve('./react-native/react-native-polyfill.js'),
+                    './src/mobile/index.js'
+                ]
+            },
+            output: {
+                filename: `index.mobile.bundle`,
+                publicPath: '/',
+                path: path.resolve(path.join(options.frontendBuildDir, platform.target)),
+            },
+            devServer: {
+                ...baseDevServerConfig,
+                hot: false,
+                port: platform.hasAny('android') ? 3010 : 3020
+            },
+            plugins
+        };
+        config.resolve.plugins = [
+            new HasteResolver({
                 directories: [path.resolve('node_modules/react-native')],
-              }),
-              new AssetResolver({ platform: platform.target, test: mobileAssetTest }),
-            ],
-            mainFields: ['react-native', 'browser', 'main']
-          },
-          plugins
-        }
+            }),
+            new AssetResolver({platform: platform.target, test: mobileAssetTest}),
+        ];
+        config.resolve.mainFields = ['react-native', 'browser', 'main'];
     } else {
         throw new Error(`Unknown platform target: ${platform.target}`);
     }

@@ -1,5 +1,6 @@
 import requireModule from './requireModule';
 import generateConfig from './generator';
+import { Platform } from "./generator";
 
 const pkg = requireModule('./package.json');
 const spinConfig = pkg.spin;
@@ -15,10 +16,11 @@ const createConfig = cmd => {
     options.webpackDevPort = options.webpackDevPort || 3000;
 
     for (let preset of Object.keys(spinConfig.presets)) {
+        const platform = new Platform(preset);
         if (spinConfig.presets[preset]) {
             const watch = cmd === 'watch';
             config[preset] = generateConfig(preset, watch, options, {});
-            if (options.webpackDll) {
+            if (options.webpackDll && !platform.hasAny('server')) {
                 config[`${preset}-dll`] = generateConfig(`${preset}-dll`, watch, options, {});
             }
         }

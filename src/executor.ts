@@ -42,6 +42,9 @@ process.on('exit', () => {
 });
 
 function runServer(path, logger) {
+    if (!fs.existsSync(path)) {
+        throw new Error(`Backend doesn't exist at ${path}, exiting`);
+    }
     if (startBackend) {
         startBackend = false;
         logger('Starting backend');
@@ -121,7 +124,6 @@ class MobileAssetsPlugin {
 function startClientWebpack(hasBackend, watch, platform, config, dll, options) {
     const webpack = requireModule('webpack');
     const logger = minilog(`webpack-for-${config.name}`);
-    logger.log("We are here!");
     try {
         const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
 
@@ -189,7 +191,7 @@ function startServerWebpack(watch, config, options) {
                     const mapKey = _.findKey(assets, (v, k) => k.endsWith('.map'));
                     if (mapKey) {
                         let srcMap = JSON.parse(assets[mapKey]._value);
-                        for (let idx of srcMap.sources) {
+                        for (let idx in srcMap.sources) {
                             srcMap.sources[idx] = srcMap.sources[idx].split(';')[0];
                         }
                         assets[mapKey]._value = JSON.stringify(srcMap);
@@ -200,26 +202,28 @@ function startServerWebpack(watch, config, options) {
             compiler.watch({}, reporter);
 
             compiler.plugin('done', stats => {
-                const {output} = config;
-                startBackend = true;
-                if (server) {
-                    if (!__WINDOWS__) {
-                        server.kill('SIGUSR2');
-                    }
+                if (!stats.compilation.errors.length) {
+                    const {output} = config;
+                    startBackend = true;
+                    if (server) {
+                        if (!__WINDOWS__) {
+                            server.kill('SIGUSR2');
+                        }
 
-                    if (options.frontendRefreshOnBackendChange) {
-                        for (let module of stats.compilation.modules) {
-                            if (module.built && module.resource &&
-                                module.resource.indexOf(path.resolve('./src/server')) === 0) {
-                                // Force front-end refresh on back-end change
-                                logger.debug('Force front-end current page refresh, due to change in backend at:', module.resource);
-                                increaseBackendReloadCount();
-                                break;
+                        if (options.frontendRefreshOnBackendChange) {
+                            for (let module of stats.compilation.modules) {
+                                if (module.built && module.resource &&
+                                    module.resource.indexOf(path.resolve('./src/server')) === 0) {
+                                    // Force front-end refresh on back-end change
+                                    logger.debug('Force front-end current page refresh, due to change in backend at:', module.resource);
+                                    increaseBackendReloadCount();
+                                    break;
+                                }
                             }
                         }
+                    } else {
+                        runServer(path.join(output.path, 'index.js'), logger);
                     }
-                } else {
-                    runServer(path.join(output.path, 'index.js'), logger);
                 }
             });
         } else {
@@ -284,10 +288,10 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
     let vendorHashesJson, vendorSourceListMap, vendorSource, vendorMap;
     if (options.webpackDll && dll) {
         const name = `vendor_${platform}`;
-        const jsonPath = path.join('..', options.dllBuildDir, `${name}_dll.json`);
+        const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
         config.plugins.push(new webpack.DllReferencePlugin({
             context: process.cwd(),
-            manifest: require(jsonPath) // eslint-disable-line import/no-dynamic-require
+            manifest: requireModule('./' + jsonPath) // eslint-disable-line import/no-dynamic-require
         }));
         vendorHashesJson = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString());
         vendorSource = new RawSource(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + "\n");
@@ -308,7 +312,7 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
         if (backendFirstStart) {
             if (hasBackend) {
                 logger.debug("Webpack dev server is waiting for backend to start...");
-                const {host} = url.parse(options.backendUrl.replace('{ip}', ip.address()));
+                const { host } = url.parse(options.backendUrl.replace('{ip}', ip.address()));
                 waitOn({resources: [`tcp:${host}`]}, err => {
                     if (err) {
                         logger.error(err);
@@ -533,23 +537,29 @@ function buildDll(platform, config, options) {
             const compiler = webpack(config);
 
             compiler.plugin('done', stats => {
-                let json = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll.json`)).toString());
-                const vendorKey = _.findKey(stats.compilation.assets,
-                    (v, key) => key.startsWith('vendor') && key.endsWith('_dll.js'));
-                let assets = [];
-                stats.compilation.modules.forEach(function (module) {
-                    if (module._asset) {
-                        assets.push(module._asset);
-                    }
-                });
-                fs.writeFileSync(path.join(options.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
+                try {
+                    let json = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll.json`)).toString());
+                    const vendorKey = _.findKey(stats.compilation.assets,
+                        (v, key) => key.startsWith('vendor') && key.endsWith('_dll.js'));
+                    let assets = [];
+                    stats.compilation.modules.forEach(function (module) {
+                        if (module._asset) {
+                            assets.push(module._asset);
+                        }
+                    });
+                    fs.writeFileSync(path.join(options.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
 
-                const meta = {name: vendorKey, hashes: {}, modules: config.entry.vendor};
-                for (let filename of Object.keys(json.content)) {
-                    if (filename.indexOf(' ') < 0) {
-                        meta.hashes[filename] = crypto.createHash('md5').update(fs.readFileSync(filename)).digest('hex');
-                        fs.writeFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
+                    const meta = {name: vendorKey, hashes: {}, modules: config.entry.vendor};
+                    for (let filename of Object.keys(json.content)) {
+                        console.log("filename:", filename);
+                        if (filename.indexOf(' ') < 0) {
+                            meta.hashes[filename] = crypto.createHash('md5').update(fs.readFileSync(filename)).digest('hex');
+                            fs.writeFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
+                        }
                     }
+                } catch (e) {
+                    logger.error(e.stack);
+                    process.exit(1);
                 }
                 done();
             });
@@ -712,7 +722,6 @@ async function startExp(options) {
 }
 
 const execute = (cmd, config, options) => {
-    console.log(`Execute '${cmd}', config: ${config}`);
     if (cmd === 'exp') {
         startExp(options);
     } else {
