@@ -363,6 +363,10 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
                 [{loader: 'ignore-loader'}]
         }]);
     } else if (platform.hasAny('web')) {
+        const backendUrl = options.backendUrl.replace('{ip}', ip.address());
+        const { protocol, host } = url.parse(backendUrl);
+        const backendBaseUrl = protocol + '//' + host;
+
         config = {
             ...createBaseConfig(platform, watch, options),
             name: 'web-frontend',
@@ -380,7 +384,13 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
             plugins,
             devServer: {
                 ...baseDevServerConfig,
-                port: options.webpackDevPort
+                port: options.webpackDevPort,
+                proxy: {
+                    '!/*.hot-update.{json,js}': {
+                        target: backendBaseUrl,
+                        logLevel: 'info'
+                    }
+                }
             }
         };
         config.module.rules = config.module.rules.concat([{
