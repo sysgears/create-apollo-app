@@ -51,18 +51,18 @@ const useBabel = () => {
     }
 };
 
-const createBaseConfig = (platform: Platform, watch, options) => {
+const createBaseConfig = (platform: Platform, dev, options) => {
     const babelRule = {
         loader: 'babel-loader',
         options: {
-            cacheDirectory: watch,
+            cacheDirectory: dev,
             presets: ["react", ["es2015", {"modules": false}], "stage-0"],
             plugins: [
                 "transform-runtime",
                 "transform-decorators-legacy",
                 "transform-class-properties",
                 ["styled-components", {"ssr": options.ssr}]
-            ].concat(watch && options.reactHotLoader ? ['react-hot-loader/babel'] : []),
+            ].concat(dev && options.reactHotLoader ? ['react-hot-loader/babel'] : []),
             only: ["*.js", "*.jsx"]
         }
     };
@@ -70,7 +70,7 @@ const createBaseConfig = (platform: Platform, watch, options) => {
     const reactNativeRule = {
         loader: 'babel-loader',
         options: {
-            cacheDirectory: watch,
+            cacheDirectory: dev,
             presets: ["react-native"],
             plugins: [
                 path.join(process.cwd(), 'node_modules/haul/src/utils/fixRequireIssues')
@@ -79,7 +79,7 @@ const createBaseConfig = (platform: Platform, watch, options) => {
     };
 
     const baseConfig: any = {
-        devtool: watch ? '#cheap-module-source-map' : '#source-map',
+        devtool: dev ? '#cheap-module-source-map' : '#source-map',
         module: {
             rules: [
                 {
@@ -128,7 +128,7 @@ const createBaseConfig = (platform: Platform, watch, options) => {
         watchOptions: {
             ignored: /build/
         },
-        bail: !watch
+        bail: !dev
     };
 
     if (platform.hasAny(['web', 'server'])) {
@@ -166,9 +166,9 @@ const createBaseConfig = (platform: Platform, watch, options) => {
 let persistPlugins;
 let ExtractTextPlugin;
 
-const createPlugins = (platform: Platform, watch, options) => {
+const createPlugins = (platform: Platform, dev, options) => {
     const webpack = requireModule('webpack');
-    const buildNodeEnv = watch ? (platform.hasAny('test') ? 'test' : 'development') : 'production';
+    const buildNodeEnv = dev ? (platform.hasAny('test') ? 'test' : 'development') : 'production';
 
     if (!persistPlugins) {
         const PersistGraphQLPlugin = requireModule('persistgraphql-webpack-plugin');
@@ -189,7 +189,7 @@ const createPlugins = (platform: Platform, watch, options) => {
 
     let plugins = [];
 
-    if (watch) {
+    if (dev) {
         plugins.push(new webpack.NamedModulesPlugin());
     } else {
         plugins.push(new webpack.optimize.UglifyJsPlugin({ minimize: true }));
@@ -207,7 +207,7 @@ const createPlugins = (platform: Platform, watch, options) => {
             }),
             new webpack.DefinePlugin({
                 __CLIENT__: false, __SERVER__: true, __SSR__: options.ssr,
-                __DEV__: watch, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
                 __PERSIST_GQL__: options.persistGraphQL,
                 __BACKEND_URL__: `"${backendUrl}"`
             }),
@@ -217,7 +217,7 @@ const createPlugins = (platform: Platform, watch, options) => {
         plugins = plugins.concat([
             new webpack.DefinePlugin({
                 __CLIENT__: true, __SERVER__: false, __SSR__: options.ssr,
-                __DEV__: watch, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
                 __PERSIST_GQL__: options.persistGraphQL,
                 __BACKEND_URL__: (
                     platform.target !== 'web' ||
@@ -240,7 +240,7 @@ const createPlugins = (platform: Platform, watch, options) => {
                 }));
             }
 
-            if (!watch) {
+            if (!dev) {
                 ExtractTextPlugin = requireModule('extract-text-webpack-plugin');
                 plugins.push(new ExtractTextPlugin({filename: '[name].[contenthash].css', allChunks: true}));
                 plugins.push(new webpack.optimize.CommonsChunkPlugin({
@@ -263,7 +263,7 @@ const createPlugins = (platform: Platform, watch, options) => {
         const name = `vendor_${platform.target}`;
         plugins = [
             new webpack.DefinePlugin({
-                __DEV__: watch, 'process.env.NODE_ENV': `"${buildNodeEnv}"`
+                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`
             }),
             new webpack.DllPlugin({
                 name,
@@ -288,7 +288,7 @@ const getDepsForPlatform = (platform: Platform, depPlatforms) => {
     return deps;
 };
 
-const createConfig = (preset, watch, opts, depPlatforms) => {
+const createConfig = (preset, dev, opts, depPlatforms) => {
     const platform = new Platform(preset);
 
     const options: any = {...opts};
@@ -314,14 +314,14 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         useBabel();
     }
 
-    const plugins = createPlugins(platform, watch, options);
+    const plugins = createPlugins(platform, dev, options);
     if (platform.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
         const nodeExternalsFn = nodeExternals({
             whitelist: [/(^webpack|^react-native)/]
         });
         config = {
-            ...createBaseConfig(platform, watch, options),
+            ...createBaseConfig(platform, dev, options),
             name: 'backend',
             entry: {
                 index: [
@@ -344,8 +344,8 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
                 });
             },
             output: {
-                devtoolModuleFilenameTemplate: watch ? '../../[resource-path]' : undefined,
-                devtoolFallbackModuleFilenameTemplate: watch ? '../../[resource-path];[hash]' : undefined,
+                devtoolModuleFilenameTemplate: dev ? '../../[resource-path]' : undefined,
+                devtoolFallbackModuleFilenameTemplate: dev ? '../../[resource-path];[hash]' : undefined,
                 filename: '[name].js',
                 sourceMapFilename: '[name].[chunkhash].js.map',
                 path: path.resolve(options.backendBuildDir),
@@ -355,7 +355,7 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         };
         config.module.rules = config.module.rules.concat([{
             test: /\.scss$/,
-            use: watch ? [
+            use: dev ? [
                 {loader: 'isomorphic-style-loader'},
                 {loader: 'css-loader', options: {sourceMap: true}},
                 {loader: 'postcss-loader', options: {sourceMap: true}},
@@ -368,7 +368,7 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         const backendBaseUrl = protocol + '//' + host;
 
         config = {
-            ...createBaseConfig(platform, watch, options),
+            ...createBaseConfig(platform, dev, options),
             name: 'web-frontend',
             entry: {
                 index: [
@@ -395,7 +395,7 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         };
         config.module.rules = config.module.rules.concat([{
             test: /\.scss$/,
-            use: watch ? [
+            use: dev ? [
                 {loader: 'style-loader'},
                 {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
                 {loader: 'postcss-loader', options: {sourceMap: true}},
@@ -409,7 +409,7 @@ const createConfig = (preset, watch, opts, depPlatforms) => {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
-            ...createBaseConfig(platform, watch, options),
+            ...createBaseConfig(platform, dev, options),
             name: `${platform.target}-frontend`,
             entry: {
                 index: [

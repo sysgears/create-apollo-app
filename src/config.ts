@@ -10,20 +10,26 @@ const createConfig = cmd => {
 
     const options: any = spinConfig.options;
 
-    options.backendBuildDir = options.backendBuildDir || 'build/server';
-    options.frontendBuildDir = options.frontendBuildDir || 'build/client';
-    options.dllBuildDir = options.dllBuildDir || 'build/dll';
-    options.webpackDevPort = options.webpackDevPort || 3000;
+    try {
+        options.backendBuildDir = options.backendBuildDir || 'build/server';
+        options.frontendBuildDir = options.frontendBuildDir || 'build/client';
+        options.dllBuildDir = options.dllBuildDir || 'build/dll';
+        options.webpackDevPort = options.webpackDevPort || 3000;
 
-    for (let preset of Object.keys(spinConfig.presets)) {
-        const platform = new Platform(preset);
-        if (spinConfig.presets[preset]) {
-            const watch = cmd === 'watch';
-            config[preset] = generateConfig(preset, watch, options, {});
-            if (options.webpackDll && !platform.hasAny('server')) {
-                config[`${preset}-dll`] = generateConfig(`${preset}-dll`, watch, options, {});
+        for (let preset of Object.keys(spinConfig.presets)) {
+            const platform = new Platform(preset);
+            if (spinConfig.presets[preset]) {
+                const dev = cmd === 'watch' || cmd === 'test';
+                if (cmd === 'test' && !platform.hasAny('test'))
+                    continue;
+                config[preset] = generateConfig(preset, dev, options, {});
+                if (options.webpackDll && !platform.hasAny('server')) {
+                    config[`${preset}-dll`] = generateConfig(`${preset}-dll`, dev, options, {});
+                }
             }
         }
+    } catch (e) {
+        console.error(e.stack);
     }
 
     return { config, options };

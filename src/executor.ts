@@ -727,6 +727,16 @@ async function startExp(options) {
 const execute = (cmd, config, options) => {
     if (cmd === 'exp') {
         startExp(options);
+    } else if (cmd === 'test') {
+        spawn(path.join(process.cwd(), 'node_modules/.bin/mocha-webpack'),
+            [
+                '--include',
+                'babel-polyfill',
+                '--webpack-config',
+                'node_modules/spinjs/webpack.config.js'
+            ].concat(process.argv.slice(3)), {
+            stdio: [0, 1, 2]
+        });
     } else {
         let prepareExpoPromise;
         const expoPlatforms = [];
@@ -749,7 +759,7 @@ const execute = (cmd, config, options) => {
         prepareExpoPromise.then(() => {
             for (let preset of Object.keys(config)) {
                 const platform = new Platform(preset);
-                if (platform.hasAny('dll'))
+                if (platform.hasAny(['dll', 'test']))
                     continue;
                 const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && config[`${preset}-dll`]) ?
                     buildDll(platform.target, config[`${preset}-dll`], options) : Promise.resolve();

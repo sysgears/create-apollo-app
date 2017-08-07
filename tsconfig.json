@@ -15,8 +15,7 @@
     "removeComments": true
   },
   "include": [
-    "./src/index.ts",
-    "./src/config.ts",
+    "./src/*.ts",
     "./src/react-native/*.ts"
   ],
   "exclude": [
