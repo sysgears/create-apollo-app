@@ -261,20 +261,6 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
     const connect = requireModule('connect');
     const compression = requireModule('compression');
     const mime = requireModule('mime');
-    const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
-    const copyToClipBoardMiddleware = requireModule('react-native/local-cli/server/middleware/copyToClipBoardMiddleware');
-    const cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
-    const getDevToolsMiddleware = requireModule('react-native/local-cli/server/middleware/getDevToolsMiddleware');
-    const heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
-    const indexPageMiddleware = requireModule('react-native/local-cli/server/middleware/indexPage');
-    const loadRawBodyMiddleware = requireModule('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
-    const messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
-    const openStackFrameInEditorMiddleware = requireModule('react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware');
-    const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-    const systraceProfileMiddleware = requireModule('react-native/local-cli/server/middleware/systraceProfileMiddleware.js');
-    const unless = requireModule('react-native/local-cli/server/middleware/unless');
-    const webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
-    const symbolicateMiddleware = requireModule('haul/src/server/middleware/symbolicateMiddleware');
     const webpackDevMiddleware = requireModule('webpack-dev-middleware');
     const webpackHotMiddleware = requireModule('webpack-hot-middleware');
     const httpProxyMiddleware = requireModule('http-proxy-middleware');
@@ -392,11 +378,28 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
 
     const serverInstance: any = http.createServer(app);
 
+    let webSocketProxy, messageSocket;
     let wsProxy, ms, inspectorProxy;
 
     if (platform !== 'web') {
         mime.define({'application/javascript': ['bundle']});
         mime.define({'application/json': ['assets']});
+
+        messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
+        webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
+
+        const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
+        const copyToClipBoardMiddleware = requireModule('react-native/local-cli/server/middleware/copyToClipBoardMiddleware');
+        const cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
+        const getDevToolsMiddleware = requireModule('react-native/local-cli/server/middleware/getDevToolsMiddleware');
+        const heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
+        const indexPageMiddleware = requireModule('react-native/local-cli/server/middleware/indexPage');
+        const loadRawBodyMiddleware = requireModule('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
+        const openStackFrameInEditorMiddleware = requireModule('react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware');
+        const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+        const systraceProfileMiddleware = requireModule('react-native/local-cli/server/middleware/systraceProfileMiddleware.js');
+        const unless = requireModule('react-native/local-cli/server/middleware/unless');
+        const symbolicateMiddleware = requireModule('haul/src/server/middleware/symbolicateMiddleware');
 
         inspectorProxy = new InspectorProxy();
         const args = {
