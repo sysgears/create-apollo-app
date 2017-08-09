@@ -1,3 +1,3 @@
 require('source-map-support').install();
 
-module.exports = require('./lib/config');
+module.exports = require('./lib/spin.config');

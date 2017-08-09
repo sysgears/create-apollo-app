@@ -13,7 +13,7 @@ import { RawSource } from 'webpack-sources';
 
 import * as VirtualModules from 'webpack-virtual-modules';
 
-import { Platform } from "./generator";
+import Platform from "./platform";
 import requireModule from './requireModule';
 import liveReloadMiddleware from './react-native/liveReloadMiddleware';
 
@@ -554,7 +554,6 @@ function buildDll(platform, config, options) {
 
                     const meta = {name: vendorKey, hashes: {}, modules: config.entry.vendor};
                     for (let filename of Object.keys(json.content)) {
-                        console.log("filename:", filename);
                         if (filename.indexOf(' ') < 0) {
                             meta.hashes[filename] = crypto.createHash('md5').update(fs.readFileSync(filename)).digest('hex');
                             fs.writeFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
@@ -724,7 +723,7 @@ async function startExp(options) {
     });
 }
 
-const execute = (cmd, config, options) => {
+const execute = (cmd, nodes: Object, options) => {
     if (cmd === 'exp') {
         startExp(options);
     } else if (cmd === 'test') {
@@ -742,8 +741,9 @@ const execute = (cmd, config, options) => {
         const expoPlatforms = [];
         const watch = cmd === 'watch';
         const targets = {};
-        for (let preset of Object.keys(config)) {
-            const platform = new Platform(preset);
+        for (let name in nodes) {
+            const node = nodes[name];
+            const platform = node.platform;
             targets[platform.target] = true;
             if (platform.hasAny('ios')) {
                 expoPlatforms.push('ios');
@@ -757,14 +757,15 @@ const execute = (cmd, config, options) => {
             prepareExpoPromise = Promise.resolve();
         }
         prepareExpoPromise.then(() => {
-            for (let preset of Object.keys(config)) {
-                const platform = new Platform(preset);
+            for (let name in nodes) {
+                const node = nodes[name];
+                const platform = node.platform;
                 if (platform.hasAny(['dll', 'test']))
                     continue;
-                const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && config[`${preset}-dll`]) ?
-                    buildDll(platform.target, config[`${preset}-dll`], options) : Promise.resolve();
+                const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && node.dllConfig) ?
+                    buildDll(platform.target, node.dllConfig, options) : Promise.resolve();
                 prepareDllPromise.then(() =>
-                    startWebpack(targets, watch, platform.target, config[preset], config[`${preset}-dll`], options));
+                    startWebpack(targets, watch, platform.target, node.config, node.dllConfig, options));
             }
         });
     }

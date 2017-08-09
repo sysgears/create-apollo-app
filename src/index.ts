@@ -7,5 +7,5 @@ if (process.argv.length >= 3) {
     if (cmd === 'watch' || cmd === 'build' || cmd === 'test') {
         config = createConfig(cmd);
     }
-    execute(cmd, config.config, config.options);
+    execute(cmd, config.nodes, config.options);
 }

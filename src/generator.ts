@@ -3,39 +3,11 @@ import * as ip from 'ip';
 import * as url from 'url';
 
 import requireModule from './requireModule';
+import Platform from "./platform";
 const pkg = requireModule('./package.json');
-const spinConfig = pkg.spin;
 
 const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
 let babelUsed = false;
-
-export class Platform {
-    features: string[];
-    target: string;
-
-    constructor(preset) {
-        this.features = preset.split('-');
-        if (this.hasAny('server')) {
-            this.target = 'server';
-        } else if (this.hasAny('web')) {
-            this.target = 'web';
-        } else if (this.hasAny('android')) {
-            this.target = 'android'
-        } else if (this.hasAny('ios')) {
-            this.target = 'ios';
-        }
-    }
-
-    hasAny(arg): Boolean {
-        const array = arg.constructor === Array ? arg : [arg];
-        for (let feature of array) {
-            if (this.features.indexOf(feature) >= 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-}
 
 const useBabel = () => {
     if (!babelUsed) {
@@ -166,7 +138,8 @@ const createBaseConfig = (platform: Platform, dev, options) => {
 let persistPlugins;
 let ExtractTextPlugin;
 
-const createPlugins = (platform: Platform, dev, options) => {
+const createPlugins = (node, nodes: Object, dev, options) => {
+    const platform = node.platform;
     const webpack = requireModule('webpack');
     const buildNodeEnv = dev ? (platform.hasAny('test') ? 'test' : 'development') : 'production';
 
@@ -232,7 +205,14 @@ const createPlugins = (platform: Platform, dev, options) => {
             plugins.push(new ManifestPlugin({
                 fileName: 'assets.json'
             }));
-            if (!spinConfig.presets['apollo-react-server']) {
+            let hasServer = false;
+            for (let name in nodes) {
+                if (nodes[name].platform.hasAny('server')) {
+                    hasServer = true;
+                    break;
+                }
+            }
+            if (!hasServer) {
                 const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
                 plugins.push(new HtmlWebpackPlugin({
                     template: 'tools/html-plugin-template.ejs',
@@ -260,7 +240,7 @@ const createPlugins = (platform: Platform, dev, options) => {
     }
 
     if (platform.hasAny('dll')) {
-        const name = `vendor_${platform.target}`;
+        const name = `vendor_${node.parentName}`;
         plugins = [
             new webpack.DefinePlugin({
                 __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`
@@ -274,22 +254,22 @@ const createPlugins = (platform: Platform, dev, options) => {
     return plugins;
 };
 
-const getDepsForPlatform = (platform: Platform, depPlatforms) => {
+const getDepsForNode = (node, depPlatforms) => {
     let deps = [];
     for (let key of Object.keys(pkg.dependencies)) {
         const val = depPlatforms[key];
-        if (!val || platform.hasAny(val)) {
+        if (!val || (val.constructor === Array && val.indexOf(node.parentName) >= 0) || val === node.parentName) {
             deps.push(key);
         }
     }
-    if (platform.hasAny(['android', 'ios'])) {
+    if (node.platform.hasAny(['android', 'ios'])) {
         deps = deps.concat(require.resolve('./react-native/react-native-polyfill.js'));
     }
     return deps;
 };
 
-const createConfig = (preset, dev, opts, depPlatforms) => {
-    const platform = new Platform(preset);
+const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
+    const platform = node.platform;
 
     const options: any = {...opts};
 
@@ -314,7 +294,7 @@ const createConfig = (preset, dev, opts, depPlatforms) => {
         useBabel();
     }
 
-    const plugins = createPlugins(platform, dev, options);
+    const plugins = createPlugins(node, nodes, dev, options);
     if (platform.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
         const nodeExternalsFn = nodeExternals({
@@ -410,7 +390,7 @@ const createConfig = (preset, dev, opts, depPlatforms) => {
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
             ...createBaseConfig(platform, dev, options),
-            name: `${platform.target}-frontend`,
+            name: node.name,
             entry: {
                 index: [
                     require.resolve('./react-native/react-native-polyfill.js'),
@@ -420,7 +400,7 @@ const createConfig = (preset, dev, opts, depPlatforms) => {
             output: {
                 filename: `index.mobile.bundle`,
                 publicPath: '/',
-                path: path.resolve(path.join(options.frontendBuildDir, platform.target)),
+                path: path.resolve(path.join(options.frontendBuildDir, node.name)),
             },
             devServer: {
                 ...baseDevServerConfig,
@@ -441,13 +421,13 @@ const createConfig = (preset, dev, opts, depPlatforms) => {
     }
 
     if (platform.hasAny('dll')) {
-        const name = `vendor_${platform.target}`;
+        const name = `vendor_${node.parentName}`;
         config = {
             ...config,
             devtool: '#cheap-module-source-map',
-            name: `${platform.target}-dll`,
+            name: node.name,
             entry: {
-                vendor: getDepsForPlatform(platform, depPlatforms),
+                vendor: getDepsForNode(node, depPlatforms),
             },
             output: {
                 filename: `${name}.[hash]_dll.js`,
