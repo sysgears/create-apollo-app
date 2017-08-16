@@ -3,7 +3,6 @@ import * as ip from 'ip';
 import * as url from 'url';
 
 import requireModule from './requireModule';
-import Platform from "./platform";
 const pkg = requireModule('./package.json');
 
 const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
@@ -23,34 +22,39 @@ const useBabel = () => {
     }
 };
 
-const createBaseConfig = (platform: Platform, dev, options) => {
+const createBaseConfig = (node, dev, options) => {
+    const platform = node.platform;
     const babelRule = {
-        loader: 'babel-loader',
+        loader: requireModule.resolve('babel-loader'),
         options: {
             cacheDirectory: dev,
-            presets: ["react", ["es2015", {"modules": false}], "stage-0"],
+            presets: [
+                requireModule.resolve('babel-preset-react'),
+                [requireModule.resolve('babel-preset-es2015'), {'modules': false}],
+                requireModule.resolve('babel-preset-stage-0')],
             plugins: [
-                "transform-runtime",
-                "transform-decorators-legacy",
-                "transform-class-properties",
-                ["styled-components", {"ssr": options.ssr}]
-            ].concat(dev && options.reactHotLoader ? ['react-hot-loader/babel'] : []),
-            only: ["*.js", "*.jsx"]
-        }
+                requireModule.resolve('babel-plugin-transform-runtime'),
+                requireModule.resolve('babel-plugin-transform-decorators-legacy'),
+                requireModule.resolve('babel-plugin-transform-class-properties'),
+                [requireModule.resolve('babel-plugin-styled-components'), {'ssr': options.ssr}],
+            ].concat(dev && options.reactHotLoader ? [requireModule.resolve('react-hot-loader/babel')] : []),
+            only: ['*.js', '*.jsx'],
+        },
     };
 
     const reactNativeRule = {
-        loader: 'babel-loader',
+        loader: requireModule.resolve('babel-loader'),
         options: {
             cacheDirectory: dev,
-            presets: ["react-native"],
+            presets: [requireModule.resolve('babel-preset-react-native')],
             plugins: [
-                path.join(process.cwd(), 'node_modules/haul/src/utils/fixRequireIssues')
-            ]
-        }
+                requireModule.resolve('haul/src/utils/fixRequireIssues'),
+            ],
+        },
     };
 
     const baseConfig: any = {
+        name: node.name,
         devtool: dev ? '#cheap-module-source-map' : '#source-map',
         module: {
             rules: [
@@ -70,16 +74,16 @@ const createBaseConfig = (platform: Platform, dev, options) => {
                                 }
                                 return result;
                             } :
-                            babelRule) as any
+                            babelRule) as any,
                     ].concat(
                         options.persistGraphQL ?
                             ['persistgraphql-webpack-plugin/js-loader'] :
-                            []
-                    )
+                            [],
+                    ),
                 },
                 {
                     test: /\.graphqls/,
-                    use: 'raw-loader'
+                    use: 'raw-loader',
                 },
                 {
                     test: /\.(graphql|gql)$/,
@@ -87,38 +91,39 @@ const createBaseConfig = (platform: Platform, dev, options) => {
                     use: ['graphql-tag/loader'].concat(
                         options.persistGraphQL ?
                             ['persistgraphql-webpack-plugin/graphql-loader'] :
-                            []
-                    )
+                            [],
+                    ),
                 },
-            ]
+            ],
         },
         resolve: {
             extensions: platform.hasAny('server') ?
                 [`.web.js`, `.web.jsx`, '.js', '.jsx'] :
-                [`.${platform.target}.js`, `.${platform.target}.jsx`, '.native.js', '.native.jsx', '.js', '.jsx']
+                [`.${platform.target}.js`, `.${platform.target}.jsx`, '.native.js', '.native.jsx', '.js', '.jsx'],
+            modules: [path.join(process.cwd(), 'node_modules'), 'node_modules'],
         },
         watchOptions: {
-            ignored: /build/
+            ignored: /build/,
         },
-        bail: !dev
+        bail: !dev,
     };
 
     if (platform.hasAny(['web', 'server'])) {
         baseConfig.resolve.alias = {
-            'react-native': 'react-native-web'
+            'react-native': 'react-native-web',
         };
         baseConfig.module.rules = baseConfig.module.rules.concat([
             {
                 test: /\.(png|ico|jpg|xml)$/,
-                use: 'url-loader?name=[hash].[ext]&limit=10000'
+                use: 'url-loader?name=[hash].[ext]&limit=10000',
             },
             {
                 test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                use: 'url-loader?name=./assets/[hash].[ext]&limit=10000'
+                use: 'url-loader?name=./assets/[hash].[ext]&limit=10000',
             },
             {
                 test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                use: 'file-loader?name=./assets/[hash].[ext]'
+                use: 'file-loader?name=./assets/[hash].[ext]',
             },
         ]);
     } else if (platform.hasAny(['android', 'ios'])) {
@@ -128,8 +133,8 @@ const createBaseConfig = (platform: Platform, dev, options) => {
                 use: {
                     loader: require.resolve('./react-native/assetLoader'),
                     query: {platform: platform.target, root: path.resolve('.'), bundle: false},
-                }
-            }
+                },
+            },
         ]);
     }
     return baseConfig;
@@ -176,15 +181,15 @@ const createPlugins = (node, nodes: Object, dev, options) => {
         plugins = plugins.concat([
             new webpack.BannerPlugin({
                 banner: 'require("source-map-support").install();',
-                raw: true, entryOnly: false
+                raw: true, entryOnly: false,
             }),
             new webpack.DefinePlugin({
                 __CLIENT__: false, __SERVER__: true, __SSR__: options.ssr,
                 __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
                 __PERSIST_GQL__: options.persistGraphQL,
-                __BACKEND_URL__: `"${backendUrl}"`
+                __BACKEND_URL__: `"${backendUrl}"`,
             }),
-            persistPlugins.server
+            persistPlugins.server,
         ]);
     } else {
         plugins = plugins.concat([
@@ -197,13 +202,13 @@ const createPlugins = (node, nodes: Object, dev, options) => {
                     url.parse(backendUrl).hostname !== 'localhost'
                 ) ? `"${backendUrl}"` : false,
             }),
-            persistPlugins.client
+            persistPlugins.client,
         ]);
 
         if (platform.hasAny('web')) {
             const ManifestPlugin = requireModule('webpack-manifest-plugin');
             plugins.push(new ManifestPlugin({
-                fileName: 'assets.json'
+                fileName: 'assets.json',
             }));
             let hasServer = false;
             for (let name in nodes) {
@@ -224,11 +229,11 @@ const createPlugins = (node, nodes: Object, dev, options) => {
                 ExtractTextPlugin = requireModule('extract-text-webpack-plugin');
                 plugins.push(new ExtractTextPlugin({filename: '[name].[contenthash].css', allChunks: true}));
                 plugins.push(new webpack.optimize.CommonsChunkPlugin({
-                    name: "vendor",
-                    filename: "[name].[hash].js",
+                    name: 'vendor',
+                    filename: '[name].[hash].js',
                     minChunks: function (module) {
                         return module.resource && module.resource.indexOf(path.resolve('./node_modules')) === 0;
-                    }
+                    },
                 }));
             }
         } else if (platform.hasAny(['android', 'ios'])) {
@@ -243,12 +248,12 @@ const createPlugins = (node, nodes: Object, dev, options) => {
         const name = `vendor_${node.parentName}`;
         plugins = [
             new webpack.DefinePlugin({
-                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`
+                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
             }),
             new webpack.DllPlugin({
                 name,
                 path: path.join(options.dllBuildDir, `${name}_dll.json`),
-            })
+            }),
         ];
     }
     return plugins;
@@ -285,7 +290,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         headers: { 'Access-Control-Allow-Origin': '*' },
         quiet: false,
         noInfo: true,
-        stats: { colors: true, chunkModules: false }
+        stats: { colors: true, chunkModules: false },
     };
 
     let config;
@@ -298,21 +303,20 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
     if (platform.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
         const nodeExternalsFn = nodeExternals({
-            whitelist: [/(^webpack|^react-native)/]
+            whitelist: [/(^webpack|^react-native)/],
         });
         config = {
-            ...createBaseConfig(platform, dev, options),
-            name: 'backend',
+            ...createBaseConfig(node, dev, options),
             entry: {
                 index: [
                     'babel-polyfill',
-                    './src/server/index.js'
-                ]
+                    './src/server/index.js',
+                ],
             },
             target: 'node',
             node: {
                 __dirname: true,
-                __filename: true
+                __filename: true,
             },
             externals(context, request, callback) {
                 return nodeExternalsFn(context, request, function () {
@@ -329,9 +333,9 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 filename: '[name].js',
                 sourceMapFilename: '[name].[chunkhash].js.map',
                 path: path.resolve(options.backendBuildDir),
-                publicPath: '/'
+                publicPath: '/',
             },
-            plugins
+            plugins,
         };
         config.module.rules = config.module.rules.concat([{
             test: /\.scss$/,
@@ -340,7 +344,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 {loader: 'css-loader', options: {sourceMap: true}},
                 {loader: 'postcss-loader', options: {sourceMap: true}},
                 {loader: 'sass-loader', options: {sourceMap: true}}] :
-                [{loader: 'ignore-loader'}]
+                [{loader: 'ignore-loader'}],
         }]);
     } else if (platform.hasAny('web')) {
         const backendUrl = options.backendUrl.replace('{ip}', ip.address());
@@ -348,18 +352,17 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         const backendBaseUrl = protocol + '//' + host;
 
         config = {
-            ...createBaseConfig(platform, dev, options),
-            name: 'web-frontend',
+            ...createBaseConfig(node, dev, options),
             entry: {
                 index: [
                     'babel-polyfill',
-                    './src/client/index.jsx'
-                ]
+                    './src/client/index.jsx',
+                ],
             },
             output: {
                 filename: '[name].[hash].js',
                 path: path.resolve(path.join(options.frontendBuildDir, 'web')),
-                publicPath: '/'
+                publicPath: '/',
             },
             plugins,
             devServer: {
@@ -368,10 +371,10 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 proxy: {
                     '!/*.hot-update.{json,js}': {
                         target: backendBaseUrl,
-                        logLevel: 'info'
-                    }
-                }
-            }
+                        logLevel: 'info',
+                    },
+                },
+            },
         };
         config.module.rules = config.module.rules.concat([{
             test: /\.scss$/,
@@ -381,21 +384,20 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 {loader: 'postcss-loader', options: {sourceMap: true}},
                 {loader: 'sass-loader', options: {sourceMap: true}},
             ] : ExtractTextPlugin.extract({
-                fallback: "style-loader",
-                use: ['css-loader', 'postcss-loader', 'sass-loader']
-            })
+                fallback: 'style-loader',
+                use: ['css-loader', 'postcss-loader', 'sass-loader'],
+            }),
         }]);
     } else if (platform.hasAny(['android', 'ios'])) {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
-            ...createBaseConfig(platform, dev, options),
-            name: node.name,
+            ...createBaseConfig(node, dev, options),
             entry: {
                 index: [
                     require.resolve('./react-native/react-native-polyfill.js'),
-                    './src/mobile/index.js'
-                ]
+                    './src/mobile/index.js',
+                ],
             },
             output: {
                 filename: `index.mobile.bundle`,
@@ -405,9 +407,9 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             devServer: {
                 ...baseDevServerConfig,
                 hot: false,
-                port: platform.hasAny('android') ? 3010 : 3020
+                port: platform.hasAny('android') ? 3010 : 3020,
             },
-            plugins
+            plugins,
         };
         config.resolve.plugins = [
             new HasteResolver({
@@ -425,14 +427,13 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         config = {
             ...config,
             devtool: '#cheap-module-source-map',
-            name: node.name,
             entry: {
                 vendor: getDepsForNode(node, depPlatforms),
             },
             output: {
                 filename: `${name}.[hash]_dll.js`,
                 path: path.resolve(options.dllBuildDir),
-                library: name
+                library: name,
             },
         };
     }

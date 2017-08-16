@@ -9,4 +9,4 @@ export default cmd => {
         createConfig = requireModule('spinjs/spin.config.js').default;
     }
     return createConfig(cmd);
-}
+};

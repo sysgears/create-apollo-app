@@ -27,13 +27,15 @@
  * @flow
  */
 
-const utils = require('loader-utils');
-const util = require('util');
-const hashAssetFiles = require('expo/tools/hashAssetFiles');
-const size = require('image-size');
+const requireModule = require('../requireModule').default;
 const path = require('path');
-const hasha = require('hasha');
-const AssetResolver = require('haul/src/resolvers/AssetResolver');
+
+const util = requireModule('util');
+const utils = requireModule('loader-utils');
+const size = requireModule('image-size');
+const hasha = requireModule('hasha');
+const hashAssetFiles = requireModule('expo/tools/hashAssetFiles');
+const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
 
 type Config = {
   platform: string,

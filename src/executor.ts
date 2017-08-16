@@ -13,7 +13,6 @@ import { RawSource } from 'webpack-sources';
 
 import * as VirtualModules from 'webpack-virtual-modules';
 
-import Platform from "./platform";
 import requireModule from './requireModule';
 import liveReloadMiddleware from './react-native/liveReloadMiddleware';
 
@@ -41,14 +40,14 @@ process.on('exit', () => {
     }
 });
 
-function runServer(path, logger) {
-    if (!fs.existsSync(path)) {
-        throw new Error(`Backend doesn't exist at ${path}, exiting`);
+function runServer(serverPath, logger) {
+    if (!fs.existsSync(serverPath)) {
+        throw new Error(`Backend doesn't exist at ${serverPath}, exiting`);
     }
     if (startBackend) {
         startBackend = false;
         logger('Starting backend');
-        server = spawn('node', [path], {stdio: [0, 1, 2]});
+        server = spawn('node', [serverPath], {stdio: [0, 1, 2]});
         server.on('exit', code => {
             if (code === 250) {
                 // App requested full reload
@@ -56,7 +55,7 @@ function runServer(path, logger) {
             }
             logger('Backend has been stopped');
             server = undefined;
-            runServer(path, logger);
+            runServer(serverPath, logger);
         });
     }
 }
@@ -64,7 +63,7 @@ function runServer(path, logger) {
 function webpackReporter(watch, outputPath, log, err?, stats?) {
     if (err) {
         log(err.stack);
-        throw new Error("Build error");
+        throw new Error('Build error');
     }
     if (stats) {
         log(stats.toString({
@@ -81,7 +80,7 @@ function webpackReporter(watch, outputPath, log, err?, stats?) {
             errorDetails: true,
             warnings: true,
             publicPath: false,
-            colors: true
+            colors: true,
         }));
 
         if (!watch) {
@@ -112,7 +111,7 @@ class MobileAssetsPlugin {
                                 assets.push(module._asset);
                             }
                         });
-                        compilation.assets[file.replace(".bundle", "") + ".assets"] = new RawSource(JSON.stringify(assets));
+                        compilation.assets[file.replace('.bundle', '') + '.assets'] = new RawSource(JSON.stringify(assets));
                     }
                 });
             });
@@ -249,7 +248,7 @@ function openFrontend(config, platform) {
 
 function debugMiddleware(req, res, next) {
   if (['/debug', '/debug/bundles'].indexOf(req.path) >= 0) {
-    res.writeHead(200, {"Content-Type": "text/html"});
+    res.writeHead(200, {'Content-Type': 'text/html'});
     res.end('<!doctype html><div><a href="/debug/bundles">Cached Bundles</a></div>');
   } else {
     next();
@@ -277,18 +276,18 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
         const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
         config.plugins.push(new webpack.DllReferencePlugin({
             context: process.cwd(),
-            manifest: requireModule('./' + jsonPath) // eslint-disable-line import/no-dynamic-require
+            manifest: requireModule('./' + jsonPath),
         }));
         vendorHashesJson = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString());
-        vendorSource = new RawSource(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + "\n");
-        vendorMap = new RawSource(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + ".map")).toString());
+        vendorSource = new RawSource(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + '\n');
+        vendorMap = new RawSource(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.map')).toString());
         if (platform !== 'web') {
-            const vendorAssets = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + ".assets")).toString());
+            const vendorAssets = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.assets')).toString());
             config.plugins.push(new MobileAssetsPlugin(vendorAssets));
         }
         vendorSourceListMap = fromStringWithSourceMap(
             vendorSource.source(),
-            JSON.parse(vendorMap.source())
+            JSON.parse(vendorMap.source()),
         );
     }
 
@@ -297,14 +296,14 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
     compiler.plugin('after-emit', (compilation, callback) => {
         if (backendFirstStart) {
             if (hasBackend) {
-                logger.debug("Webpack dev server is waiting for backend to start...");
+                logger.debug('Webpack dev server is waiting for backend to start...');
                 const { host } = url.parse(options.backendUrl.replace('{ip}', ip.address()));
                 waitOn({resources: [`tcp:${host}`]}, err => {
                     if (err) {
                         logger.error(err);
                         callback();
                     } else {
-                        logger.debug("Backend has been started, resuming webpack dev server...");
+                        logger.debug('Backend has been started, resuming webpack dev server...');
                         backendFirstStart = false;
                         callback();
                     }
@@ -324,10 +323,10 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
                         let sourceListMap = new SourceListMap();
                         sourceListMap.add(vendorSourceListMap);
                         sourceListMap.add(fromStringWithSourceMap(compilation.assets[file].source(),
-                            JSON.parse(compilation.assets[file + ".map"].source())));
+                            JSON.parse(compilation.assets[file + '.map'].source())));
                         let sourceAndMap = sourceListMap.toStringWithSourceMap({file});
                         compilation.assets[file] = new RawSource(sourceAndMap.source);
-                        compilation.assets[file + ".map"] = new RawSource(JSON.stringify(sourceAndMap.map));
+                        compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
                     }
                 });
             });
@@ -404,13 +403,13 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
         inspectorProxy = new InspectorProxy();
         const args = {
             port: config.
-                devServer.port, projectRoots: [path.resolve('.')]
+                devServer.port, projectRoots: [path.resolve('.')],
         };
         app
             .use(loadRawBodyMiddleware)
             .use(function (req, res, next) {
                 req.path = req.url.split('?')[0];
-                // console.log("req:", req.path);
+                // console.log('req:', req.path);
                 next();
             })
             .use(compression())
@@ -439,16 +438,16 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
                     for (const filePath of files) {
                         if (fs.existsSync(filePath)) {
                             assetExists = true;
-                            res.writeHead(200, {"Content-Type": mime.lookup(filePath)});
+                            res.writeHead(200, {'Content-Type': mime.lookup(filePath)});
                             fs.createReadStream(filePath)
                                 .pipe(res);
                         }
                     }
 
                     if (!assetExists) {
-                        logger.warn("Asset not found:", origPath);
-                        res.writeHead(404, {"Content-Type": "plain"});
-                        res.end("Asset: " + origPath + " not found. Tried: " + JSON.stringify(files));
+                        logger.warn('Asset not found:', origPath);
+                        res.writeHead(404, {'Content-Type': 'plain'});
+                        res.end('Asset: ' + origPath + ' not found. Tried: ' + JSON.stringify(files));
                     }
                 } else {
                     next();
@@ -459,12 +458,12 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
     app.use(webpackDevMiddleware(compiler, _.merge({}, config.devServer, {
         reporter({state, stats}) {
             if (state) {
-                logger("bundle is now VALID.");
+                logger('bundle is now VALID.');
             } else {
-                logger("bundle is now INVALID.");
+                logger('bundle is now INVALID.');
             }
             reporter(null, stats);
-        }
+        },
     })))
         .use(webpackHotMiddleware(compiler, {log: false}));
 
@@ -606,7 +605,7 @@ async function startExpoServer(projectRoot, packagerPort) {
 
     await Project.startExpoServerAsync(projectRoot);
     await ProjectSettings.setPackagerInfoAsync(projectRoot, {
-        packagerPort
+        packagerPort,
     });
 }
 
@@ -621,7 +620,7 @@ async function startExpoProject(config, platform) {
 
         const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
         console.log(`Expo address for ${platform}:`, address);
-        console.log("To open this app on your phone scan this QR code in Expo Client (if it doesn't get started automatically)");
+        console.log('To open this app on your phone scan this QR code in Expo Client (if it doesn\'t get started automatically)');
         qr.generate(address, code => {
             console.log(code);
         });
@@ -638,7 +637,7 @@ async function startExpoProject(config, platform) {
             const {success, msg} = await Simulator.openUrlInSimulatorSafeAsync(localAddress);
 
             if (!success) {
-                console.error("Failed to start Simulator: ", msg);
+                console.error('Failed to start Simulator: ', msg);
             }
         }
     } catch (e) {
@@ -678,22 +677,22 @@ async function startExpoProdServer(options) {
     app
         .use(function (req, res, next) {
             req.path = req.url.split('?')[0];
-            console.log("req:", req.url);
+            console.log('req:', req.url);
             next();
         })
         .use(compression())
         .use(debugMiddleware)
         .use(function (req, res, next) {
-            var platform = url.parse(req.url, true).query.platform;
+            let platform = url.parse(req.url, true).query.platform;
             if (platform) {
                 const filePath = path.join(options.frontendBuildDir, platform, req.path);
                 if (fs.existsSync(filePath)) {
-                    res.writeHead(200, {"Content-Type": mime.lookup(filePath)});
+                    res.writeHead(200, {'Content-Type': mime.lookup(filePath)});
                     fs.createReadStream(filePath)
                         .pipe(res);
                 } else {
-                    res.writeHead(404, {"Content-Type": "application/json"});
-                    res.end(`{"message": "File not found: ${filePath}"}`);
+                    res.writeHead(404, {'Content-Type': 'application/json'});
+                    res.end(`{'message': 'File not found: ${filePath}'}`);
                 }
             } else {
                 next();
@@ -716,7 +715,7 @@ async function startExp(options) {
     }
     const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
         cwd: projectRoot,
-        stdio: [0, 1, 2]
+        stdio: [0, 1, 2],
     });
     exp.on('exit', code => {
         process.exit(code);
@@ -732,9 +731,9 @@ const execute = (cmd, nodes: Object, options) => {
                 '--include',
                 'babel-polyfill',
                 '--webpack-config',
-                'node_modules/spinjs/webpack.config.js'
+                'node_modules/spinjs/webpack.config.js',
             ].concat(process.argv.slice(3)), {
-            stdio: [0, 1, 2]
+            stdio: [0, 1, 2],
         });
     } else {
         let prepareExpoPromise;

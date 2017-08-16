@@ -17,7 +17,7 @@ export default class Platform {
         } else if (this.hasAny('web')) {
             this.target = 'web';
         } else if (this.hasAny('android')) {
-            this.target = 'android'
+            this.target = 'android';
         } else if (this.hasAny('ios')) {
             this.target = 'ios';
         }

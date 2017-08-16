@@ -3,7 +3,7 @@ import * as merge from 'webpack-merge';
 
 import ConfigRc from './configRc';
 import generateConfig from './generator';
-import Platform from "./platform";
+import Platform from './platform';
 import requireModule from './requireModule';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
