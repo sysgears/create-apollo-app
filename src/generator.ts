@@ -273,6 +273,47 @@ const getDepsForNode = (node, depPlatforms) => {
     return deps;
 };
 
+const createCssPreprocessorRules = (dev, platform): Array<Object> => {
+    let createRule;
+
+    if (platform.hasAny('server')) {
+        createRule = (prep, ext) => ({
+            test: new RegExp(`\.${ext}$`),
+            use: dev ? [
+                {loader: 'isomorphic-style-loader'},
+                {loader: 'css-loader', options: {sourceMap: true}},
+                {loader: 'postcss-loader', options: {sourceMap: true}},
+                {loader: `${prep}-loader`, options: {sourceMap: true}}] :
+                [{loader: 'ignore-loader'}],
+        });
+    } else if (platform.hasAny('web')) {
+        createRule = (prep, ext) => ({
+            test: new RegExp(`\.${ext}$`),
+            use: dev ? [
+                {loader: 'style-loader'},
+                {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
+                {loader: 'postcss-loader', options: {sourceMap: true}},
+                {loader: `${prep}-loader`, options: {sourceMap: true}},
+            ] : ExtractTextPlugin.extract({
+                fallback: 'style-loader',
+                use: ['css-loader', 'postcss-loader', `${prep}-loader`],
+            }),
+        });
+    }
+
+    const rules = [];
+
+    if (createRule && platform.hasAny('sass')) {
+        rules.push(createRule('sass', 'scss'));
+    }
+
+    if (createRule && platform.hasAny('less')) {
+        rules.push(createRule('less', 'less'));
+    }
+
+    return rules;
+};
+
 const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
     const platform = node.platform;
 
@@ -297,15 +338,6 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
 
     if (platform.hasAny(['ios', 'android'])) {
         useBabel();
-    }
-
-    let cssPrep, cssPrepExt;
-    if (platform.hasAny('sass')) {
-        cssPrep = 'sass';
-        cssPrepExt = 'scss';
-    } else if (platform.hasAny('less')) {
-        cssPrep = 'less';
-        cssPrepExt = 'less';
     }
 
     const plugins = createPlugins(node, nodes, dev, options);
@@ -346,17 +378,6 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             },
             plugins,
         };
-        if (cssPrep) {
-            config.module.rules = config.module.rules.concat([{
-                test: new RegExp(`\.${cssPrepExt}$`),
-                use: dev ? [
-                    {loader: 'isomorphic-style-loader'},
-                    {loader: 'css-loader', options: {sourceMap: true}},
-                    {loader: 'postcss-loader', options: {sourceMap: true}},
-                    {loader: `${cssPrep}-loader`, options: {sourceMap: true}}] :
-                    [{loader: 'ignore-loader'}],
-            }]);
-        }
     } else if (platform.hasAny('web')) {
         const backendUrl = options.backendUrl.replace('{ip}', ip.address());
         const { protocol, host } = url.parse(backendUrl);
@@ -387,20 +408,6 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 },
             },
         };
-        if (cssPrep) {
-            config.module.rules = config.module.rules.concat([{
-                test: new RegExp(`\.${cssPrepExt}$`),
-                use: dev ? [
-                    {loader: 'style-loader'},
-                    {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
-                    {loader: 'postcss-loader', options: {sourceMap: true}},
-                    {loader: `${cssPrep}-loader`, options: {sourceMap: true}},
-                ] : ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: ['css-loader', 'postcss-loader', `${cssPrep}-loader`],
-                }),
-            }]);
-        }
     } else if (platform.hasAny(['android', 'ios'])) {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
@@ -434,6 +441,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
     } else {
         throw new Error(`Unknown platform target: ${platform.target}`);
     }
+    config.module.rules = config.module.rules.concat(createCssPreprocessorRules(dev, platform));
 
     if (platform.hasAny('dll')) {
         const name = `vendor_${node.parentName}`;
