@@ -299,11 +299,13 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         useBabel();
     }
 
-    let cssPrep = null;
+    let cssPrep, cssPrepExt;
     if (platform.hasAny('sass')) {
         cssPrep = 'sass';
+        cssPrepExt = 'scss';
     } else if (platform.hasAny('less')) {
-        cssPrep = 'less'
+        cssPrep = 'less';
+        cssPrepExt = 'less';
     }
 
     const plugins = createPlugins(node, nodes, dev, options);
@@ -346,7 +348,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         };
         if (cssPrep) {
             config.module.rules = config.module.rules.concat([{
-                test: new RegExp(`\.${cssPrep}$`),
+                test: new RegExp(`\.${cssPrepExt}$`),
                 use: dev ? [
                     {loader: 'isomorphic-style-loader'},
                     {loader: 'css-loader', options: {sourceMap: true}},
@@ -387,7 +389,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         };
         if (cssPrep) {
             config.module.rules = config.module.rules.concat([{
-                test: new RegExp(`\.${cssPrep}$`),
+                test: new RegExp(`\.${cssPrepExt}$`),
                 use: dev ? [
                     {loader: 'style-loader'},
                     {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
