@@ -120,8 +120,11 @@ class MobileAssetsPlugin {
     }
 }
 
-function startClientWebpack(hasBackend, watch, platform, config, dll, options) {
+function startClientWebpack(hasBackend, watch, node, options) {
     const webpack = requireModule('webpack');
+
+    const config = node.config;
+
     const logger = minilog(`webpack-for-${config.name}`);
     try {
         const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
@@ -140,9 +143,9 @@ function startClientWebpack(hasBackend, watch, platform, config, dll, options) {
                 config.plugins.push(new webpack.HotModuleReplacementPlugin());
             }
             config.plugins.push(new webpack.NoEmitOnErrorsPlugin());
-            startWebpackDevServer(hasBackend, platform, config, dll, options, reporter, logger);
+            startWebpackDevServer(hasBackend, node, options, reporter, logger);
         } else {
-            if (platform !== 'web') {
+            if (node.platform.target !== 'web') {
                 config.plugins.push(new MobileAssetsPlugin());
             }
 
@@ -162,7 +165,8 @@ function increaseBackendReloadCount() {
     `var count = ${backendReloadCount};\n`);
 }
 
-function startServerWebpack(watch, config, options) {
+function startServerWebpack(watch, node, options) {
+    const config = node.config;
     const logger = minilog(`webpack-for-${config.name}`);
 
     try {
@@ -233,13 +237,13 @@ function startServerWebpack(watch, config, options) {
     }
 }
 
-function openFrontend(config, platform) {
+function openFrontend(node) {
     const openurl = requireModule('openurl');
     try {
-        if (platform === 'web') {
-            openurl.open(`http://${ip.address()}:${config.devServer.port}`);
-        } else if (['android', 'ios'].indexOf(platform) >= 0) {
-            startExpoProject(config, platform);
+        if (node.platform.target === 'web' && node.openBrowser !== false) {
+            openurl.open(`http://${ip.address()}:${node.config.devServer.port}`);
+        } else if (['android', 'ios'].indexOf(node.platform.target) >= 0) {
+            startExpoProject(node.config, node.platform.target);
         }
     } catch (e) {
         console.error(e.stack);
@@ -255,7 +259,7 @@ function debugMiddleware(req, res, next) {
   }
 }
 
-function startWebpackDevServer(hasBackend, platform, config, dll, options, reporter, logger) {
+function startWebpackDevServer(hasBackend, node, options, reporter, logger) {
     const webpack = requireModule('webpack');
     const connect = requireModule('connect');
     const compression = requireModule('compression');
@@ -265,13 +269,16 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
     const httpProxyMiddleware = requireModule('http-proxy-middleware');
     const waitOn = requireModule('wait-on');
 
+    const config = node.config;
+    const platform = node.platform.target;
+
     const configOutputPath = config.output.path;
     config.output.path = '/';
 
     config.plugins.push(frontendVirtualModules);
 
     let vendorHashesJson, vendorSourceListMap, vendorSource, vendorMap;
-    if (options.webpackDll && dll) {
+    if (options.webpackDll && node.dllConfig) {
         const name = `vendor_${platform}`;
         const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
         config.plugins.push(new webpack.DllReferencePlugin({
@@ -315,7 +322,7 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
             callback();
         }
     });
-    if (options.webpackDll && dll && platform !== 'web') {
+    if (options.webpackDll && node.dllConfig && platform !== 'web') {
         compiler.plugin('after-compile', (compilation, callback) => {
             _.each(compilation.chunks, chunk => {
                 _.each(chunk.files, file => {
@@ -334,7 +341,7 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
         });
     }
 
-    if (options.webpackDll && dll && platform === 'web' && !hasBackend) {
+    if (options.webpackDll && node.dllConfig && platform === 'web' && !hasBackend) {
         compiler.plugin('after-compile', (compilation, callback) => {
             compilation.assets[vendorHashesJson.name] = vendorSource;
             compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
@@ -369,7 +376,7 @@ function startWebpackDevServer(hasBackend, platform, config, dll, options, repor
         }
         if (frontendFirstStart) {
             frontendFirstStart = false;
-            openFrontend(config, platform);
+            openFrontend(node);
         }
     });
 
@@ -645,11 +652,11 @@ async function startExpoProject(config, platform) {
     }
 }
 
-function startWebpack(targets, watch, platform, config, dll, options) {
-    if (platform === 'server') {
-        startServerWebpack(watch, config, options);
+function startWebpack(targets, watch, node, options) {
+    if (node.platform.target === 'server') {
+        startServerWebpack(watch, node, options);
     } else {
-        startClientWebpack(!!targets.server, watch, platform, config, dll, options);
+        startClientWebpack(!!targets.server, watch, node, options);
     }
 }
 
@@ -764,7 +771,7 @@ const execute = (cmd, nodes: Object, options) => {
                 const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && node.dllConfig) ?
                     buildDll(platform.target, node.dllConfig, options) : Promise.resolve();
                 prepareDllPromise.then(() =>
-                    startWebpack(targets, watch, platform.target, node.config, node.dllConfig, options));
+                    startWebpack(targets, watch, node, options));
             }
         });
     }

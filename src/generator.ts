@@ -299,6 +299,13 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         useBabel();
     }
 
+    let cssPrep = null;
+    if (platform.hasAny('sass')) {
+        cssPrep = 'sass';
+    } else if (platform.hasAny('less')) {
+        cssPrep = 'less'
+    }
+
     const plugins = createPlugins(node, nodes, dev, options);
     if (platform.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
@@ -337,15 +344,17 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             },
             plugins,
         };
-        config.module.rules = config.module.rules.concat([{
-            test: /\.scss$/,
-            use: dev ? [
-                {loader: 'isomorphic-style-loader'},
-                {loader: 'css-loader', options: {sourceMap: true}},
-                {loader: 'postcss-loader', options: {sourceMap: true}},
-                {loader: 'sass-loader', options: {sourceMap: true}}] :
-                [{loader: 'ignore-loader'}],
-        }]);
+        if (cssPrep) {
+            config.module.rules = config.module.rules.concat([{
+                test: new RegExp(`\.${cssPrep}$`),
+                use: dev ? [
+                    {loader: 'isomorphic-style-loader'},
+                    {loader: 'css-loader', options: {sourceMap: true}},
+                    {loader: 'postcss-loader', options: {sourceMap: true}},
+                    {loader: `${cssPrep}-loader`, options: {sourceMap: true}}] :
+                    [{loader: 'ignore-loader'}],
+            }]);
+        }
     } else if (platform.hasAny('web')) {
         const backendUrl = options.backendUrl.replace('{ip}', ip.address());
         const { protocol, host } = url.parse(backendUrl);
@@ -376,18 +385,20 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 },
             },
         };
-        config.module.rules = config.module.rules.concat([{
-            test: /\.scss$/,
-            use: dev ? [
-                {loader: 'style-loader'},
-                {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
-                {loader: 'postcss-loader', options: {sourceMap: true}},
-                {loader: 'sass-loader', options: {sourceMap: true}},
-            ] : ExtractTextPlugin.extract({
-                fallback: 'style-loader',
-                use: ['css-loader', 'postcss-loader', 'sass-loader'],
-            }),
-        }]);
+        if (cssPrep) {
+            config.module.rules = config.module.rules.concat([{
+                test: new RegExp(`\.${cssPrep}$`),
+                use: dev ? [
+                    {loader: 'style-loader'},
+                    {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
+                    {loader: 'postcss-loader', options: {sourceMap: true}},
+                    {loader: `${cssPrep}-loader`, options: {sourceMap: true}},
+                ] : ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: ['css-loader', 'postcss-loader', `${cssPrep}-loader`],
+                }),
+            }]);
+        }
     } else if (platform.hasAny(['android', 'ios'])) {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
