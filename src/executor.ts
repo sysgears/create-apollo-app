@@ -11,10 +11,10 @@ import * as url from 'url';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import { RawSource } from 'webpack-sources';
 
-import * as VirtualModules from 'webpack-virtual-modules';
-
 import requireModule from './requireModule';
 import liveReloadMiddleware from './react-native/liveReloadMiddleware';
+
+const VirtualModules = requireModule('webpack-virtual-modules');
 
 const expoPorts = {};
 

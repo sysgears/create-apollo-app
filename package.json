@@ -39,7 +39,6 @@
     "source-list-map": "^2.0.0",
     "source-map-support": "^0.4.15",
     "webpack-merge": "^4.1.0",
-    "webpack-sources": "^1.0.1",
-    "webpack-virtual-modules": "^0.1.7"
+    "webpack-sources": "^1.0.1"
   }
 }
