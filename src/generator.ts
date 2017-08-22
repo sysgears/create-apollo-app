@@ -273,47 +273,6 @@ const getDepsForNode = (builder, depPlatforms) => {
     return deps;
 };
 
-const createCssPreprocessorRules = (dev, stack): Array<Object> => {
-    let createRule;
-
-    if (stack.hasAny('server')) {
-        createRule = (prep, ext) => ({
-            test: new RegExp(`\.${ext}$`),
-            use: dev ? [
-                {loader: 'isomorphic-style-loader'},
-                {loader: 'css-loader', options: {sourceMap: true}},
-                {loader: 'postcss-loader', options: {sourceMap: true}},
-                {loader: `${prep}-loader`, options: {sourceMap: true}}] :
-                [{loader: 'ignore-loader'}],
-        });
-    } else if (stack.hasAny('web')) {
-        createRule = (prep, ext) => ({
-            test: new RegExp(`\.${ext}$`),
-            use: dev ? [
-                {loader: 'style-loader'},
-                {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
-                {loader: 'postcss-loader', options: {sourceMap: true}},
-                {loader: `${prep}-loader`, options: {sourceMap: true}},
-            ] : ExtractTextPlugin.extract({
-                fallback: 'style-loader',
-                use: ['css-loader', 'postcss-loader', `${prep}-loader`],
-            }),
-        });
-    }
-
-    const rules = [];
-
-    if (createRule && stack.hasAny('sass')) {
-        rules.push(createRule('sass', 'scss'));
-    }
-
-    if (createRule && stack.hasAny('less')) {
-        rules.push(createRule('less', 'less'));
-    }
-
-    return rules;
-};
-
 const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
     const stack = builder.stack;
 
@@ -441,7 +400,6 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
     } else {
         throw new Error(`Unknown platform target: ${stack.platform}`);
     }
-    config.module.rules = config.module.rules.concat(createCssPreprocessorRules(dev, stack));
 
     if (stack.hasAny('dll')) {
         const name = `vendor_${builder.parentName}`;

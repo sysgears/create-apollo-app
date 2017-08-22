@@ -1,19 +1,22 @@
 import * as fs from 'fs';
 
 import requireModule from './requireModule';
-import Stack from './stack';
+import Stack from './Stack';
+import { Builder } from "./Builder";
+import CssProcessorPlugin from "./plugins/CssProcessorPlugin";
 const pkg = requireModule('./package.json');
 
 const SPIN_CONFIG_NAME = '.spinrc';
 
 export default class ConfigRc {
   options: any;
-  builders: Object;
+  builders: { [x: string]: Builder };
+  plugins: Object[];
 
   constructor() {
     const config = fs.existsSync(SPIN_CONFIG_NAME) ?
         JSON.parse(fs.readFileSync(SPIN_CONFIG_NAME).toString()) : pkg.spin;
-    const builders = {};
+    const builders: { [x: string]: Builder } = {};
     for (let name of Object.keys(config.builders)) {
       const builderVal = config.builders[name];
       const builder: any = typeof builderVal === 'object' ? {...builderVal} : {stack: builderVal};
@@ -24,6 +27,9 @@ export default class ConfigRc {
     }
     this.builders = builders;
     this.options = {...config.options};
+    this.plugins = [
+      new CssProcessorPlugin()
+    ].concat((config.plugins || []).map(name => new (require(name))));
     const options: any = this.options;
 
     options.backendBuildDir = options.backendBuildDir || 'build/server';
