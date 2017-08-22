@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 import requireModule from './requireModule';
-import Platform from './platform';
+import Stack from './stack';
 const pkg = requireModule('./package.json');
 
 const SPIN_CONFIG_NAME = '.spinrc';
@@ -16,9 +16,9 @@ export default class ConfigRc {
     const nodes = {};
     for (let name of Object.keys(config.nodes)) {
       const nodeVal = config.nodes[name];
-      const node: any = typeof nodeVal === 'object' ? {...nodeVal} : {features: nodeVal};
+      const node: any = typeof nodeVal === 'object' ? {...nodeVal} : {stack: nodeVal};
       node.name = name;
-      node.platform = new Platform(config.options.features, typeof node === 'object' ? node.features : node);
+      node.stack = new Stack(config.options.stack, typeof node === 'object' ? node.stack : node);
       node.roles = node.roles || ['build', 'watch'];
       nodes[node.name] = node;
     }

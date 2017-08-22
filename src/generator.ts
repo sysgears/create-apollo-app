@@ -23,7 +23,7 @@ const useBabel = () => {
 };
 
 const createBaseConfig = (node, dev, options) => {
-    const platform = node.platform;
+    const stack = node.stack;
     const babelRule = {
         loader: requireModule.resolve('babel-loader'),
         options: {
@@ -60,11 +60,11 @@ const createBaseConfig = (node, dev, options) => {
             rules: [
                 {
                     test: /\.jsx?$/,
-                    exclude: platform.hasAny(['ios', 'android']) ?
+                    exclude: stack.hasAny(['ios', 'android']) ?
                         /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
                         /node_modules/,
                     use: [
-                        (platform.hasAny(['ios', 'android']) ?
+                        (stack.hasAny(['ios', 'android']) ?
                             function (req) {
                                 let result;
                                 if (req.resource.indexOf('node_modules') >= 0) {
@@ -97,9 +97,9 @@ const createBaseConfig = (node, dev, options) => {
             ],
         },
         resolve: {
-            extensions: platform.hasAny('server') ?
+            extensions: stack.hasAny('server') ?
                 [`.web.js`, `.web.jsx`, '.js', '.jsx'] :
-                [`.${platform.target}.js`, `.${platform.target}.jsx`, '.native.js', '.native.jsx', '.js', '.jsx'],
+                [`.${stack.platform}.js`, `.${stack.platform}.jsx`, '.native.js', '.native.jsx', '.js', '.jsx'],
             modules: [path.join(process.cwd(), 'node_modules'), 'node_modules'],
         },
         watchOptions: {
@@ -108,7 +108,7 @@ const createBaseConfig = (node, dev, options) => {
         bail: !dev,
     };
 
-    if (platform.hasAny(['web', 'server'])) {
+    if (stack.hasAny(['web', 'server'])) {
         baseConfig.resolve.alias = {
             'react-native': 'react-native-web',
         };
@@ -126,13 +126,13 @@ const createBaseConfig = (node, dev, options) => {
                 use: 'file-loader?name=./assets/[hash].[ext]',
             },
         ]);
-    } else if (platform.hasAny(['android', 'ios'])) {
+    } else if (stack.hasAny(['android', 'ios'])) {
         baseConfig.module.rules = baseConfig.module.rules.concat([
             {
                 test: mobileAssetTest,
                 use: {
                     loader: require.resolve('./react-native/assetLoader'),
-                    query: {platform: platform.target, root: path.resolve('.'), bundle: false},
+                    query: {platform: stack.platform, root: path.resolve('.'), bundle: false},
                 },
             },
         ]);
@@ -144,9 +144,9 @@ let persistPlugins;
 let ExtractTextPlugin;
 
 const createPlugins = (node, nodes: Object, dev, options) => {
-    const platform = node.platform;
+    const stack = node.stack;
     const webpack = requireModule('webpack');
-    const buildNodeEnv = dev ? (platform.hasAny('test') ? 'test' : 'development') : 'production';
+    const buildNodeEnv = dev ? (stack.hasAny('test') ? 'test' : 'development') : 'production';
 
     if (!persistPlugins) {
         const PersistGraphQLPlugin = requireModule('persistgraphql-webpack-plugin');
@@ -177,7 +177,7 @@ const createPlugins = (node, nodes: Object, dev, options) => {
 
     const backendUrl = options.backendUrl.replace('{ip}', ip.address());
 
-    if (platform.hasAny('server')) {
+    if (stack.hasAny('server')) {
         plugins = plugins.concat([
             new webpack.BannerPlugin({
                 banner: 'require("source-map-support").install();',
@@ -198,21 +198,21 @@ const createPlugins = (node, nodes: Object, dev, options) => {
                 __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
                 __PERSIST_GQL__: options.persistGraphQL,
                 __BACKEND_URL__: (
-                    platform.target !== 'web' ||
+                    stack.platform !== 'web' ||
                     url.parse(backendUrl).hostname !== 'localhost'
                 ) ? `"${backendUrl}"` : false,
             }),
             persistPlugins.client,
         ]);
 
-        if (platform.hasAny('web')) {
+        if (stack.hasAny('web')) {
             const ManifestPlugin = requireModule('webpack-manifest-plugin');
             plugins.push(new ManifestPlugin({
                 fileName: 'assets.json',
             }));
             let hasServer = false;
             for (let name in nodes) {
-                if (nodes[name].platform.hasAny('server')) {
+                if (nodes[name].stack.hasAny('server')) {
                     hasServer = true;
                     break;
                 }
@@ -236,7 +236,7 @@ const createPlugins = (node, nodes: Object, dev, options) => {
                     },
                 }));
             }
-        } else if (platform.hasAny(['android', 'ios'])) {
+        } else if (stack.hasAny(['android', 'ios'])) {
             plugins.push(new webpack.SourceMapDevToolPlugin({
                 test: /\.(js|jsx|css|bundle)($|\?)/i,
                 filename: '[file].map',
@@ -244,7 +244,7 @@ const createPlugins = (node, nodes: Object, dev, options) => {
         }
     }
 
-    if (platform.hasAny('dll')) {
+    if (stack.hasAny('dll')) {
         const name = `vendor_${node.parentName}`;
         plugins = [
             new webpack.DefinePlugin({
@@ -267,16 +267,16 @@ const getDepsForNode = (node, depPlatforms) => {
             deps.push(key);
         }
     }
-    if (node.platform.hasAny(['android', 'ios'])) {
+    if (node.stack.hasAny(['android', 'ios'])) {
         deps = deps.concat(require.resolve('./react-native/react-native-polyfill.js'));
     }
     return deps;
 };
 
-const createCssPreprocessorRules = (dev, platform): Array<Object> => {
+const createCssPreprocessorRules = (dev, stack): Array<Object> => {
     let createRule;
 
-    if (platform.hasAny('server')) {
+    if (stack.hasAny('server')) {
         createRule = (prep, ext) => ({
             test: new RegExp(`\.${ext}$`),
             use: dev ? [
@@ -286,7 +286,7 @@ const createCssPreprocessorRules = (dev, platform): Array<Object> => {
                 {loader: `${prep}-loader`, options: {sourceMap: true}}] :
                 [{loader: 'ignore-loader'}],
         });
-    } else if (platform.hasAny('web')) {
+    } else if (stack.hasAny('web')) {
         createRule = (prep, ext) => ({
             test: new RegExp(`\.${ext}$`),
             use: dev ? [
@@ -303,11 +303,11 @@ const createCssPreprocessorRules = (dev, platform): Array<Object> => {
 
     const rules = [];
 
-    if (createRule && platform.hasAny('sass')) {
+    if (createRule && stack.hasAny('sass')) {
         rules.push(createRule('sass', 'scss'));
     }
 
-    if (createRule && platform.hasAny('less')) {
+    if (createRule && stack.hasAny('less')) {
         rules.push(createRule('less', 'less'));
     }
 
@@ -315,11 +315,11 @@ const createCssPreprocessorRules = (dev, platform): Array<Object> => {
 };
 
 const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
-    const platform = node.platform;
+    const stack = node.stack;
 
     const options: any = {...opts};
 
-    if (platform.hasAny('test')) {
+    if (stack.hasAny('test')) {
         options.ssr = false;
         options.persistGraphQL = false;
     }
@@ -336,12 +336,12 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
 
     let config;
 
-    if (platform.hasAny(['ios', 'android'])) {
+    if (stack.hasAny(['ios', 'android'])) {
         useBabel();
     }
 
     const plugins = createPlugins(node, nodes, dev, options);
-    if (platform.hasAny('server')) {
+    if (stack.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
         const nodeExternalsFn = nodeExternals({
             whitelist: [/(^webpack|^react-native)/],
@@ -378,7 +378,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             },
             plugins,
         };
-    } else if (platform.hasAny('web')) {
+    } else if (stack.hasAny('web')) {
         const backendUrl = options.backendUrl.replace('{ip}', ip.address());
         const { protocol, host } = url.parse(backendUrl);
         const backendBaseUrl = protocol + '//' + host;
@@ -408,7 +408,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
                 },
             },
         };
-    } else if (platform.hasAny(['android', 'ios'])) {
+    } else if (stack.hasAny(['android', 'ios'])) {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
@@ -427,7 +427,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             devServer: {
                 ...baseDevServerConfig,
                 hot: false,
-                port: platform.hasAny('android') ? 3010 : 3020,
+                port: stack.hasAny('android') ? 3010 : 3020,
             },
             plugins,
         };
@@ -435,15 +435,15 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             new HasteResolver({
                 directories: [path.resolve('node_modules/react-native')],
             }),
-            new AssetResolver({platform: platform.target, test: mobileAssetTest}),
+            new AssetResolver({platform: stack.platform, test: mobileAssetTest}),
         ];
         config.resolve.mainFields = ['react-native', 'browser', 'main'];
     } else {
-        throw new Error(`Unknown platform target: ${platform.target}`);
+        throw new Error(`Unknown platform target: ${stack.platform}`);
     }
-    config.module.rules = config.module.rules.concat(createCssPreprocessorRules(dev, platform));
+    config.module.rules = config.module.rules.concat(createCssPreprocessorRules(dev, stack));
 
-    if (platform.hasAny('dll')) {
+    if (stack.hasAny('dll')) {
         const name = `vendor_${node.parentName}`;
         config = {
             ...config,

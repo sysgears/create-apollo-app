@@ -145,7 +145,7 @@ function startClientWebpack(hasBackend, watch, node, options) {
             config.plugins.push(new webpack.NoEmitOnErrorsPlugin());
             startWebpackDevServer(hasBackend, node, options, reporter, logger);
         } else {
-            if (node.platform.target !== 'web') {
+            if (node.stack.platform !== 'web') {
                 config.plugins.push(new MobileAssetsPlugin());
             }
 
@@ -240,10 +240,10 @@ function startServerWebpack(watch, node, options) {
 function openFrontend(node) {
     const openurl = requireModule('openurl');
     try {
-        if (node.platform.target === 'web' && node.openBrowser !== false) {
+        if (node.stack.platform === 'web' && node.openBrowser !== false) {
             openurl.open(`http://${ip.address()}:${node.config.devServer.port}`);
-        } else if (['android', 'ios'].indexOf(node.platform.target) >= 0) {
-            startExpoProject(node.config, node.platform.target);
+        } else if (['android', 'ios'].indexOf(node.stack.platform) >= 0) {
+            startExpoProject(node.config, node.stack.platform);
         }
     } catch (e) {
         console.error(e.stack);
@@ -270,7 +270,7 @@ function startWebpackDevServer(hasBackend, node, options, reporter, logger) {
     const waitOn = requireModule('wait-on');
 
     const config = node.config;
-    const platform = node.platform.target;
+    const platform = node.stack.platform;
 
     const configOutputPath = config.output.path;
     config.output.path = '/';
@@ -652,11 +652,11 @@ async function startExpoProject(config, platform) {
     }
 }
 
-function startWebpack(targets, watch, node, options) {
-    if (node.platform.target === 'server') {
+function startWebpack(platforms, watch, node, options) {
+    if (node.stack.platform === 'server') {
         startServerWebpack(watch, node, options);
     } else {
-        startClientWebpack(!!targets.server, watch, node, options);
+        startClientWebpack(!!platforms.server, watch, node, options);
     }
 }
 
@@ -746,14 +746,14 @@ const execute = (cmd, nodes: Object, options) => {
         let prepareExpoPromise;
         const expoPlatforms = [];
         const watch = cmd === 'watch';
-        const targets = {};
+        const platforms = {};
         for (let name in nodes) {
             const node = nodes[name];
-            const platform = node.platform;
-            targets[platform.target] = true;
-            if (platform.hasAny('ios')) {
+            const stack = node.stack;
+            platforms[stack.platform] = true;
+            if (stack.hasAny('ios')) {
                 expoPlatforms.push('ios');
-            } else if (platform.hasAny('android')) {
+            } else if (stack.hasAny('android')) {
                 expoPlatforms.push('android');
             }
         }
@@ -765,13 +765,13 @@ const execute = (cmd, nodes: Object, options) => {
         prepareExpoPromise.then(() => {
             for (let name in nodes) {
                 const node = nodes[name];
-                const platform = node.platform;
-                if (platform.hasAny(['dll', 'test']))
+                const stack = node.stack;
+                if (stack.hasAny(['dll', 'test']))
                     continue;
                 const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && node.dllConfig) ?
-                    buildDll(platform.target, node.dllConfig, options) : Promise.resolve();
+                    buildDll(stack.platform, node.dllConfig, options) : Promise.resolve();
                 prepareDllPromise.then(() =>
-                    startWebpack(targets, watch, node, options));
+                    startWebpack(platforms, watch, node, options));
             }
         });
     }

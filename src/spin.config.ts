@@ -3,7 +3,7 @@ import * as merge from 'webpack-merge';
 
 import ConfigRc from './configRc';
 import generateConfig from './generator';
-import Platform from './platform';
+import Stack from './stack';
 import requireModule from './requireModule';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
@@ -16,7 +16,7 @@ const createConfig = cmd => {
     try {
         for (let name in config.nodes) {
             const node = config.nodes[name];
-            const platform = node.platform;
+            const stack = node.stack;
             const dev = cmd === 'watch' || cmd === 'test';
             if (node.roles.indexOf(cmd) < 0)
                 continue;
@@ -31,12 +31,12 @@ const createConfig = cmd => {
             if (overrides[name]) {
                 nodes[name].config = merge(nodes[name].config, overrides[name]);
             }
-            if (options.webpackDll && !platform.hasAny('server')) {
+            if (options.webpackDll && !stack.hasAny('server')) {
                 const dllNode: any = {...node};
                 const dllNodeName = node.name + 'Dll';
                 dllNode.parentName = node.name;
                 dllNode.name = dllNodeName;
-                dllNode.platform = new Platform(dllNode.platform.features, 'dll');
+                dllNode.stack = new Stack(dllNode.stack.technologies, 'dll');
                 nodes[name].dllConfig = generateConfig(dllNode, config.nodes, dev, options, overrides.dependencyPlatforms || {});
                 if (overrides[dllNodeName]) {
                     nodes[name].dllConfig = merge(nodes[name].dllConfig, overrides[dllNodeName]);
