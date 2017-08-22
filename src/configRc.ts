@@ -8,21 +8,21 @@ const SPIN_CONFIG_NAME = '.spinrc';
 
 export default class ConfigRc {
   options: any;
-  nodes: Object;
+  builders: Object;
 
   constructor() {
     const config = fs.existsSync(SPIN_CONFIG_NAME) ?
         JSON.parse(fs.readFileSync(SPIN_CONFIG_NAME).toString()) : pkg.spin;
-    const nodes = {};
-    for (let name of Object.keys(config.nodes)) {
-      const nodeVal = config.nodes[name];
-      const node: any = typeof nodeVal === 'object' ? {...nodeVal} : {stack: nodeVal};
-      node.name = name;
-      node.stack = new Stack(config.options.stack, typeof node === 'object' ? node.stack : node);
-      node.roles = node.roles || ['build', 'watch'];
-      nodes[node.name] = node;
+    const builders = {};
+    for (let name of Object.keys(config.builders)) {
+      const builderVal = config.builders[name];
+      const builder: any = typeof builderVal === 'object' ? {...builderVal} : {stack: builderVal};
+      builder.name = name;
+      builder.stack = new Stack(config.options.stack, typeof builder === 'object' ? builder.stack : builder);
+      builder.roles = builder.roles || ['build', 'watch'];
+      builders[builder.name] = builder;
     }
-    this.nodes = nodes;
+    this.builders = builders;
     this.options = {...config.options};
     const options: any = this.options;
 

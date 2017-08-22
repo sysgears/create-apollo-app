@@ -22,8 +22,8 @@ const useBabel = () => {
     }
 };
 
-const createBaseConfig = (node, dev, options) => {
-    const stack = node.stack;
+const createBaseConfig = (builder, dev, options) => {
+    const stack = builder.stack;
     const babelRule = {
         loader: requireModule.resolve('babel-loader'),
         options: {
@@ -54,7 +54,7 @@ const createBaseConfig = (node, dev, options) => {
     };
 
     const baseConfig: any = {
-        name: node.name,
+        name: builder.name,
         devtool: dev ? '#cheap-module-source-map' : '#source-map',
         module: {
             rules: [
@@ -143,8 +143,8 @@ const createBaseConfig = (node, dev, options) => {
 let persistPlugins;
 let ExtractTextPlugin;
 
-const createPlugins = (node, nodes: Object, dev, options) => {
-    const stack = node.stack;
+const createPlugins = (builder, builders: Object, dev, options) => {
+    const stack = builder.stack;
     const webpack = requireModule('webpack');
     const buildNodeEnv = dev ? (stack.hasAny('test') ? 'test' : 'development') : 'production';
 
@@ -211,8 +211,8 @@ const createPlugins = (node, nodes: Object, dev, options) => {
                 fileName: 'assets.json',
             }));
             let hasServer = false;
-            for (let name in nodes) {
-                if (nodes[name].stack.hasAny('server')) {
+            for (let name in builders) {
+                if (builders[name].stack.hasAny('server')) {
                     hasServer = true;
                     break;
                 }
@@ -245,7 +245,7 @@ const createPlugins = (node, nodes: Object, dev, options) => {
     }
 
     if (stack.hasAny('dll')) {
-        const name = `vendor_${node.parentName}`;
+        const name = `vendor_${builder.parentName}`;
         plugins = [
             new webpack.DefinePlugin({
                 __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
@@ -259,15 +259,15 @@ const createPlugins = (node, nodes: Object, dev, options) => {
     return plugins;
 };
 
-const getDepsForNode = (node, depPlatforms) => {
+const getDepsForNode = (builder, depPlatforms) => {
     let deps = [];
     for (let key of Object.keys(pkg.dependencies)) {
         const val = depPlatforms[key];
-        if (!val || (val.constructor === Array && val.indexOf(node.parentName) >= 0) || val === node.parentName) {
+        if (!val || (val.constructor === Array && val.indexOf(builder.parentName) >= 0) || val === builder.parentName) {
             deps.push(key);
         }
     }
-    if (node.stack.hasAny(['android', 'ios'])) {
+    if (builder.stack.hasAny(['android', 'ios'])) {
         deps = deps.concat(require.resolve('./react-native/react-native-polyfill.js'));
     }
     return deps;
@@ -314,8 +314,8 @@ const createCssPreprocessorRules = (dev, stack): Array<Object> => {
     return rules;
 };
 
-const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
-    const stack = node.stack;
+const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
+    const stack = builder.stack;
 
     const options: any = {...opts};
 
@@ -340,14 +340,14 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         useBabel();
     }
 
-    const plugins = createPlugins(node, nodes, dev, options);
+    const plugins = createPlugins(builder, builders, dev, options);
     if (stack.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
         const nodeExternalsFn = nodeExternals({
             whitelist: [/(^webpack|^react-native)/],
         });
         config = {
-            ...createBaseConfig(node, dev, options),
+            ...createBaseConfig(builder, dev, options),
             entry: {
                 index: [
                     'babel-polyfill',
@@ -384,7 +384,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         const backendBaseUrl = protocol + '//' + host;
 
         config = {
-            ...createBaseConfig(node, dev, options),
+            ...createBaseConfig(builder, dev, options),
             entry: {
                 index: [
                     'babel-polyfill',
@@ -412,7 +412,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
-            ...createBaseConfig(node, dev, options),
+            ...createBaseConfig(builder, dev, options),
             entry: {
                 index: [
                     require.resolve('./react-native/react-native-polyfill.js'),
@@ -422,7 +422,7 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
             output: {
                 filename: `index.mobile.bundle`,
                 publicPath: '/',
-                path: path.resolve(path.join(options.frontendBuildDir, node.name)),
+                path: path.resolve(path.join(options.frontendBuildDir, builder.name)),
             },
             devServer: {
                 ...baseDevServerConfig,
@@ -444,12 +444,12 @@ const createConfig = (node, nodes, dev, opts, depPlatforms?) => {
     config.module.rules = config.module.rules.concat(createCssPreprocessorRules(dev, stack));
 
     if (stack.hasAny('dll')) {
-        const name = `vendor_${node.parentName}`;
+        const name = `vendor_${builder.parentName}`;
         config = {
             ...config,
             devtool: '#cheap-module-source-map',
             entry: {
-                vendor: getDepsForNode(node, depPlatforms),
+                vendor: getDepsForNode(builder, depPlatforms),
             },
             output: {
                 filename: `${name}.[hash]_dll.js`,
