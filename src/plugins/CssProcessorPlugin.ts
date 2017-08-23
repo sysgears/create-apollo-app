@@ -5,7 +5,6 @@ import requireModule from '../requireModule';
 
 const createCssPreprocessorRules = (dev, stack): Array<Object> => {
     let createRule;
-    const ExtractTextPlugin = requireModule('extract-text-webpack-plugin');
 
     if (stack.hasAny('server')) {
         createRule = (prep, ext) => ({
@@ -25,7 +24,7 @@ const createCssPreprocessorRules = (dev, stack): Array<Object> => {
                 {loader: 'css-loader', options: {sourceMap: true, importLoaders: 1}},
                 {loader: 'postcss-loader', options: {sourceMap: true}},
                 {loader: `${prep}-loader`, options: {sourceMap: true}},
-            ] : ExtractTextPlugin.extract({
+            ] : requireModule('extract-text-webpack-plugin').extract({
                 fallback: 'style-loader',
                 use: ['css-loader', 'postcss-loader', `${prep}-loader`],
             }),

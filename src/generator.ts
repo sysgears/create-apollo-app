@@ -24,34 +24,6 @@ const useBabel = () => {
 
 const createBaseConfig = (builder, dev, options) => {
     const stack = builder.stack;
-    const babelRule = {
-        loader: requireModule.resolve('babel-loader'),
-        options: {
-            cacheDirectory: dev,
-            presets: [
-                requireModule.resolve('babel-preset-react'),
-                [requireModule.resolve('babel-preset-es2015'), {'modules': false}],
-                requireModule.resolve('babel-preset-stage-0')],
-            plugins: [
-                requireModule.resolve('babel-plugin-transform-runtime'),
-                requireModule.resolve('babel-plugin-transform-decorators-legacy'),
-                requireModule.resolve('babel-plugin-transform-class-properties'),
-                [requireModule.resolve('babel-plugin-styled-components'), {'ssr': options.ssr}],
-            ].concat(dev && options.reactHotLoader ? [requireModule.resolve('react-hot-loader/babel')] : []),
-            only: ['*.js', '*.jsx'],
-        },
-    };
-
-    const reactNativeRule = {
-        loader: requireModule.resolve('babel-loader'),
-        options: {
-            cacheDirectory: dev,
-            presets: [requireModule.resolve('babel-preset-react-native')],
-            plugins: [
-                requireModule.resolve('haul/src/utils/fixRequireIssues'),
-            ],
-        },
-    };
 
     const baseConfig: any = {
         name: builder.name,
@@ -60,21 +32,10 @@ const createBaseConfig = (builder, dev, options) => {
             rules: [
                 {
                     test: /\.jsx?$/,
-                    exclude: stack.hasAny(['ios', 'android']) ?
+                    exclude: (stack.hasAny('react-native')) ?
                         /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
                         /node_modules/,
                     use: [
-                        (stack.hasAny(['ios', 'android']) ?
-                            function (req) {
-                                let result;
-                                if (req.resource.indexOf('node_modules') >= 0) {
-                                    result = reactNativeRule;
-                                } else {
-                                    result = babelRule;
-                                }
-                                return result;
-                            } :
-                            babelRule) as any,
                     ].concat(
                         options.persistGraphQL ?
                             ['persistgraphql-webpack-plugin/js-loader'] :
@@ -126,7 +87,7 @@ const createBaseConfig = (builder, dev, options) => {
                 use: 'file-loader?name=./assets/[hash].[ext]',
             },
         ]);
-    } else if (stack.hasAny(['android', 'ios'])) {
+    } else if (stack.hasAny('react-native')) {
         baseConfig.module.rules = baseConfig.module.rules.concat([
             {
                 test: mobileAssetTest,
@@ -236,7 +197,7 @@ const createPlugins = (builder, builders: Object, dev, options) => {
                     },
                 }));
             }
-        } else if (stack.hasAny(['android', 'ios'])) {
+        } else if (stack.hasAny('react-native')) {
             plugins.push(new webpack.SourceMapDevToolPlugin({
                 test: /\.(js|jsx|css|bundle)($|\?)/i,
                 filename: '[file].map',
@@ -267,7 +228,7 @@ const getDepsForNode = (builder, depPlatforms) => {
             deps.push(key);
         }
     }
-    if (builder.stack.hasAny(['android', 'ios'])) {
+    if (builder.stack.hasAny('react-native')) {
         deps = deps.concat(require.resolve('./react-native/react-native-polyfill.js'));
     }
     return deps;
@@ -295,7 +256,7 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
 
     let config;
 
-    if (stack.hasAny(['ios', 'android'])) {
+    if (stack.hasAny('react-native')) {
         useBabel();
     }
 
@@ -367,7 +328,7 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
                 },
             },
         };
-    } else if (stack.hasAny(['android', 'ios'])) {
+    } else if (stack.hasAny('react-native')) {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {

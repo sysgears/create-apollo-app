@@ -7,15 +7,21 @@ import Stack from './Stack';
 import requireModule from './requireModule';
 import Spin from "./Spin";
 import { SpinPlugin } from "./SpinPlugin";
+import CssProcessorPlugin from "./plugins/CssProcessorPlugin";
+import ES6Plugin from "./plugins/ES6Plugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
 const createConfig = cmd => {
     let builders = {};
 
-    const config = new ConfigRc();
+    const plugins = [
+        new CssProcessorPlugin(),
+        new ES6Plugin()
+    ];
+    const config = new ConfigRc(plugins);
     const options = config.options;
-    const spin = new Spin(process.argv, config.builders);
+    const spin = new Spin(process.argv, config.builders, config.options);
     try {
         for (let name in config.builders) {
             const builder = config.builders[name];

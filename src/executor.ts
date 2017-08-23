@@ -240,9 +240,9 @@ function startServerWebpack(watch, builder, options) {
 function openFrontend(builder) {
     const openurl = requireModule('openurl');
     try {
-        if (builder.stack.platform === 'web' && builder.openBrowser !== false) {
+        if (builder.stack.hasAny('web') && builder.openBrowser !== false) {
             openurl.open(`http://${ip.address()}:${builder.config.devServer.port}`);
-        } else if (['android', 'ios'].indexOf(builder.stack.platform) >= 0) {
+        } else if (builder.stack.hasAny('react-native')) {
             startExpoProject(builder.config, builder.stack.platform);
         }
     } catch (e) {
@@ -751,9 +751,9 @@ const execute = (cmd, builders: Object, options) => {
             const builder = builders[name];
             const stack = builder.stack;
             platforms[stack.platform] = true;
-            if (stack.hasAny('ios')) {
+            if (stack.hasAny('react-native') && stack.hasAny('ios')) {
                 expoPlatforms.push('ios');
-            } else if (stack.hasAny('android')) {
+            } else if (stack.hasAny('react-native') && stack.hasAny('android')) {
                 expoPlatforms.push('android');
             }
         }
