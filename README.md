@@ -1,6 +1,6 @@
 <p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spin.js/master/logo.svg"></a></p>
 
-## Spin.js - an Universal JavaScript build tool
+## Spin.js - a JavaScript build tool that makes your life easier
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/sysgears.svg?style=social)](https://twitter.com/sysgears)
 
