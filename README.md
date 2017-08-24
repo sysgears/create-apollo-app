@@ -1,6 +1,6 @@
 <p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spin.js/master/logo.svg"></a></p>
 
-## Spin.js - a JavaScript build tool that makes your life easier
+## Spin.js - a JavaScript tool to simplify build rules development
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/sysgears.svg?style=social)](https://twitter.com/sysgears)
 
@@ -9,6 +9,10 @@
 ```bash
 npm install -g spinjs
 ```
+
+## Introduction
+
+
 
 ## Usage
 

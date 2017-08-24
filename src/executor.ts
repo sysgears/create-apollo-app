@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as ip from 'ip';
 import * as url from 'url';
+import * as util from 'util';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import { RawSource } from 'webpack-sources';
 
@@ -278,7 +279,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
     config.plugins.push(frontendVirtualModules);
 
     let vendorHashesJson, vendorSourceListMap, vendorSource, vendorMap;
-    if (options.webpackDll && builder.dllConfig) {
+    if (options.webpackDll && builder.child) {
         const name = `vendor_${platform}`;
         const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
         config.plugins.push(new webpack.DllReferencePlugin({
@@ -322,7 +323,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
             callback();
         }
     });
-    if (options.webpackDll && builder.dllConfig && platform !== 'web') {
+    if (options.webpackDll && builder.child && platform !== 'web') {
         compiler.plugin('after-compile', (compilation, callback) => {
             _.each(compilation.chunks, chunk => {
                 _.each(chunk.files, file => {
@@ -341,7 +342,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         });
     }
 
-    if (options.webpackDll && builder.dllConfig && platform === 'web' && !hasBackend) {
+    if (options.webpackDll && builder.child && platform === 'web' && !hasBackend) {
         compiler.plugin('after-compile', (compilation, callback) => {
             compilation.assets[vendorHashesJson.name] = vendorSource;
             compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
@@ -768,8 +769,9 @@ const execute = (cmd, builders: Object, options) => {
                 const stack = builder.stack;
                 if (stack.hasAny(['dll', 'test']))
                     continue;
-                const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && builder.dllConfig) ?
-                    buildDll(stack.platform, builder.dllConfig, options) : Promise.resolve();
+                // console.log("name: %s, config:", name, util.inspect(builder.config, false, null));
+                const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && builder.child) ?
+                    buildDll(stack.platform, builder.child.config, options) : Promise.resolve();
                 prepareDllPromise.then(() =>
                     startWebpack(platforms, watch, builder, options));
             }

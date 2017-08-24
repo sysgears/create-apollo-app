@@ -23,8 +23,8 @@ export default class Stack {
         }
     }
 
-    hasAny(arg): Boolean {
-        const array = arg.constructor === Array ? arg : [arg];
+    hasAny(technologies): Boolean {
+        const array = technologies.constructor === Array ? technologies : [technologies];
         for (let feature of array) {
             if (this.technologies.indexOf(feature) >= 0) {
                 return true;

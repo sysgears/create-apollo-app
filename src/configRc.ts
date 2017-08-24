@@ -20,9 +20,6 @@ export default class ConfigRc {
       const builderVal = config.builders[name];
       const builder: any = (typeof builderVal === 'object' && builderVal.constructor !== Array) ?
           {...builderVal} : {stack: builderVal};
-      if (builder.enabled === false) {
-        continue;
-      }
       builder.name = name;
       builder.stack = new Stack(config.options.stack, typeof builder === 'object' ? builder.stack : builder);
       builder.roles = builder.roles || ['build', 'watch'];

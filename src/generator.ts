@@ -32,15 +32,9 @@ const createBaseConfig = (builder, dev, options) => {
             rules: [
                 {
                     test: /\.jsx?$/,
-                    exclude: (stack.hasAny('react-native')) ?
-                        /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
-                        /node_modules/,
-                    use: [
-                    ].concat(
-                        options.persistGraphQL ?
+                    use: options.persistGraphQL ?
                             ['persistgraphql-webpack-plugin/js-loader'] :
                             [],
-                    ),
                 },
                 {
                     test: /\.graphqls/,
@@ -102,7 +96,6 @@ const createBaseConfig = (builder, dev, options) => {
 };
 
 let persistPlugins;
-let ExtractTextPlugin;
 
 const createPlugins = (builder, builders: Object, dev, options) => {
     const stack = builder.stack;
@@ -187,8 +180,6 @@ const createPlugins = (builder, builders: Object, dev, options) => {
             }
 
             if (!dev) {
-                ExtractTextPlugin = requireModule('extract-text-webpack-plugin');
-                plugins.push(new ExtractTextPlugin({filename: '[name].[contenthash].css', allChunks: true}));
                 plugins.push(new webpack.optimize.CommonsChunkPlugin({
                     name: 'vendor',
                     filename: '[name].[hash].js',
@@ -206,7 +197,7 @@ const createPlugins = (builder, builders: Object, dev, options) => {
     }
 
     if (stack.hasAny('dll')) {
-        const name = `vendor_${builder.parentName}`;
+        const name = `vendor_${builder.parent.name}`;
         plugins = [
             new webpack.DefinePlugin({
                 __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
@@ -224,7 +215,7 @@ const getDepsForNode = (builder, depPlatforms) => {
     let deps = [];
     for (let key of Object.keys(pkg.dependencies)) {
         const val = depPlatforms[key];
-        if (!val || (val.constructor === Array && val.indexOf(builder.parentName) >= 0) || val === builder.parentName) {
+        if (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0) || val === builder.parent.name) {
             deps.push(key);
         }
     }
@@ -270,7 +261,6 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
             ...createBaseConfig(builder, dev, options),
             entry: {
                 index: [
-                    'babel-polyfill',
                     './src/server/index.js',
                 ],
             },
@@ -307,7 +297,6 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
             ...createBaseConfig(builder, dev, options),
             entry: {
                 index: [
-                    'babel-polyfill',
                     './src/client/index.jsx',
                 ],
             },
@@ -335,7 +324,6 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
             ...createBaseConfig(builder, dev, options),
             entry: {
                 index: [
-                    require.resolve('./react-native/react-native-polyfill.js'),
                     './src/mobile/index.js',
                 ],
             },
@@ -363,7 +351,7 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
     }
 
     if (stack.hasAny('dll')) {
-        const name = `vendor_${builder.parentName}`;
+        const name = `vendor_${builder.parent.name}`;
         config = {
             ...config,
             devtool: '#cheap-module-source-map',

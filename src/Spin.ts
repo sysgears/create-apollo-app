@@ -1,4 +1,6 @@
-import { Builder } from "./Builder";
+import * as merge from 'webpack-merge';
+import { Builder } from './Builder';
+import { Configuration } from "webpack";
 
 export default class Spin
 {
@@ -12,5 +14,9 @@ export default class Spin
         this.dev = this.cmd === 'watch' || this.cmd === 'test';
         this.builders = builders;
         this.options = options;
+    }
+
+    merge(config: Configuration, overrides: any): Configuration {
+        return merge.smart(config, overrides);
     }
 }

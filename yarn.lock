@@ -32,6 +32,22 @@
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/@types/source-map/-/source-map-0.5.1.tgz#7e74db5d06ab373a712356eebfaea2fad0ea2367"
 
+"@types/tapable@*":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@types/tapable/-/tapable-0.2.4.tgz#8181a228da46185439300e600c5ae3b3b3982585"
+
+"@types/uglify-js@*":
+  version "2.6.29"
+  resolved "https://registry.yarnpkg.com/@types/uglify-js/-/uglify-js-2.6.29.tgz#521347f69e20201d218f5991ae66e10878afcf1a"
+  dependencies:
+    "@types/source-map" "*"
+
+"@types/webpack-merge@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@types/webpack-merge/-/webpack-merge-0.0.5.tgz#bdbc6a4839dcb67c2d57d4e8d775f197946836a4"
+  dependencies:
+    "@types/webpack" "*"
+
 "@types/webpack-sources@^0.1.2":
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/@types/webpack-sources/-/webpack-sources-0.1.2.tgz#e7fc3174657a6065e7dbc9bac5d505999b7acef5"
@@ -39,6 +55,14 @@
     "@types/node" "*"
     "@types/source-list-map" "*"
     "@types/source-map" "*"
+
+"@types/webpack@*":
+  version "3.0.10"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-3.0.10.tgz#1d27db07df32109f8c882535b547aae4252fd53e"
+  dependencies:
+    "@types/node" "*"
+    "@types/tapable" "*"
+    "@types/uglify-js" "*"
 
 "@types/yargs@^8.0.2":
   version "8.0.2"

@@ -4,9 +4,7 @@ import { Builder } from '../Builder';
 import Spin from '../Spin';
 
 export default class ES6Plugin implements SpinPlugin {
-    configure(builder: Builder, spin: Spin): Object {
-        const rules = [];
-
+    configure(builder: Builder, spin: Spin) {
         if (builder.stack.hasAny(['es6', 'react-native'])) {
             const babelRule = {
                 loader: requireModule.resolve('babel-loader'),
@@ -28,6 +26,13 @@ export default class ES6Plugin implements SpinPlugin {
 
             let reactNativeRule;
 
+            if (builder.stack.hasAny('es6') && !builder.stack.hasAny(['dll', 'react-native'])) {
+                builder.config = spin.merge({
+                    entry: {
+                        index: ['babel-polyfill'],
+                    },
+                }, builder.config);
+            }
             if (builder.stack.hasAny('react-native')) {
                 reactNativeRule = {
                     loader: requireModule.resolve('babel-loader'),
@@ -39,14 +44,21 @@ export default class ES6Plugin implements SpinPlugin {
                         ],
                     },
                 };
+                if (!builder.stack.hasAny('dll')) {
+                    builder.config = spin.merge({
+                        entry: {
+                            index: [require.resolve('../react-native/react-native-polyfill.js')],
+                        },
+                    }, builder.config);
+                }
             }
 
-            rules.push(                {
-                    test: /\.jsx?$/,
-                    exclude: builder.stack.hasAny(['react-native']) ?
+            for (let rule of builder.config.module.rules) {
+                if (String(rule.test) === String(/\.jsx?$/)) {
+                    rule.exclude = builder.stack.hasAny(['react-native']) ?
                         /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
-                        /node_modules/,
-                    use: [
+                        /node_modules/;
+                    rule.use = [
                         (builder.stack.hasAny(['react-native']) ?
                             function (req) {
                                 let result;
@@ -58,14 +70,9 @@ export default class ES6Plugin implements SpinPlugin {
                                 return result;
                             } :
                             babelRule) as any,
-                    ],
-                },
-            );
-        }
-        return {
-            module: {
-                rules,
+                    ].concat(rule.use);
+                }
             }
-        };
+        }
     }
 }
