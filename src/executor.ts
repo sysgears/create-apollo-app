@@ -130,8 +130,6 @@ function startClientWebpack(hasBackend, watch, builder, options) {
     try {
         const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
 
-        config.plugins.push(frontendVirtualModules);
-
         if (watch) {
             if (config.devServer.hot) {
                 _.each(config.entry, entry => {
@@ -767,9 +765,9 @@ const execute = (cmd, builders: Object, options) => {
             for (let name in builders) {
                 const builder = builders[name];
                 const stack = builder.stack;
+                // console.log("name: %s, config:", name, util.inspect(builder.config, false, null));
                 if (stack.hasAny(['dll', 'test']))
                     continue;
-                // console.log("name: %s, config:", name, util.inspect(builder.config, false, null));
                 const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && builder.child) ?
                     buildDll(stack.platform, builder.child.config, options) : Promise.resolve();
                 prepareDllPromise.then(() =>

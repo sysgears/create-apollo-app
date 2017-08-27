@@ -53,26 +53,33 @@ export default class ES6Plugin implements SpinPlugin {
                 }
             }
 
+            let jsRule;
             for (let rule of builder.config.module.rules) {
                 if (String(rule.test) === String(/\.jsx?$/)) {
-                    rule.exclude = builder.stack.hasAny(['react-native']) ?
-                        /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
-                        /node_modules/;
-                    rule.use = [
-                        (builder.stack.hasAny(['react-native']) ?
-                            function (req) {
-                                let result;
-                                if (req.resource.indexOf('node_modules') >= 0) {
-                                    result = reactNativeRule;
-                                } else {
-                                    result = babelRule;
-                                }
-                                return result;
-                            } :
-                            babelRule) as any,
-                    ].concat(rule.use);
+                    jsRule = rule;
+                    break;
                 }
             }
+            if (!jsRule) {
+                jsRule = { test: /\.jsx?$/};
+                builder.config.module.rules = builder.config.module.rules.concat(jsRule);
+            }
+            jsRule.exclude = builder.stack.hasAny(['react-native']) ?
+                /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/ :
+                /node_modules/;
+            jsRule.use = [
+                (builder.stack.hasAny(['react-native']) ?
+                    function (req) {
+                        let result;
+                        if (req.resource.indexOf('node_modules') >= 0) {
+                            result = reactNativeRule;
+                        } else {
+                            result = babelRule;
+                        }
+                        return result;
+                    } :
+                    babelRule) as any,
+                ];
         }
     }
 }

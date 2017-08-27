@@ -10,6 +10,7 @@ import { SpinPlugin } from "./SpinPlugin";
 import CssProcessorPlugin from "./plugins/CssProcessorPlugin";
 import ES6Plugin from "./plugins/ES6Plugin";
 import {Builder} from "./Builder";
+import ApolloPlugin from "./plugins/ApolloPlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -18,10 +19,10 @@ const createConfig = cmd => {
 
     const plugins = [
         new CssProcessorPlugin(),
+        new ApolloPlugin(),
         new ES6Plugin()
     ];
     const config = new ConfigRc(plugins);
-    const options = config.options;
     const spin = new Spin(process.argv, config.builders, config.options);
 
     for (let name in config.builders) {
@@ -32,7 +33,7 @@ const createConfig = cmd => {
             continue;
         }
 
-        if (options.webpackDll && !stack.hasAny('server')) {
+        if (spin.options.webpackDll && !stack.hasAny('server')) {
             const dllBuilder: Builder = {...builder} as Builder;
             dllBuilder.name = builder.name + 'Dll';
             dllBuilder.parent = builder;
@@ -44,7 +45,7 @@ const createConfig = cmd => {
     }
 
     try {
-        const overridesConfig = options.overridesConfig || WEBPACK_OVERRIDES_NAME;
+        const overridesConfig = spin.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
         let overrides;
         if (fs.existsSync(overridesConfig)) {
             overrides = requireModule('./' + overridesConfig);
@@ -54,7 +55,7 @@ const createConfig = cmd => {
 
         for (let name in builders) {
             const builder = builders[name];
-            builders[name].config = generateConfig(builder, config.builders, spin.dev, options, overrides.dependencyPlatforms || {});
+            builders[name].config = generateConfig(builder, spin, overrides.dependencyPlatforms || {});
             config.plugins.forEach((plugin: SpinPlugin) => plugin.configure(builder, spin));
             if (overrides[name]) {
                 builders[name].config = merge(builders[name].config, overrides[name]);
@@ -64,7 +65,7 @@ const createConfig = cmd => {
         console.error(e.stack);
     }
 
-    return { builders, options };
+    return { builders, options: spin.options };
 };
 
 export default createConfig;

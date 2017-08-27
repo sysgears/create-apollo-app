@@ -5,6 +5,7 @@ import { Configuration } from "webpack";
 export default class Spin
 {
     dev: boolean;
+    test: boolean;
     cmd: string;
     builders: { [x: string]: Builder };
     options: any;
@@ -12,6 +13,7 @@ export default class Spin
     constructor(argv: string[], builders, options) {
         this.cmd = argv[2];
         this.dev = this.cmd === 'watch' || this.cmd === 'test';
+        this.test = this.cmd === 'test';
         this.builders = builders;
         this.options = options;
     }

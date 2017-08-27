@@ -3,6 +3,8 @@ import * as ip from 'ip';
 import * as url from 'url';
 
 import requireModule from './requireModule';
+import { Builder } from "./Builder";
+import Spin from "./Spin";
 const pkg = requireModule('./package.json');
 
 const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
@@ -22,34 +24,14 @@ const useBabel = () => {
     }
 };
 
-const createBaseConfig = (builder, dev, options) => {
+const createBaseConfig = (builder, dev) => {
     const stack = builder.stack;
 
     const baseConfig: any = {
         name: builder.name,
         devtool: dev ? '#cheap-module-source-map' : '#source-map',
         module: {
-            rules: [
-                {
-                    test: /\.jsx?$/,
-                    use: options.persistGraphQL ?
-                            ['persistgraphql-webpack-plugin/js-loader'] :
-                            [],
-                },
-                {
-                    test: /\.graphqls/,
-                    use: 'raw-loader',
-                },
-                {
-                    test: /\.(graphql|gql)$/,
-                    exclude: /node_modules/,
-                    use: ['graphql-tag/loader'].concat(
-                        options.persistGraphQL ?
-                            ['persistgraphql-webpack-plugin/graphql-loader'] :
-                            [],
-                    ),
-                },
-            ],
+          rules: [],
         },
         resolve: {
             extensions: stack.hasAny('server') ?
@@ -95,33 +77,14 @@ const createBaseConfig = (builder, dev, options) => {
     return baseConfig;
 };
 
-let persistPlugins;
-
-const createPlugins = (builder, builders: Object, dev, options) => {
+const createPlugins = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
     const webpack = requireModule('webpack');
-    const buildNodeEnv = dev ? (stack.hasAny('test') ? 'test' : 'development') : 'production';
-
-    if (!persistPlugins) {
-        const PersistGraphQLPlugin = requireModule('persistgraphql-webpack-plugin');
-        const moduleName = path.resolve('node_modules/persisted_queries.json');
-        if (options.persistGraphQL) {
-            const clientPersistPlugin = new PersistGraphQLPlugin({ moduleName,
-                filename: 'extracted_queries.json', addTypename: true });
-            const serverPersistPlugin = new PersistGraphQLPlugin({ moduleName,
-                provider: clientPersistPlugin });
-            persistPlugins = { client: clientPersistPlugin, server: serverPersistPlugin };
-        } else {
-            // Dummy plugin instances just to create persisted_queries.json virtual module
-            const clientPersistPlugin = new PersistGraphQLPlugin({ moduleName });
-            const serverPersistPlugin = new PersistGraphQLPlugin({ moduleName });
-            persistPlugins = { client: clientPersistPlugin, server: serverPersistPlugin };
-        }
-    }
+    const buildNodeEnv = spin.dev ? (stack.hasAny('test') ? 'test' : 'development') : 'production';
 
     let plugins = [];
 
-    if (dev) {
+    if (spin.dev) {
         plugins.push(new webpack.NamedModulesPlugin());
     } else {
         plugins.push(new webpack.optimize.UglifyJsPlugin({ minimize: true }));
@@ -129,7 +92,7 @@ const createPlugins = (builder, builders: Object, dev, options) => {
         plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
     }
 
-    const backendUrl = options.backendUrl.replace('{ip}', ip.address());
+    const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
 
     if (stack.hasAny('server')) {
         plugins = plugins.concat([
@@ -138,25 +101,21 @@ const createPlugins = (builder, builders: Object, dev, options) => {
                 raw: true, entryOnly: false,
             }),
             new webpack.DefinePlugin({
-                __CLIENT__: false, __SERVER__: true, __SSR__: options.ssr,
-                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                __PERSIST_GQL__: options.persistGraphQL,
+                __CLIENT__: false, __SERVER__: true, __SSR__: spin.options.ssr && !spin.test,
+                __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
                 __BACKEND_URL__: `"${backendUrl}"`,
             }),
-            persistPlugins.server,
         ]);
     } else {
         plugins = plugins.concat([
             new webpack.DefinePlugin({
-                __CLIENT__: true, __SERVER__: false, __SSR__: options.ssr,
-                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                __PERSIST_GQL__: options.persistGraphQL,
+                __CLIENT__: true, __SERVER__: false, __SSR__: spin.options.ssr && !spin.test,
+                __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
                 __BACKEND_URL__: (
                     stack.platform !== 'web' ||
                     url.parse(backendUrl).hostname !== 'localhost'
                 ) ? `"${backendUrl}"` : false,
             }),
-            persistPlugins.client,
         ]);
 
         if (stack.hasAny('web')) {
@@ -165,8 +124,8 @@ const createPlugins = (builder, builders: Object, dev, options) => {
                 fileName: 'assets.json',
             }));
             let hasServer = false;
-            for (let name in builders) {
-                if (builders[name].stack.hasAny('server')) {
+            for (let name in spin.builders) {
+                if (spin.builders[name].stack.hasAny('server')) {
                     hasServer = true;
                     break;
                 }
@@ -179,7 +138,7 @@ const createPlugins = (builder, builders: Object, dev, options) => {
                 }));
             }
 
-            if (!dev) {
+            if (!spin.dev) {
                 plugins.push(new webpack.optimize.CommonsChunkPlugin({
                     name: 'vendor',
                     filename: '[name].[hash].js',
@@ -200,11 +159,11 @@ const createPlugins = (builder, builders: Object, dev, options) => {
         const name = `vendor_${builder.parent.name}`;
         plugins = [
             new webpack.DefinePlugin({
-                __DEV__: dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+                __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
             }),
             new webpack.DllPlugin({
                 name,
-                path: path.join(options.dllBuildDir, `${name}_dll.json`),
+                path: path.join(spin.options.dllBuildDir, `${name}_dll.json`),
             }),
         ];
     }
@@ -225,15 +184,8 @@ const getDepsForNode = (builder, depPlatforms) => {
     return deps;
 };
 
-const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
+const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
     const stack = builder.stack;
-
-    const options: any = {...opts};
-
-    if (stack.hasAny('test')) {
-        options.ssr = false;
-        options.persistGraphQL = false;
-    }
 
     const baseDevServerConfig = {
         hot: true,
@@ -251,14 +203,14 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
         useBabel();
     }
 
-    const plugins = createPlugins(builder, builders, dev, options);
+    const plugins = createPlugins(builder, spin);
     if (stack.hasAny('server')) {
         const nodeExternals = requireModule('webpack-node-externals');
         const nodeExternalsFn = nodeExternals({
             whitelist: [/(^webpack|^react-native)/],
         });
         config = {
-            ...createBaseConfig(builder, dev, options),
+            ...createBaseConfig(builder, spin.dev),
             entry: {
                 index: [
                     './src/server/index.js',
@@ -279,22 +231,22 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
                 });
             },
             output: {
-                devtoolModuleFilenameTemplate: dev ? '../../[resource-path]' : undefined,
-                devtoolFallbackModuleFilenameTemplate: dev ? '../../[resource-path];[hash]' : undefined,
+                devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
+                devtoolFallbackModuleFilenameTemplate: spin.dev ? '../../[resource-path];[hash]' : undefined,
                 filename: '[name].js',
                 sourceMapFilename: '[name].[chunkhash].js.map',
-                path: path.resolve(options.backendBuildDir),
+                path: path.resolve(spin.options.backendBuildDir),
                 publicPath: '/',
             },
             plugins,
         };
     } else if (stack.hasAny('web')) {
-        const backendUrl = options.backendUrl.replace('{ip}', ip.address());
+        const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
         const { protocol, host } = url.parse(backendUrl);
         const backendBaseUrl = protocol + '//' + host;
 
         config = {
-            ...createBaseConfig(builder, dev, options),
+            ...createBaseConfig(builder, spin.dev),
             entry: {
                 index: [
                     './src/client/index.jsx',
@@ -302,13 +254,13 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
             },
             output: {
                 filename: '[name].[hash].js',
-                path: path.resolve(path.join(options.frontendBuildDir, 'web')),
+                path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
                 publicPath: '/',
             },
             plugins,
             devServer: {
                 ...baseDevServerConfig,
-                port: options.webpackDevPort,
+                port: spin.options.webpackDevPort,
                 proxy: {
                     '!/*.hot-update.{json,js}': {
                         target: backendBaseUrl,
@@ -321,7 +273,7 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
         const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
         const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
-            ...createBaseConfig(builder, dev, options),
+            ...createBaseConfig(builder, spin.dev),
             entry: {
                 index: [
                     './src/mobile/index.js',
@@ -330,7 +282,7 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
             output: {
                 filename: `index.mobile.bundle`,
                 publicPath: '/',
-                path: path.resolve(path.join(options.frontendBuildDir, builder.name)),
+                path: path.resolve(path.join(spin.options.frontendBuildDir, builder.name)),
             },
             devServer: {
                 ...baseDevServerConfig,
@@ -360,7 +312,7 @@ const createConfig = (builder, builders, dev, opts, depPlatforms?) => {
             },
             output: {
                 filename: `${name}.[hash]_dll.js`,
-                path: path.resolve(options.dllBuildDir),
+                path: path.resolve(spin.options.dllBuildDir),
                 library: name,
             },
         };
