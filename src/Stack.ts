@@ -32,4 +32,14 @@ export default class Stack {
         }
         return false;
     }
+
+    hasAll(technologies): Boolean {
+        const array = technologies.constructor === Array ? technologies : [technologies];
+        for (let feature of array) {
+            if (this.technologies.indexOf(feature) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

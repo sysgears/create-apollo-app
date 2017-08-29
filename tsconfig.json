@@ -16,7 +16,7 @@
   },
   "include": [
     "./src/*.ts",
-    "./src/react-native/*.ts"
+    "./src/plugins/react-native/*.ts"
   ],
   "exclude": [
     "node_modules",

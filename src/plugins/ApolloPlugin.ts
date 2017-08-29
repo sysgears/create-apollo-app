@@ -9,7 +9,7 @@ let persistPlugins;
 
 export default class ApolloPlugin implements SpinPlugin {
     configure(builder: Builder, spin: Spin) {
-        if (builder.stack.hasAny('apollo')) {
+        if (builder.stack.hasAll(['apollo', 'webpack'])) {
             const persistGraphQL = spin.options.persistGraphQL && !spin.test && !builder.stack.hasAny('dll');
             if (builder.stack.hasAny(['server', 'web']) && !builder.stack.hasAny('dll')) {
                 if (!persistPlugins) {

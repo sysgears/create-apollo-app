@@ -7,23 +7,6 @@ import { Builder } from "./Builder";
 import Spin from "./Spin";
 const pkg = requireModule('./package.json');
 
-const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
-let babelUsed = false;
-
-const useBabel = () => {
-    if (!babelUsed) {
-        require('babel-register')({
-            presets: ['es2015', 'flow'],
-            ignore: /node_modules(?!\/(haul|react-native))/,
-            retainLines: true,
-            sourceMaps: 'inline',
-        });
-        require('babel-polyfill');
-
-        babelUsed = true;
-    }
-};
-
 const createBaseConfig = (builder, dev) => {
     const stack = builder.stack;
 
@@ -46,9 +29,6 @@ const createBaseConfig = (builder, dev) => {
     };
 
     if (stack.hasAny(['web', 'server'])) {
-        baseConfig.resolve.alias = {
-            'react-native': 'react-native-web',
-        };
         baseConfig.module.rules = baseConfig.module.rules.concat([
             {
                 test: /\.(png|ico|jpg|xml)$/,
@@ -61,16 +41,6 @@ const createBaseConfig = (builder, dev) => {
             {
                 test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                 use: 'file-loader?name=./assets/[hash].[ext]',
-            },
-        ]);
-    } else if (stack.hasAny('react-native')) {
-        baseConfig.module.rules = baseConfig.module.rules.concat([
-            {
-                test: mobileAssetTest,
-                use: {
-                    loader: require.resolve('./react-native/assetLoader'),
-                    query: {platform: stack.platform, root: path.resolve('.'), bundle: false},
-                },
             },
         ]);
     }
@@ -147,11 +117,6 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                     },
                 }));
             }
-        } else if (stack.hasAny('react-native')) {
-            plugins.push(new webpack.SourceMapDevToolPlugin({
-                test: /\.(js|jsx|css|bundle)($|\?)/i,
-                filename: '[file].map',
-            }));
         }
     }
 
@@ -178,9 +143,6 @@ const getDepsForNode = (builder, depPlatforms) => {
             deps.push(key);
         }
     }
-    if (builder.stack.hasAny('react-native')) {
-        deps = deps.concat(require.resolve('./react-native/react-native-polyfill.js'));
-    }
     return deps;
 };
 
@@ -199,16 +161,8 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
 
     let config;
 
-    if (stack.hasAny('react-native')) {
-        useBabel();
-    }
-
     const plugins = createPlugins(builder, spin);
     if (stack.hasAny('server')) {
-        const nodeExternals = requireModule('webpack-node-externals');
-        const nodeExternalsFn = nodeExternals({
-            whitelist: [/(^webpack|^react-native)/],
-        });
         config = {
             ...createBaseConfig(builder, spin.dev),
             entry: {
@@ -221,15 +175,7 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
                 __dirname: true,
                 __filename: true,
             },
-            externals(context, request, callback) {
-                return nodeExternalsFn(context, request, function () {
-                    if (request.indexOf('react-native') >= 0) {
-                        return callback(null, 'commonjs ' + request + '-web');
-                    } else {
-                        return callback.apply(this, arguments);
-                    }
-                });
-            },
+            externals: requireModule('webpack-node-externals'),
             output: {
                 devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
                 devtoolFallbackModuleFilenameTemplate: spin.dev ? '../../[resource-path];[hash]' : undefined,
@@ -270,8 +216,6 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
             },
         };
     } else if (stack.hasAny('react-native')) {
-        const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
-        const HasteResolver = requireModule('haul/src/resolvers/HasteResolver');
         config = {
             ...createBaseConfig(builder, spin.dev),
             entry: {
@@ -291,13 +235,6 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
             },
             plugins,
         };
-        config.resolve.plugins = [
-            new HasteResolver({
-                directories: [path.resolve('node_modules/react-native')],
-            }),
-            new AssetResolver({platform: stack.platform, test: mobileAssetTest}),
-        ];
-        config.resolve.mainFields = ['react-native', 'browser', 'main'];
     } else {
         throw new Error(`Unknown platform target: ${stack.platform}`);
     }

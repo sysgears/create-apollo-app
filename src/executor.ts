@@ -13,7 +13,7 @@ import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import { RawSource } from 'webpack-sources';
 
 import requireModule from './requireModule';
-import liveReloadMiddleware from './react-native/liveReloadMiddleware';
+import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 
 const VirtualModules = requireModule('webpack-virtual-modules');
 

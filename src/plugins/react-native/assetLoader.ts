@@ -27,7 +27,7 @@
  * @flow
  */
 
-const requireModule = require('../requireModule').default;
+const requireModule = require('../../requireModule').default;
 const path = require('path');
 
 const util = requireModule('util');

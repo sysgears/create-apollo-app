@@ -9,8 +9,10 @@ import Spin from "./Spin";
 import { SpinPlugin } from "./SpinPlugin";
 import CssProcessorPlugin from "./plugins/CssProcessorPlugin";
 import ES6Plugin from "./plugins/ES6Plugin";
-import {Builder} from "./Builder";
+import { Builder } from "./Builder";
 import ApolloPlugin from "./plugins/ApolloPlugin";
+import ReactNativePlugin from "./plugins/ReactNativePlugin";
+import ReactNativeWebPlugin from "./plugins/ReactNativeWebPlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -20,7 +22,9 @@ const createConfig = cmd => {
     const plugins = [
         new CssProcessorPlugin(),
         new ApolloPlugin(),
-        new ES6Plugin()
+        new ES6Plugin(),
+        new ReactNativePlugin(),
+        new ReactNativeWebPlugin(),
     ];
     const config = new ConfigRc(plugins);
     const spin = new Spin(process.argv, config.builders, config.options);
