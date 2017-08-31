@@ -20,7 +20,7 @@ export default class ES6Plugin implements SpinPlugin {
                         requireModule.resolve('babel-plugin-transform-decorators-legacy'),
                         requireModule.resolve('babel-plugin-transform-class-properties'),
                     ].concat(spin.dev && spin.options.reactHotLoader ? [requireModule.resolve('react-hot-loader/babel')] : []),
-                    only: ['*.js', '*.jsx'],
+                    only: ['*.js'].concat(builder.stack.hasAny(['react', 'react-native']) ?  ['*.jsx'] : []),
                 },
             };
 

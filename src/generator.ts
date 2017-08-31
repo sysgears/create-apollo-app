@@ -7,46 +7,6 @@ import { Builder } from "./Builder";
 import Spin from "./Spin";
 const pkg = requireModule('./package.json');
 
-const createBaseConfig = (builder, dev) => {
-    const stack = builder.stack;
-
-    const baseConfig: any = {
-        name: builder.name,
-        devtool: dev ? '#cheap-module-source-map' : '#source-map',
-        module: {
-          rules: [],
-        },
-        resolve: {
-            extensions: stack.hasAny('server') ?
-                [`.web.js`, `.web.jsx`, '.js', '.jsx'] :
-                [`.${stack.platform}.js`, `.${stack.platform}.jsx`, '.native.js', '.native.jsx', '.js', '.jsx'],
-            modules: [path.join(process.cwd(), 'node_modules'), 'node_modules'],
-        },
-        watchOptions: {
-            ignored: /build/,
-        },
-        bail: !dev,
-    };
-
-    if (stack.hasAny(['web', 'server'])) {
-        baseConfig.module.rules = baseConfig.module.rules.concat([
-            {
-                test: /\.(png|ico|jpg|xml)$/,
-                use: 'url-loader?name=[hash].[ext]&limit=10000',
-            },
-            {
-                test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                use: 'url-loader?name=./assets/[hash].[ext]&limit=10000',
-            },
-            {
-                test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                use: 'file-loader?name=./assets/[hash].[ext]',
-            },
-        ]);
-    }
-    return baseConfig;
-};
-
 const createPlugins = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
     const webpack = requireModule('webpack');
@@ -103,7 +63,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
             if (!hasServer) {
                 const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
                 plugins.push(new HtmlWebpackPlugin({
-                    template: 'tools/html-plugin-template.ejs',
+                    template: path.resolve('html-plugin-template.ejs'),
                     inject: 'body',
                 }));
             }
@@ -146,8 +106,23 @@ const getDepsForNode = (builder, depPlatforms) => {
     return deps;
 };
 
-const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
+const createConfig = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
+
+    const baseConfig: any = {
+        name: builder.name,
+        devtool: spin.dev ? '#cheap-module-source-map' : '#source-map',
+        module: {
+            rules: [],
+        },
+        resolve: {
+            modules: [path.join(process.cwd(), 'node_modules'), 'node_modules'],
+        },
+        watchOptions: {
+            ignored: /build/,
+        },
+        bail: !spin.dev,
+    };
 
     const baseDevServerConfig = {
         hot: true,
@@ -164,7 +139,7 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
     const plugins = createPlugins(builder, spin);
     if (stack.hasAny('server')) {
         config = {
-            ...createBaseConfig(builder, spin.dev),
+            ...baseConfig,
             entry: {
                 index: [
                     './src/server/index.js',
@@ -192,10 +167,10 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
         const backendBaseUrl = protocol + '//' + host;
 
         config = {
-            ...createBaseConfig(builder, spin.dev),
+            ...baseConfig,
             entry: {
                 index: [
-                    './src/client/index.jsx',
+                    './src/client/index.js',
                 ],
             },
             output: {
@@ -217,7 +192,7 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
         };
     } else if (stack.hasAny('react-native')) {
         config = {
-            ...createBaseConfig(builder, spin.dev),
+            ...baseConfig,
             entry: {
                 index: [
                     './src/mobile/index.js',
@@ -245,7 +220,7 @@ const createConfig = (builder: Builder, spin: Spin, depPlatforms?) => {
             ...config,
             devtool: '#cheap-module-source-map',
             entry: {
-                vendor: getDepsForNode(builder, depPlatforms),
+                vendor: getDepsForNode(builder, spin.depPlatforms),
             },
             output: {
                 filename: `${name}.[hash]_dll.js`,

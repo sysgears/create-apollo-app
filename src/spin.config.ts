@@ -14,6 +14,8 @@ import ApolloPlugin from "./plugins/ApolloPlugin";
 import ReactNativePlugin from "./plugins/ReactNativePlugin";
 import ReactNativeWebPlugin from "./plugins/ReactNativeWebPlugin";
 import StyledComponentsPlugin from "./plugins/StyledComponentsPlugin";
+import WebAssetsPlugin from "./plugins/WebAssetsPlugin";
+import ReactPlugin from "./plugins/ReactPlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -21,7 +23,9 @@ const createConfig = cmd => {
     let builders = {};
 
     const plugins = [
+        new WebAssetsPlugin(),
         new CssProcessorPlugin(),
+        new ReactPlugin(),
         new ApolloPlugin(),
         new ES6Plugin(),
         new ReactNativePlugin(),
@@ -29,7 +33,14 @@ const createConfig = cmd => {
         new StyledComponentsPlugin(),
     ];
     const config = new ConfigRc(plugins);
-    const spin = new Spin(process.argv, config.builders, config.options);
+    const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
+    let overrides;
+    if (fs.existsSync(overridesConfig)) {
+        overrides = requireModule('./' + overridesConfig);
+    } else {
+        overrides = {};
+    }
+    const spin = new Spin(process.argv, config.builders, config.options, overrides.dependencyPlatforms || {});
 
     for (let name in config.builders) {
         const builder = config.builders[name];
@@ -51,17 +62,9 @@ const createConfig = cmd => {
     }
 
     try {
-        const overridesConfig = spin.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
-        let overrides;
-        if (fs.existsSync(overridesConfig)) {
-            overrides = requireModule('./' + overridesConfig);
-        } else {
-            overrides = {};
-        }
-
         for (let name in builders) {
             const builder = builders[name];
-            builders[name].config = generateConfig(builder, spin, overrides.dependencyPlatforms || {});
+            builders[name].config = generateConfig(builder, spin);
             config.plugins.forEach((plugin: SpinPlugin) => plugin.configure(builder, spin));
             if (overrides[name]) {
                 builders[name].config = merge(builders[name].config, overrides[name]);
