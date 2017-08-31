@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as merge from 'webpack-merge';
 
 import ConfigRc from './configRc';
-import generateConfig from './generator';
 import Stack from './Stack';
 import requireModule from './requireModule';
 import Spin from "./Spin";
@@ -16,6 +15,7 @@ import ReactNativeWebPlugin from "./plugins/ReactNativeWebPlugin";
 import StyledComponentsPlugin from "./plugins/StyledComponentsPlugin";
 import WebAssetsPlugin from "./plugins/WebAssetsPlugin";
 import ReactPlugin from "./plugins/ReactPlugin";
+import WebpackPlugin from "./plugins/WebpackPlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -23,6 +23,7 @@ const createConfig = cmd => {
     let builders = {};
 
     const plugins = [
+        new WebpackPlugin(),
         new WebAssetsPlugin(),
         new CssProcessorPlugin(),
         new ReactPlugin(),
@@ -64,7 +65,6 @@ const createConfig = cmd => {
     try {
         for (let name in builders) {
             const builder = builders[name];
-            builders[name].config = generateConfig(builder, spin);
             config.plugins.forEach((plugin: SpinPlugin) => plugin.configure(builder, spin));
             if (overrides[name]) {
                 builders[name].config = merge(builders[name].config, overrides[name]);

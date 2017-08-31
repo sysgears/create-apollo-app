@@ -2,9 +2,11 @@ import * as path from 'path';
 import * as ip from 'ip';
 import * as url from 'url';
 
-import requireModule from './requireModule';
-import { Builder } from "./Builder";
-import Spin from "./Spin";
+import Spin from "../Spin";
+import { SpinPlugin } from "../SpinPlugin";
+import { Builder } from "../Builder";
+import requireModule from '../requireModule';
+
 const pkg = requireModule('./package.json');
 
 const createPlugins = (builder: Builder, spin: Spin) => {
@@ -233,4 +235,13 @@ const createConfig = (builder: Builder, spin: Spin) => {
     return config;
 };
 
-export default createConfig;
+export default class WebpackPlugin implements SpinPlugin {
+    configure(builder: Builder, spin: Spin) {
+        const stack = builder.stack;
+
+        if (stack.hasAny('webpack')) {
+            builder.config = builder.config || {};
+            builder.config = spin.merge(builder.config, createConfig(builder, spin));
+        }
+    }
+}
