@@ -4,6 +4,7 @@ import Spin from "../Spin";
 import { SpinPlugin } from "../SpinPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
+import findJSRule from './shared/JSRuleFinder';
 
 let babelRegisterDone = false;
 
@@ -49,18 +50,7 @@ export default class ReactNativePlugin implements SpinPlugin {
                 },
             };
 
-            let jsRule;
-            for (let rule of builder.config.module.rules) {
-                if (String(rule.test) === String(/\.jsx?$/)) {
-                    jsRule = rule;
-                    break;
-                }
-            }
-            if (!jsRule) {
-                jsRule = { test: /\.jsx?$/};
-                builder.config.module.rules = (builder.config.module.rules || []).concat(jsRule);
-            }
-
+            const jsRule = findJSRule(builder);
             jsRule.exclude = /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/;
             const origUse = jsRule.use;
             jsRule.use = function (req) {

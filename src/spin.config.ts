@@ -13,6 +13,7 @@ import { Builder } from "./Builder";
 import ApolloPlugin from "./plugins/ApolloPlugin";
 import ReactNativePlugin from "./plugins/ReactNativePlugin";
 import ReactNativeWebPlugin from "./plugins/ReactNativeWebPlugin";
+import StyledComponentsPlugin from "./plugins/StyledComponentsPlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -25,6 +26,7 @@ const createConfig = cmd => {
         new ES6Plugin(),
         new ReactNativePlugin(),
         new ReactNativeWebPlugin(),
+        new StyledComponentsPlugin(),
     ];
     const config = new ConfigRc(plugins);
     const spin = new Spin(process.argv, config.builders, config.options);
