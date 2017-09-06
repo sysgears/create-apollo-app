@@ -6,7 +6,7 @@ import {Builder} from './Builder';
 
 const pkg = requireModule('./package.json');
 
-const SPIN_CONFIG_NAME = '.spinrc';
+const SPIN_CONFIG_NAME = '.spinrc.json';
 
 export default class ConfigRc {
     options: any;
