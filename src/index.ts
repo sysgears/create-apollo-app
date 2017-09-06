@@ -3,17 +3,13 @@ import * as yargs from 'yargs';
 import createConfig from './createConfig';
 import execute from './executor';
 
-const handler = args => {
-    console.log("args:", args);
-};
-
 const argv = yargs
     .command('build', 'compiles package for usage in production')
-    .command('watch', 'launches package in development mode with hot code reload',)
+    .command('watch', 'launches package in development mode with hot code reload')
     .command('test [mocha-webpack options]', 'runs package tests')
     .demandCommand(1, '')
     .help()
-    .version(require('../package.json').version)
+    .version(require('../package.json').version) // tslint:disable-line
     .argv;
 
 const cmd = argv._[0];

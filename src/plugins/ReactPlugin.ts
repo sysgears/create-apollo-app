@@ -1,9 +1,9 @@
 import Spin from "../Spin";
-import { SpinPlugin } from "../SpinPlugin";
+import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import findJSRule from './shared/JSRuleFinder';
 
-export default class ReactPlugin implements SpinPlugin {
+export default class ReactPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 

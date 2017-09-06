@@ -3,7 +3,7 @@ import * as ip from 'ip';
 import * as url from 'url';
 
 import Spin from "../Spin";
-import { SpinPlugin } from "../SpinPlugin";
+import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
 
@@ -235,7 +235,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     return config;
 };
 
-export default class WebpackPlugin implements SpinPlugin {
+export default class WebpackPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 

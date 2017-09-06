@@ -1,9 +1,8 @@
 import * as merge from 'webpack-merge';
 import { Builder } from './Builder';
-import { Configuration } from "webpack";
+import { Configuration } from 'webpack';
 
-export default class Spin
-{
+export default class Spin {
     dev: boolean;
     test: boolean;
     cmd: string;

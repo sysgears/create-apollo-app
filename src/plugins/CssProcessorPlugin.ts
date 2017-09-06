@@ -1,9 +1,9 @@
 import Spin from "../Spin";
-import { SpinPlugin } from "../SpinPlugin";
+import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
 
-export default class CssProcessorPlugin implements SpinPlugin {
+export default class CssProcessorPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
         const dev = spin.dev;

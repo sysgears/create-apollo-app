@@ -8,7 +8,6 @@ import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as ip from 'ip';
 import * as url from 'url';
-import * as util from 'util';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import { RawSource } from 'webpack-sources';
 

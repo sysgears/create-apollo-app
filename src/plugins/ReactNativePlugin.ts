@@ -1,7 +1,7 @@
 import * as path from 'path';
 
 import Spin from "../Spin";
-import { SpinPlugin } from "../SpinPlugin";
+import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
 import findJSRule from './shared/JSRuleFinder';
@@ -25,7 +25,7 @@ const registerBabel = () => {
     }
 };
 
-export default class ReactNativePlugin implements SpinPlugin {
+export default class ReactNativePlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 

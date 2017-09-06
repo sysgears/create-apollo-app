@@ -1,8 +1,8 @@
 import Spin from "../Spin";
-import { SpinPlugin } from "../SpinPlugin";
+import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 
-export default class WebAssetsPlugin implements SpinPlugin {
+export default class WebAssetsPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 

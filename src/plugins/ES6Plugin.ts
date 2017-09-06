@@ -1,10 +1,10 @@
 import requireModule from '../requireModule';
-import { SpinPlugin } from '../SpinPlugin';
+import { ConfigPlugin } from '../ConfigPlugin';
 import { Builder } from '../Builder';
 import Spin from '../Spin';
 import findJSRule from './shared/JSRuleFinder';
 
-export default class ES6Plugin implements SpinPlugin {
+export default class ES6Plugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         if (builder.stack.hasAll(['es6', 'webpack'])) {
             const babelRule = {

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 
 import requireModule from './requireModule';
 import Stack from './Stack';
-import { Builder } from "./Builder";
+import { Builder } from './Builder';
 const pkg = requireModule('./package.json');
 
 const SPIN_CONFIG_NAME = '.spinrc';

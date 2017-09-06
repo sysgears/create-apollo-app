@@ -1,10 +1,10 @@
 import Spin from "../Spin";
-import { SpinPlugin } from "../SpinPlugin";
+import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
 import findJSRule from './shared/JSRuleFinder';
 
-export default class StyledComponentsPlugin implements SpinPlugin {
+export default class StyledComponentsPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 

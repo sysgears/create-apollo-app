@@ -1,13 +1,13 @@
 import * as path from 'path';
 
 import requireModule from '../requireModule';
-import { SpinPlugin } from '../SpinPlugin';
+import { ConfigPlugin } from '../ConfigPlugin';
 import { Builder } from '../Builder';
 import Spin from '../Spin';
 
 let persistPlugins;
 
-export default class ApolloPlugin implements SpinPlugin {
+export default class ApolloPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         if (builder.stack.hasAll(['apollo', 'webpack'])) {
             const persistGraphQL = spin.options.persistGraphQL && !spin.test && !builder.stack.hasAny('dll');

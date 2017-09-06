@@ -4,18 +4,18 @@ import * as merge from 'webpack-merge';
 import ConfigRc from './configRc';
 import Stack from './Stack';
 import requireModule from './requireModule';
-import Spin from "./Spin";
-import { SpinPlugin } from "./SpinPlugin";
-import CssProcessorPlugin from "./plugins/CssProcessorPlugin";
-import ES6Plugin from "./plugins/ES6Plugin";
-import { Builder } from "./Builder";
-import ApolloPlugin from "./plugins/ApolloPlugin";
-import ReactNativePlugin from "./plugins/ReactNativePlugin";
-import ReactNativeWebPlugin from "./plugins/ReactNativeWebPlugin";
-import StyledComponentsPlugin from "./plugins/StyledComponentsPlugin";
-import WebAssetsPlugin from "./plugins/WebAssetsPlugin";
-import ReactPlugin from "./plugins/ReactPlugin";
-import WebpackPlugin from "./plugins/WebpackPlugin";
+import Spin from './Spin';
+import { ConfigPlugin } from './ConfigPlugin';
+import CssProcessorPlugin from './plugins/CssProcessorPlugin';
+import ES6Plugin from './plugins/ES6Plugin';
+import { Builder } from './Builder';
+import ApolloPlugin from './plugins/ApolloPlugin';
+import ReactNativePlugin from './plugins/ReactNativePlugin';
+import ReactNativeWebPlugin from './plugins/ReactNativeWebPlugin';
+import StyledComponentsPlugin from './plugins/StyledComponentsPlugin';
+import WebAssetsPlugin from './plugins/WebAssetsPlugin';
+import ReactPlugin from './plugins/ReactPlugin';
+import WebpackPlugin from './plugins/WebpackPlugin';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -65,7 +65,7 @@ const createConfig = cmd => {
     try {
         for (let name in builders) {
             const builder = builders[name];
-            config.plugins.forEach((plugin: SpinPlugin) => plugin.configure(builder, spin));
+            config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
             if (overrides[name]) {
                 builders[name].config = merge(builders[name].config, overrides[name]);
             }
