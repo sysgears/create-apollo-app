@@ -1,6 +1,6 @@
 <p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spin.js/master/logo.svg"></a></p>
 
-## Spin.js - a JavaScript tool to simplify build rules development
+## Spin.js - is a tool that sets up great JavaScript build infrastructure for you
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/sysgears.svg?style=social)](https://twitter.com/sysgears)
 
@@ -10,15 +10,32 @@
 npm install -g spinjs
 ```
 
-## Introduction
+## Basic Usage
 
+The idea behind `spin.js` is very simple. You add into your `package.json` the property `spin` that describes your stack:
+```json
+{
+  "spin": "webpack:es6:apollo:react:styled-components:sass:server"
+}
+```
+and you are all set. 
 
-
-## Usage
+You can then execute
+```bash
+spin watch
+```
+to launch your project in `webpack watch` mode for development. After making changes to your code, they will be 
+automatically reloaded from disk using Webpack Hot Module Replacement. 
 
 ```bash
-spin --help
+spin build
 ```
+will build your project for production environment.
+
+```bash
+spin test "src/**/*.spec.js"
+```
+will run tests located in `.spec.js` files via Mocha Webpack.
 
 ## Contributors
 
