@@ -20,8 +20,8 @@ export default class ConfigRc {
         if (typeof config === 'string' || (typeof config === 'object' && config.constructor === Array)) {
             config = {
                 builders: {
-                    [pkg.name]: config
-                }
+                    [pkg.name]: config,
+                },
             };
         }
 
@@ -47,7 +47,7 @@ export default class ConfigRc {
         options.backendBuildDir = options.backendBuildDir || 'build/server';
         options.frontendBuildDir = options.frontendBuildDir || 'build/client';
         options.dllBuildDir = options.dllBuildDir || 'build/dll';
-        options.backendUrl = options.backendUrl || "http://{ip}:8080/graphql";
+        options.backendUrl = options.backendUrl || 'http://{ip}:8080/graphql';
         options.webpackDevPort = options.webpackDevPort || 3000;
         options.webpackDll = options.webpackDll !== undefined ? options.webpackDll : true;
     }

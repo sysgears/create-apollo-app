@@ -41,7 +41,7 @@ const createConfig = cmd => {
     } else {
         overrides = {};
     }
-    const spin = new Spin(process.argv, config.builders, config.options, overrides.dependencyPlatforms || {});
+    const spin = new Spin(cmd, config.builders, config.options, overrides.dependencyPlatforms || {});
 
     for (let name in config.builders) {
         const builder = config.builders[name];

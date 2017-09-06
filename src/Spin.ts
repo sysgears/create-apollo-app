@@ -10,8 +10,8 @@ export default class Spin {
     options: any;
     depPlatforms: any;
 
-    constructor(argv: string[], builders, options, depPlatforms) {
-        this.cmd = argv[2];
+    constructor(cmd, builders, options, depPlatforms) {
+        this.cmd = cmd;
         this.dev = this.cmd === 'watch' || this.cmd === 'test';
         this.test = this.cmd === 'test';
         this.builders = builders;
