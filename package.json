@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "scripts": {
     "compile": "tsc",
     "watch": "tsc -w",
