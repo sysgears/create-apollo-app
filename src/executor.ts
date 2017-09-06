@@ -461,7 +461,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
             });
     }
 
-    app.use(webpackDevMiddleware(compiler, _.merge({}, config.devServer, {
+    const devMiddleware = webpackDevMiddleware(compiler, _.merge({}, config.devServer, {
         reporter({state, stats}) {
             if (state) {
                 logger('bundle is now VALID.');
@@ -470,7 +470,22 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
             }
             reporter(null, stats);
         },
-    })))
+    }));
+
+    app.use(function(req, res, next) {
+        if (platform !== 'web') {
+            // Workaround for Expo Client bug in parsing Content-Type header with charset
+            const origSetHeader = res.setHeader;
+            res.setHeader = function (key, value) {
+                let val = value;
+                if (key === 'Content-Type' && value.indexOf('application/javascript') >= 0) {
+                    val = value.split(';')[0];
+                }
+                origSetHeader.call(res, key, val);
+            };
+        }
+        return devMiddleware(req, res, next);
+    })
         .use(webpackHotMiddleware(compiler, {log: false}));
 
     if (config.devServer.proxy) {
