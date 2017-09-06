@@ -152,7 +152,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
                 __dirname: true,
                 __filename: true,
             },
-            externals: requireModule('webpack-node-externals'),
+            externals: [requireModule('webpack-node-externals')({
+                whitelist: [/(^webpack|^react-native)/]
+            })],
             output: {
                 devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
                 devtoolFallbackModuleFilenameTemplate: spin.dev ? '../../[resource-path];[hash]' : undefined,

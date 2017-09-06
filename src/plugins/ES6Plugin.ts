@@ -27,7 +27,7 @@ export default class ES6Plugin implements ConfigPlugin {
             if (builder.stack.hasAny('es6') && !builder.stack.hasAny('dll')) {
                 builder.config = spin.merge({
                     entry: {
-                        index: ['babel-polyfill'],
+                        index: [requireModule.resolve('babel-polyfill')],
                     },
                 }, builder.config);
             }
