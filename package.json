@@ -2,11 +2,12 @@
   "name": "spinjs",
   "version": "0.2.0",
   "scripts": {
+    "clean": "rm -rf ./lib",
     "compile": "tsc",
     "watch": "tsc -w",
     "lint": "tslint --fix 'src/*.ts*' -p tsconfig.json --type-check && tslint 'test/*.ts*' -p tsconfig.json --type-check",
     "test": " ",
-    "prepublish": "npm run compile"
+    "prepublish": "npm run clean && npm run compile"
   },
   "files": [
     "src",
