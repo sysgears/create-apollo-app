@@ -243,7 +243,7 @@ function openFrontend(builder) {
         if (builder.stack.hasAny('web') && builder.openBrowser !== false) {
             openurl.open(`http://${ip.address()}:${builder.config.devServer.port}`);
         } else if (builder.stack.hasAny('react-native')) {
-            startExpoProject(builder.config, builder.stack.platform);
+            startExpoProject(builder.config, builder.stack.platform, [builder]);
         }
     } catch (e) {
         console.error(e.stack);
@@ -473,7 +473,8 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
 
     app.use(function(req, res, next) {
         if (platform !== 'web') {
-            // Workaround for Expo Client bug in parsing Content-Type header with charset
+            // TODO: Workaround for React Native bug in parsing Content-Type header with charset
+            // https://github.com/facebook/react-native/issues/15791
             const origSetHeader = res.setHeader;
             res.setHeader = function (key, value) {
                 let val = value;
@@ -592,7 +593,7 @@ function buildDll(platform, config, options) {
     });
 }
 
-function setupExpoDir(dir, platform) {
+function setupExpoDir(dir, platform, builders) {
     const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
     mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
     fs.writeFileSync(path.join(reactNativeDir, 'package.json'),
@@ -609,6 +610,18 @@ function setupExpoDir(dir, platform) {
     const appJson = JSON.parse(fs.readFileSync('app.json').toString());
     if (appJson.expo.icon) {
         appJson.expo.icon = path.join(path.resolve('.'), appJson.expo.icon);
+    }
+    // TODO: Temporary native base support
+    // https://github.com/sysgears/spin.js/issues/2#issuecomment-327819766
+    for (let name of Object.keys(builders)) {
+        if (builders[name].stack.hasAny('native-base')) {
+            appJson.expo.packagerOpts = {
+                ...appJson.expo.packagerOpts,
+                assetExts: ((appJson.expo.packagerOpts || {}).assetExts || [])
+                    .concat(['ttf']),
+            };
+            break;
+        }
     }
     fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
     if (platform !== 'all') {
@@ -629,13 +642,13 @@ async function startExpoServer(projectRoot, packagerPort) {
     });
 }
 
-async function startExpoProject(config, platform) {
+async function startExpoProject(config, platform, builders) {
     const { UrlUtils, Android, Simulator } = requireModule('xdl');
     const qr = requireModule('qrcode-terminal');
 
     try {
         const projectRoot = path.join(path.resolve('.'), '.expo', platform);
-        setupExpoDir(projectRoot, platform);
+        setupExpoDir(projectRoot, platform, builders);
         await startExpoServer(projectRoot, config.devServer.port);
 
         const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
@@ -727,9 +740,9 @@ async function startExpoProdServer(options) {
     serverInstance.keepAliveTimeout = 0;
 }
 
-async function startExp(options) {
+async function startExp(options, builders) {
     const projectRoot = path.join(process.cwd(), '.expo', 'all');
-    setupExpoDir(projectRoot, 'all');
+    setupExpoDir(projectRoot, 'all', builders);
     if (['ba', 'bi', 'build:android', 'build:ios'].indexOf(process.argv[3]) >= 0) {
         await startExpoProdServer(options);
     }
@@ -744,7 +757,7 @@ async function startExp(options) {
 
 const execute = (cmd, builders: Object, options) => {
     if (cmd === 'exp') {
-        startExp(options);
+        startExp(options, builders);
     } else if (cmd === 'test') {
         spawn(path.join(process.cwd(), 'node_modules/.bin/mocha-webpack'),
             [
