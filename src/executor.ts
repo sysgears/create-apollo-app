@@ -125,6 +125,8 @@ function startClientWebpack(hasBackend, watch, builder, options) {
 
     const config = builder.config;
 
+    config.plugins.push(frontendVirtualModules);
+
     const logger = minilog(`webpack-for-${config.name}`);
     try {
         const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
@@ -272,8 +274,6 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
 
     const configOutputPath = config.output.path;
     config.output.path = '/';
-
-    config.plugins.push(frontendVirtualModules);
 
     let vendorHashesJson, vendorSourceListMap, vendorSource, vendorMap;
     if (options.webpackDll && builder.child) {

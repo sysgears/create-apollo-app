@@ -37,6 +37,9 @@ spin test "src/**/*.spec.js"
 ```
 will run tests located in `.spec.js` files via Mocha Webpack.
 
+## Concepts
+
+
 ## Contributors
 
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
