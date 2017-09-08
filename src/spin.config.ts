@@ -67,7 +67,9 @@ const createConfig = cmd => {
             const builder = builders[name];
             config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
             if (overrides[name]) {
-                builders[name].config = merge(builders[name].config, overrides[name]);
+                builders[name].config = merge.smartStrategy({
+                    entry: 'replace',
+                })(builders[name].config, overrides[name]);
             }
         }
     } catch (e) {

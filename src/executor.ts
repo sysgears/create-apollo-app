@@ -779,7 +779,7 @@ const execute = (cmd, builders: Object, options) => {
             for (let name in builders) {
                 const builder = builders[name];
                 const stack = builder.stack;
-                // console.log("name: %s, config:", name, require('util').inspect(builder.config, false, null));
+                // console.log("builder: %s, config:", name, require('util').inspect(builder.config, false, null));
                 if (stack.hasAny(['dll', 'test']))
                     continue;
                 const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && builder.child) ?

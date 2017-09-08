@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "scripts": {
     "clean": "rm -rf ./lib",
     "compile": "tsc",
@@ -24,7 +24,7 @@
     "@types/lodash": "^4.14.71",
     "@types/mkdirp": "^0.5.0",
     "@types/node": "^7.0.18",
-    "@types/webpack-merge": "^0.0.5",
+    "@types/webpack": "^3.0.10",
     "@types/webpack-sources": "^0.1.2",
     "@types/yargs": "^8.0.2",
     "tslint": "^5.2.0",
