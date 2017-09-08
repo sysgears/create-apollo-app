@@ -26,62 +26,6 @@ const createPlugins = (builder: Builder, spin: Spin) => {
 
     const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
 
-    if (stack.hasAny('server')) {
-        plugins = plugins.concat([
-            new webpack.BannerPlugin({
-                banner: 'require("source-map-support").install();',
-                raw: true, entryOnly: false,
-            }),
-            new webpack.DefinePlugin({
-                __CLIENT__: false, __SERVER__: true, __SSR__: spin.options.ssr && !spin.test,
-                __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                __BACKEND_URL__: `"${backendUrl}"`,
-            }),
-        ]);
-    } else {
-        plugins = plugins.concat([
-            new webpack.DefinePlugin({
-                __CLIENT__: true, __SERVER__: false, __SSR__: spin.options.ssr && !spin.test,
-                __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                __BACKEND_URL__: (
-                    stack.platform !== 'web' ||
-                    url.parse(backendUrl).hostname !== 'localhost'
-                ) ? `"${backendUrl}"` : false,
-            }),
-        ]);
-
-        if (stack.hasAny('web')) {
-            const ManifestPlugin = requireModule('webpack-manifest-plugin');
-            plugins.push(new ManifestPlugin({
-                fileName: 'assets.json',
-            }));
-            let hasServer = false;
-            for (let name in spin.builders) {
-                if (spin.builders[name].stack.hasAny('server')) {
-                    hasServer = true;
-                    break;
-                }
-            }
-            if (!hasServer) {
-                const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
-                plugins.push(new HtmlWebpackPlugin({
-                    template: path.resolve('html-plugin-template.ejs'),
-                    inject: 'body',
-                }));
-            }
-
-            if (!spin.dev) {
-                plugins.push(new webpack.optimize.CommonsChunkPlugin({
-                    name: 'vendor',
-                    filename: '[name].[hash].js',
-                    minChunks: function (module) {
-                        return module.resource && module.resource.indexOf(path.resolve('./node_modules')) === 0;
-                    },
-                }));
-            }
-        }
-    }
-
     if (stack.hasAny('dll')) {
         const name = `vendor_${builder.parent.name}`;
         plugins = [
@@ -93,7 +37,64 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                 path: path.join(spin.options.dllBuildDir, `${name}_dll.json`),
             }),
         ];
+    } else {
+        if (stack.hasAny('server')) {
+            plugins = plugins.concat([
+                new webpack.BannerPlugin({
+                    banner: 'require("source-map-support").install();',
+                    raw: true, entryOnly: false,
+                }),
+                new webpack.DefinePlugin({
+                    __CLIENT__: false, __SERVER__: true, __SSR__: spin.options.ssr && !spin.test,
+                    __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+                    __BACKEND_URL__: `"${backendUrl}"`,
+                }),
+            ]);
+        } else {
+            plugins = plugins.concat([
+                new webpack.DefinePlugin({
+                    __CLIENT__: true, __SERVER__: false, __SSR__: spin.options.ssr && !spin.test,
+                    __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+                    __BACKEND_URL__: (
+                        stack.platform !== 'web' ||
+                        url.parse(backendUrl).hostname !== 'localhost'
+                    ) ? `"${backendUrl}"` : false,
+                }),
+            ]);
+
+            if (stack.hasAny('web')) {
+                const ManifestPlugin = requireModule('webpack-manifest-plugin');
+                plugins.push(new ManifestPlugin({
+                    fileName: 'assets.json',
+                }));
+                let hasServer = false;
+                for (let name in spin.builders) {
+                    if (spin.builders[name].stack.hasAny('server')) {
+                        hasServer = true;
+                        break;
+                    }
+                }
+                if (!hasServer) {
+                    const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
+                    plugins.push(new HtmlWebpackPlugin({
+                        template: path.resolve('html-plugin-template.ejs'),
+                        inject: 'body',
+                    }));
+                }
+
+                if (!spin.dev) {
+                    plugins.push(new webpack.optimize.CommonsChunkPlugin({
+                        name: 'vendor',
+                        filename: '[name].[hash].js',
+                        minChunks: function (module) {
+                            return module.resource && module.resource.indexOf(path.resolve('./node_modules')) === 0;
+                        },
+                    }));
+                }
+            }
+        }
     }
+
     return plugins;
 };
 
@@ -107,6 +108,9 @@ const getDepsForNode = (builder, depPlatforms) => {
     }
     return deps;
 };
+
+let curWebpackDevPort = 3000;
+let webpackPortMap = {};
 
 const createConfig = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
@@ -136,17 +140,15 @@ const createConfig = (builder: Builder, spin: Spin) => {
         stats: { colors: true, chunkModules: false },
     };
 
-    let config;
-
     const plugins = createPlugins(builder, spin);
+    let config = {
+        ...baseConfig,
+        plugins,
+    };
+
     if (stack.hasAny('server')) {
         config = {
-            ...baseConfig,
-            entry: {
-                index: [
-                    './src/server/index.js',
-                ],
-            },
+            ...config,
             target: 'node',
             node: {
                 __dirname: true,
@@ -155,67 +157,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
             externals: [requireModule('webpack-node-externals')({
                 whitelist: [/(^webpack|^react-native)/]
             })],
-            output: {
-                devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
-                devtoolFallbackModuleFilenameTemplate: spin.dev ? '../../[resource-path];[hash]' : undefined,
-                filename: '[name].js',
-                sourceMapFilename: '[name].[chunkhash].js.map',
-                path: path.resolve(spin.options.backendBuildDir),
-                publicPath: '/',
-            },
-            plugins,
-        };
-    } else if (stack.hasAny('web')) {
-        const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
-        const { protocol, host } = url.parse(backendUrl);
-        const backendBaseUrl = protocol + '//' + host;
-
-        config = {
-            ...baseConfig,
-            entry: {
-                index: [
-                    './src/client/index.js',
-                ],
-            },
-            output: {
-                filename: '[name].[hash].js',
-                path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
-                publicPath: '/',
-            },
-            plugins,
-            devServer: {
-                ...baseDevServerConfig,
-                port: spin.options.webpackDevPort,
-                proxy: {
-                    '!/*.hot-update.{json,js}': {
-                        target: backendBaseUrl,
-                        logLevel: 'info',
-                    },
-                },
-            },
-        };
-    } else if (stack.hasAny('react-native')) {
-        config = {
-            ...baseConfig,
-            entry: {
-                index: [
-                    './src/mobile/index.js',
-                ],
-            },
-            output: {
-                filename: `index.mobile.bundle`,
-                publicPath: '/',
-                path: path.resolve(path.join(spin.options.frontendBuildDir, builder.name)),
-            },
-            devServer: {
-                ...baseDevServerConfig,
-                hot: false,
-                port: stack.hasAny('android') ? 3010 : 3020,
-            },
-            plugins,
-        };
-    } else {
-        throw new Error(`Unknown platform target: ${stack.platform}`);
+        }
     }
 
     if (stack.hasAny('dll')) {
@@ -232,6 +174,83 @@ const createConfig = (builder: Builder, spin: Spin) => {
                 library: name,
             },
         };
+    } else {
+        if (stack.hasAny('server')) {
+            config = {
+                ...config,
+                entry: {
+                    index: [
+                        './src/server/index.js',
+                    ],
+                },
+                output: {
+                    devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
+                    devtoolFallbackModuleFilenameTemplate: spin.dev ? '../../[resource-path];[hash]' : undefined,
+                    filename: '[name].js',
+                    sourceMapFilename: '[name].[chunkhash].js.map',
+                    path: path.resolve(spin.options.backendBuildDir),
+                    publicPath: '/',
+                },
+            };
+        } else if (stack.hasAny('web')) {
+            const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
+            const {protocol, host} = url.parse(backendUrl);
+            const backendBaseUrl = protocol + '//' + host;
+            let webpackDevPort;
+            if (!builder.webpackDevPort) {
+                if (!webpackPortMap[builder.name]) {
+                    webpackPortMap[builder.name] = curWebpackDevPort++;
+                }
+                webpackDevPort = webpackPortMap[builder.name];
+            } else {
+                webpackDevPort = builder.webpackDevPort;
+            }
+
+            config = {
+                ...config,
+                entry: {
+                    index: [
+                        './src/client/index.js',
+                    ],
+                },
+                output: {
+                    filename: '[name].[hash].js',
+                    path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
+                    publicPath: '/',
+                },
+                devServer: {
+                    ...baseDevServerConfig,
+                    port: webpackDevPort,
+                    proxy: {
+                        '!/*.hot-update.{json,js}': {
+                            target: backendBaseUrl,
+                            logLevel: 'info',
+                        },
+                    },
+                },
+            };
+        } else if (stack.hasAny('react-native')) {
+            config = {
+                ...config,
+                entry: {
+                    index: [
+                        './src/mobile/index.js',
+                    ],
+                },
+                output: {
+                    filename: `index.mobile.bundle`,
+                    publicPath: '/',
+                    path: path.resolve(path.join(spin.options.frontendBuildDir, builder.name)),
+                },
+                devServer: {
+                    ...baseDevServerConfig,
+                    hot: false,
+                    port: stack.hasAny('android') ? 3010 : 3020,
+                },
+            };
+        } else {
+            throw new Error(`Unknown platform target: ${stack.platform}`);
+        }
     }
 
     return config;
