@@ -16,6 +16,7 @@ import StyledComponentsPlugin from './plugins/StyledComponentsPlugin';
 import WebAssetsPlugin from './plugins/WebAssetsPlugin';
 import ReactPlugin from './plugins/ReactPlugin';
 import WebpackPlugin from './plugins/WebpackPlugin';
+import NativeBasePlugin from './plugins/NativeBasePlugin';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -32,6 +33,7 @@ const createConfig = cmd => {
         new ReactNativePlugin(),
         new ReactNativeWebPlugin(),
         new StyledComponentsPlugin(),
+        new NativeBasePlugin(),
     ];
     const config = new ConfigRc(plugins);
     const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
