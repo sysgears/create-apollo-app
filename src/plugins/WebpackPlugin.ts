@@ -24,7 +24,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
     }
 
-    const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
+    const backendUrl = spin.options.backendUrl.replace('{ip}', spin.dev ? ip.address() : 'localhost');
 
     if (stack.hasAny('dll')) {
         const name = `vendor_${builder.parent.name}`;
