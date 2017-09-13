@@ -9,6 +9,8 @@ import requireModule from '../requireModule';
 
 const pkg = requireModule('./package.json');
 
+const __WINDOWS__ = /^win/.test(process.platform);
+
 const createPlugins = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
     const webpack = requireModule('webpack');
@@ -18,6 +20,10 @@ const createPlugins = (builder: Builder, spin: Spin) => {
 
     if (spin.dev) {
         plugins.push(new webpack.NamedModulesPlugin());
+        if (stack.hasAny(['server', 'web'])) {
+            plugins.push(new webpack.HotModuleReplacementPlugin());
+            plugins.push(new webpack.NoEmitOnErrorsPlugin());
+        }
     } else {
         plugins.push(new webpack.optimize.UglifyJsPlugin({ minimize: true }));
         plugins.push(new webpack.LoaderOptionsPlugin({ minimize: true }));
@@ -176,12 +182,20 @@ const createConfig = (builder: Builder, spin: Spin) => {
         };
     } else {
         if (stack.hasAny('server')) {
+            const index = [];
+            if (spin.dev) {
+                if (__WINDOWS__) {
+                    index.push('webpack/hot/poll?1000');
+                } else {
+                    index.push('webpack/hot/signal.js');
+                }
+            }
+            index.push('./src/server/index.js');
+
             config = {
                 ...config,
                 entry: {
-                    index: [
-                        './src/server/index.js',
-                    ],
+                    index,
                 },
                 output: {
                     devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
@@ -209,9 +223,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
             config = {
                 ...config,
                 entry: {
-                    index: [
+                    index: (spin.dev ? [`webpack-hot-middleware/client`] : []).concat([
                         './src/client/index.js',
-                    ],
+                    ]),
                 },
                 output: {
                     filename: '[name].[hash].js',

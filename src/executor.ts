@@ -132,14 +132,6 @@ function startClientWebpack(hasBackend, watch, builder, options) {
         const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
 
         if (watch) {
-            if (config.devServer.hot) {
-                _.each(config.entry, entry => {
-                    entry.unshift(
-                        `webpack-hot-middleware/client`);
-                });
-                config.plugins.push(new webpack.HotModuleReplacementPlugin());
-            }
-            config.plugins.push(new webpack.NoEmitOnErrorsPlugin());
             startWebpackDevServer(hasBackend, builder, options, reporter, logger);
         } else {
             if (builder.stack.platform !== 'web') {
@@ -169,18 +161,6 @@ function startServerWebpack(watch, builder, options) {
     try {
         const webpack = requireModule('webpack');
         const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
-
-        if (watch) {
-            _.each(config.entry, entry => {
-                if (__WINDOWS__) {
-                    entry.push('webpack/hot/poll?1000');
-                } else {
-                    entry.push('webpack/hot/signal.js');
-                }
-            });
-            config.plugins.push(new webpack.HotModuleReplacementPlugin(),
-                new webpack.NoEmitOnErrorsPlugin());
-        }
 
         const compiler = webpack(config);
 
