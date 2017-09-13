@@ -10,9 +10,16 @@
 npm install -g spinjs
 ```
 
+## Motivation
+
+> `spin.js` was created to radically simplify build rules writing for JavaScript projects. Its difference from many
+> other tools with the same goal is that `spin.js` is not tied to specific framework and does not attempt to lock you out
+> from changing build rules. `spin.js` does its best to provide you with very mature build setup from the minimal
+> information provided by you about your tech stack and lets you further customize every aspect of build setup when needed.
+
 ## Basic Usage
 
-The idea behind `spin.js` is simple: you describe the stack used in your application in the property `spin` of `package.json`:
+The basic `spin.js` usage is simple: you describe the stack used in your application in the property `spin` of `package.json`:
 ```json
 {
   "spin": "webpack:es6:apollo:react-native:ios"
