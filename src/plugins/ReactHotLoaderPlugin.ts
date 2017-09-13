@@ -8,7 +8,8 @@ export default class ReactHotLoaderPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 
-        if (stack.hasAll(['react-hot-loader', 'webpack']) && spin.dev && !spin.test) {
+        if (stack.hasAll(['react-hot-loader', 'webpack'])
+            && spin.dev && !spin.test && !stack.hasAny('dll')) {
             builder.config = spin.mergeWithStrategy({
                 entry: 'prepend',
             }, builder.config, {
