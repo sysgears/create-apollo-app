@@ -8,6 +8,12 @@ const argv = yargs
     .command('watch', 'launches package in development mode with hot code reload')
     .command('test [mocha-webpack options]', 'runs package tests')
     .demandCommand(1, '')
+    .option('verbose', {
+        alias: 'v',
+        default: false,
+        describe: 'Show generated config',
+        type: 'boolean',
+    })
     .help()
     .version(require('../package.json').version) // tslint:disable-line
     .argv;
@@ -17,4 +23,4 @@ let config;
 if (cmd === 'watch' || cmd === 'build' || cmd === 'test') {
     config = createConfig(cmd);
 }
-execute(cmd, config.builders, config.options);
+execute(cmd, argv, config.builders, config.options);

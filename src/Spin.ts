@@ -22,4 +22,8 @@ export default class Spin {
     merge(config: Configuration, overrides: any): Configuration {
         return merge.smart(config, overrides);
     }
+
+    mergeWithStrategy(strategy: any, config: Configuration, overrides: any): Configuration {
+        return merge.smartStrategy(strategy)(config, overrides);
+    }
 }

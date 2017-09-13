@@ -134,9 +134,6 @@ function startClientWebpack(hasBackend, watch, builder, options) {
         if (watch) {
             if (config.devServer.hot) {
                 _.each(config.entry, entry => {
-                    if (options.reactHotLoader) {
-                        entry.unshift('react-hot-loader/patch');
-                    }
                     entry.unshift(
                         `webpack-hot-middleware/client`);
                 });
@@ -742,7 +739,16 @@ async function startExp(options) {
     });
 }
 
-const execute = (cmd, builders: Object, options) => {
+const execute = (cmd, argv, builders: Object, options) => {
+    if (argv.verbose) {
+        const logger = minilog(`spin`);
+
+        for (let name in builders) {
+            const builder = builders[name];
+            logger.log(`${name} = `, require('util').inspect(builder.config, false, null));
+        }
+    }
+
     if (cmd === 'exp') {
         startExp(options);
     } else if (cmd === 'test') {
@@ -752,7 +758,7 @@ const execute = (cmd, builders: Object, options) => {
                 'babel-polyfill',
                 '--webpack-config',
                 'node_modules/spinjs/webpack.config.js',
-            ].concat(process.argv.slice(3)), {
+            ].concat(process.argv.slice(process.argv.indexOf('test') + 1)), {
             stdio: [0, 1, 2],
         });
     } else {
@@ -779,7 +785,6 @@ const execute = (cmd, builders: Object, options) => {
             for (let name in builders) {
                 const builder = builders[name];
                 const stack = builder.stack;
-                // console.log("builder: %s, config:", name, require('util').inspect(builder.config, false, null));
                 if (stack.hasAny(['dll', 'test']))
                     continue;
                 const prepareDllPromise: PromiseLike<any> = (cmd === 'watch' && options.webpackDll && builder.child) ?

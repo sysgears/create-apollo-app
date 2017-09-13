@@ -87,7 +87,6 @@ Options that are non-specific to each builder but rather to application as a who
 |ssr|Use server side rendering for the application (makes requiring web assets inside server code possible)| 
 |webpackDll|Utilize Webpack DLLs to speed up incremental builds|
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
-|reactHotLoader|Utilize React Hot Loader v3|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
 
 Each `spin.js` plugin tries to handle subset of technologies in the builder stack to configure build tools 
@@ -107,6 +106,7 @@ At the moment `spin.js` supports the following technologies, that can be specifi
 |es6|Code transpiled from the ECMAScript 6 to ECMAScript 5|
 |react|React|
 |react-native|React Native|
+|react-hot-loader|Use React Hot Loader during development|
 |styled-components|Styled Components|
 |sass|SCSS stylesheets transpiled to CSS|
 |less|LESS stylesheets transpiled to CSS|
