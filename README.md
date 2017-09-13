@@ -15,7 +15,7 @@ npm install -g spinjs
 The idea behind `spin.js` is simple: you describe the stack used in your application in the property `spin` of `package.json`:
 ```json
 {
-  "spin": "webpack:es6:apollo:react:styled-components:sass:server"
+  "spin": "webpack:es6:apollo:react-native:ios"
 }
 ```
 and you are all set. 
