@@ -12,7 +12,7 @@ npm install -g spinjs
 
 ## Basic Usage
 
-The idea behind `spin.js` is very simple. You add into your `package.json` the property `spin` that describes your stack:
+The idea behind `spin.js` is simple: you describe the stack used in your application in the property `spin` of `package.json`:
 ```json
 {
   "spin": "webpack:es6:apollo:react:styled-components:sass:server"
@@ -39,6 +39,82 @@ will run tests located in `.spec.js` files via Mocha Webpack.
 
 ## Concepts
 
+`spin.js` configures and launches multiple builders in parallel to build the project. If stack for the project is specified
+in `spin` property of `package.json`, then only one builder is launched. To specify multiple builders the following 
+configuration should be used:
+```json
+{
+    "spin": {
+        "builders": {
+            "backend": {
+                "stack": "webpack:es6:apollo:react:styled-components:sass:server"
+            },
+            "frontend": {
+                "stack": "webpack:es6:apollo:react:styled-components:sass:web"    
+            },
+            "mobile": {
+                "stack": "webpack:es6:apollo:react-native:styled-components:sass:ios"        
+            }
+        }
+    }
+}
+```
+
+The 'spin.js' configuration can be specified in `.spinrc.json` instead of `package.json`, it should contain the value of 
+`spin` property in this case.
+
+Each builder has a name and a `stack` property at minimum. Builder properties recognized by `spin.js`:
+
+|Builder Option            |Description|
+|--------------------------|-----------|
+|stack|an array or semicolon separated string with list of stack features for the builder|
+|enabled|whether this builder is enabled, `true` by default|
+|roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default| 
+|webpackDevPort|the local port used for Webpack Dev Server process to host web frontend files|
+
+Builder can also have builder-specific options, depending on its stack, recognized by `spin.js` plugins.
+
+Options that are non-specific to each builder but rather to application as a whole can be specified in 
+`options` property on the same level as `builders` property. Supported options:
+
+|General Option            |Description|
+|--------------------------|-----------|
+|plugins|Additional `spin.js` plugins module names|
+|backendBuildDir|Output directory for code targeted to run under Node.js|
+|frontendBuildDir|Output directory for code targeted to run in Web Browser and on mobile devices| 
+|dllBuildDir|Output directory for Webpack DLL files used to speed up incremental builds|
+|backendUrl|URL to a REST/GraphQL API of the application endpoint|
+|ssr|Use server side rendering for the application (makes requiring web assets inside server code possible)| 
+|webpackDll|Utilize Webpack DLLs to speed up incremental builds|
+|frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
+|reactHotLoader|Utilize React Hot Loader v3|
+|persistGraphQL|Generate and use Apollo persistent GraphQL queries|
+
+Each `spin.js` plugin tries to handle subset of technologies in the builder stack to configure build tools 
+usually used for this stack the best way. After configuration of the builder it gets executed in the mode
+that specified in `spin` command line, i.e. `watch`, `build`, `test`, etc. 
+
+There are several built-in plugins supplied with `spin.js`. External plugins can be specified inside
+`options -> plugins` property.
+
+## Supported technologies stack
+
+At the moment `spin.js` supports the following technologies, that can be specified inside `stack` property:
+
+|Technology                |Description|
+|--------------------------|-----------|
+|webpack|Webpack|
+|es6|Code transpiled from the ECMAScript 6 to ECMAScript 5|
+|react|React|
+|react-native|React Native|
+|styled-components|Styled Components|
+|sass|SCSS stylesheets transpiled to CSS|
+|less|LESS stylesheets transpiled to CSS|
+|apollo|Apollo GraphQL|
+|server|The code is targeted to run under Node.js|
+|web|The code is targeted to run in Web Browser|
+|ios|The code is targeted to run on iOS device|
+|android|The code is targeted to run on Android device|
 
 ## Contributors
 
