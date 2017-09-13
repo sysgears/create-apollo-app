@@ -37,6 +37,26 @@ spin test "src/**/*.spec.js"
 ```
 will run tests located in `.spec.js` files via Mocha Webpack.
 
+## Supported technologies stack
+
+At the moment `spin.js` supports the following technologies, that can be specified inside `stack` property:
+
+|Technology                |Description|
+|--------------------------|-----------|
+|webpack|Webpack|
+|es6|Code transpiled from the ECMAScript 6 to ECMAScript 5|
+|react|React|
+|react-native|React Native|
+|react-hot-loader|Use React Hot Loader during development|
+|styled-components|Styled Components|
+|sass|SCSS stylesheets transpiled to CSS|
+|less|LESS stylesheets transpiled to CSS|
+|apollo|Apollo GraphQL|
+|server|The code is targeted to run under Node.js|
+|web|The code is targeted to run in Web Browser|
+|ios|The code is targeted to run on iOS device|
+|android|The code is targeted to run on Android device|
+
 ## Concepts
 
 `spin.js` configures and launches multiple builders in parallel to build the project. If stack for the project is specified
@@ -95,26 +115,6 @@ that specified in `spin` command line, i.e. `watch`, `build`, `test`, etc.
 
 There are several built-in plugins supplied with `spin.js`. External plugins can be specified inside
 `options -> plugins` property.
-
-## Supported technologies stack
-
-At the moment `spin.js` supports the following technologies, that can be specified inside `stack` property:
-
-|Technology                |Description|
-|--------------------------|-----------|
-|webpack|Webpack|
-|es6|Code transpiled from the ECMAScript 6 to ECMAScript 5|
-|react|React|
-|react-native|React Native|
-|react-hot-loader|Use React Hot Loader during development|
-|styled-components|Styled Components|
-|sass|SCSS stylesheets transpiled to CSS|
-|less|LESS stylesheets transpiled to CSS|
-|apollo|Apollo GraphQL|
-|server|The code is targeted to run under Node.js|
-|web|The code is targeted to run in Web Browser|
-|ios|The code is targeted to run on iOS device|
-|android|The code is targeted to run on Android device|
 
 ## Contributors
 
