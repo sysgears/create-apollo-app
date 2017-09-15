@@ -2,7 +2,7 @@ import requireModule from '../requireModule';
 import { ConfigPlugin } from '../ConfigPlugin';
 import { Builder } from '../Builder';
 import Spin from '../Spin';
-import findJSRule from './shared/JSRuleFinder';
+import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class ES6Plugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
@@ -15,7 +15,8 @@ export default class ES6Plugin implements ConfigPlugin {
                 }, builder.config);
             }
 
-            const jsRule = findJSRule(builder);
+            const jsRuleFinder = new JSRuleFinder(builder);
+            const jsRule = jsRuleFinder.rule;
             jsRule.exclude = /node_modules/;
             jsRule.use = {
                 loader: requireModule.resolve('babel-loader'),
@@ -30,7 +31,7 @@ export default class ES6Plugin implements ConfigPlugin {
                         requireModule.resolve('babel-plugin-transform-decorators-legacy'),
                         requireModule.resolve('babel-plugin-transform-class-properties'),
                     ],
-                    only: ['*.js'].concat(builder.stack.hasAny(['react', 'react-native']) ?  ['*.jsx'] : []),
+                    only: jsRuleFinder.extensions.map(ext => '*.' + ext),
                 },
             };
         }

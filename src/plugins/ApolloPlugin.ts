@@ -4,6 +4,7 @@ import requireModule from '../requireModule';
 import { ConfigPlugin } from '../ConfigPlugin';
 import { Builder } from '../Builder';
 import Spin from '../Spin';
+import JSRuleFinder from "./shared/JSRuleFinder";
 
 let persistPlugins;
 
@@ -52,17 +53,14 @@ export default class ApolloPlugin implements ConfigPlugin {
 
             if (builder.stack.hasAny(['server', 'web'])) {
                 const webpack = requireModule('webpack');
+                const jsRuleFinder = new JSRuleFinder(builder);
+                const jsRule = jsRuleFinder.rule;
+                jsRule.use = spin.merge(jsRule.use, persistGraphQL ?
+                    ['persistgraphql-webpack-plugin/js-loader'] :
+                    []
+                );
+
                 builder.config = spin.merge(builder.config, {
-                    module: {
-                        rules: [
-                            {
-                                test: /\.jsx?$/,
-                                use: persistGraphQL ?
-                                    ['persistgraphql-webpack-plugin/js-loader'] :
-                                    [],
-                            },
-                        ],
-                    },
                     plugins: [
                         new webpack.DefinePlugin({__PERSIST_GQL__: persistGraphQL})
                     ].concat(builder.stack.hasAny('dll') ? [] : [

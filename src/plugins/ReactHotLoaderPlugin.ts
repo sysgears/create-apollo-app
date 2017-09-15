@@ -2,7 +2,7 @@ import Spin from "../Spin";
 import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
-import findJSRule from './shared/JSRuleFinder';
+import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class ReactHotLoaderPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
@@ -19,7 +19,8 @@ export default class ReactHotLoaderPlugin implements ConfigPlugin {
                     ]
                 }
             });
-            const jsRule = findJSRule(builder);
+            const jsRuleFinder = new JSRuleFinder(builder);
+            const jsRule = jsRuleFinder.rule;
             const isBabelUsed = jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0;
             jsRule.use = spin.merge(jsRule.use, {
                 options: {

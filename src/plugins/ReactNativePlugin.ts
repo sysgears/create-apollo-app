@@ -4,7 +4,7 @@ import Spin from "../Spin";
 import { ConfigPlugin } from "../ConfigPlugin";
 import { Builder } from "../Builder";
 import requireModule from '../requireModule';
-import findJSRule from './shared/JSRuleFinder';
+import JSRuleFinder from './shared/JSRuleFinder';
 
 let babelRegisterDone = false;
 
@@ -50,7 +50,8 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 },
             };
 
-            const jsRule = findJSRule(builder);
+            const jsRuleFinder = new JSRuleFinder(builder);
+            const jsRule = jsRuleFinder.rule;
             jsRule.exclude = /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/;
             const origUse = jsRule.use;
             jsRule.use = function (req) {
@@ -62,6 +63,10 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 }
                 return result;
             };
+
+            builder.config.resolve.extensions = [`.${stack.platform}.`, '.native', '.']
+                .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
+                .reduce((acc, val) => acc.concat(val));
 
             builder.config = spin.merge(builder.config, {
                 module: {
@@ -107,7 +112,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 builder.config = spin.merge({
                     plugins: [
                         new webpack.SourceMapDevToolPlugin({
-                            test: /\.(js|jsx|css|bundle)($|\?)/i,
+                            test: new RegExp(`\\.(${jsRuleFinder.extensions.join('|')}|css|bundle)($|\\?)`, 'i'),
                             filename: '[file].map',
                         }),
                     ],

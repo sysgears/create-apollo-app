@@ -17,7 +17,7 @@ import ReactPlugin from './plugins/ReactPlugin';
 import WebpackPlugin from './plugins/WebpackPlugin';
 import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
 import TypeScriptPlugin from "./plugins/TypeScriptPlugin";
-import AngularJSPlugin from "./plugins/AngularJSPlugin";
+import AngularJSPlugin from "./plugins/AngularPlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
