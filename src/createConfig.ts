@@ -67,18 +67,14 @@ const createConfig = cmd => {
         builders[name] = builder;
     }
 
-    try {
-        for (let name in builders) {
-            const builder = builders[name];
-            config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
-            if (overrides[name]) {
-                builders[name].config = spin.mergeWithStrategy({
-                    entry: 'replace',
-                }, builders[name].config, overrides[name]);
-            }
+    for (let name in builders) {
+        const builder = builders[name];
+        config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
+        if (overrides[name]) {
+            builders[name].config = spin.mergeWithStrategy({
+                entry: 'replace',
+            }, builders[name].config, overrides[name]);
         }
-    } catch (e) {
-        console.error(e.stack);
     }
 
     return { builders, options: spin.options };

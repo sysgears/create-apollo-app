@@ -1,4 +1,5 @@
-import * as fs from 'fs';
+import * as path from "path";
+import * as fs from "fs";
 
 import requireModule from '../requireModule';
 import { ConfigPlugin } from '../ConfigPlugin';
@@ -10,10 +11,19 @@ export default class TypeScriptPlugin implements ConfigPlugin {
     configure(builder: Builder, spin: Spin) {
         const stack = builder.stack;
 
-        if (stack.hasAll(['typescript', 'webpack'])) {
+        if (stack.hasAll(['ts', 'webpack'])) {
             const jsRuleFinder = new JSRuleFinder(builder);
             const jsRule = jsRuleFinder.rule;
-            jsRule.use = spin.merge(jsRule.use, {
+            const { CheckerPlugin } = requireModule('awesome-typescript-loader');
+            jsRule.test = /\.ts$/;
+            jsRule.use = {
+                loader: requireModule.resolve('awesome-typescript-loader'),
+            };
+
+            builder.config = spin.merge(builder.config, {
+                plugins: [
+                    new CheckerPlugin()
+                ]
             });
 
             if (!stack.hasAny('dll')) {
@@ -21,14 +31,17 @@ export default class TypeScriptPlugin implements ConfigPlugin {
                     const entry = builder.config.entry[key];
                     for (let idx = 0; idx < entry.length; idx++) {
                         const item = entry[idx];
-                        const tsItem = path.join(path.dirname(item),
-                            path.basename(item, path.extname(item)), '.ts');
-                        if (!fs.existsSync(item) && fs.existsSync(tsItem)) {
-                            entry[idx] = tsItem;
+                        if (item.startsWith('./')
+                            && ['.js', '.jsx', '.ts', '.tsx'].indexOf(path.extname(item)) >= 0
+                            && item.indexOf('node_modules') < 0) {
+                            const tsItem = './' + path.join(path.dirname(item),
+                                path.basename(item, path.extname(item))) + '.ts';
+                            if (!fs.existsSync(item) && fs.existsSync(tsItem)) {
+                                entry[idx] = tsItem;
+                            }
                         }
                     }
                 }
-
             }
         }
     }
