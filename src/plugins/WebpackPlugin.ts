@@ -108,7 +108,9 @@ const getDepsForNode = (builder, depPlatforms) => {
     let deps = [];
     for (let key of Object.keys(pkg.dependencies)) {
         const val = depPlatforms[key];
-        if (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0) || val === builder.parent.name) {
+        if (key.indexOf('@types') !== 0
+            && (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0)
+                || val === builder.parent.name)) {
             deps.push(key);
         }
     }
