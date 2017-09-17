@@ -16,8 +16,8 @@ import WebAssetsPlugin from './plugins/WebAssetsPlugin';
 import ReactPlugin from './plugins/ReactPlugin';
 import WebpackPlugin from './plugins/WebpackPlugin';
 import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
-import TypeScriptPlugin from "./plugins/TypeScriptPlugin";
-import AngularJSPlugin from "./plugins/AngularPlugin";
+import TypeScriptPlugin from './plugins/TypeScriptPlugin';
+import AngularPlugin from './plugins/AngularPlugin';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -29,7 +29,6 @@ const createConfig = cmd => {
         new WebAssetsPlugin(),
         new CssProcessorPlugin(),
         new ReactPlugin(),
-        new AngularJSPlugin(),
         new ApolloPlugin(),
         new TypeScriptPlugin(),
         new ES6Plugin(),
@@ -37,6 +36,7 @@ const createConfig = cmd => {
         new ReactNativePlugin(),
         new ReactNativeWebPlugin(),
         new StyledComponentsPlugin(),
+        new AngularPlugin(),
     ];
     const config = new ConfigRc(plugins);
     const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;

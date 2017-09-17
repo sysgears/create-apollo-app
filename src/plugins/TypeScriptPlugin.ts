@@ -16,9 +16,9 @@ export default class TypeScriptPlugin implements ConfigPlugin {
             const jsRule = jsRuleFinder.rule;
             const { CheckerPlugin } = requireModule('awesome-typescript-loader');
             jsRule.test = /\.ts$/;
-            jsRule.use = {
+            jsRule.use = [{
                 loader: requireModule.resolve('awesome-typescript-loader'),
-            };
+            }];
 
             builder.config = spin.merge(builder.config, {
                 plugins: [

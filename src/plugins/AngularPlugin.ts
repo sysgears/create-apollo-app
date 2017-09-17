@@ -11,8 +11,24 @@ export default class AngularPlugin implements ConfigPlugin {
         if (stack.hasAll(['angular', 'webpack'])) {
             const jsRuleFinder = new JSRuleFinder(builder);
             const jsRule = jsRuleFinder.rule;
-            jsRule.use = spin.merge(jsRule.use, {
+            builder.config = spin.merge(builder.config, {
+                module: {
+                    rules: [{
+                        test: jsRule.test,
+                        use: requireModule.resolve('angular2-template-loader'),
+                    }]
+                }
             });
+
+            if (!stack.hasAny('dll') && stack.hasAny('web')) {
+                builder.config = spin.merge({
+                    entry: {
+                        index: [
+                            require.resolve('./angular/angular-polyfill.js')
+                        ],
+                    },
+                }, builder.config);
+            }
         }
     }
 }
