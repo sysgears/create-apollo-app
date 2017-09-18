@@ -24,9 +24,9 @@ export default class JSRuleFinder {
         } else if (testStr.indexOf('js') >= 0) {
             return ['js'];
         } else if (testStr.indexOf('tsx') >= 0) {
-            return ['tsx', 'ts'];
+            return ['tsx', 'ts', 'jsx', 'js'];
         } else if (testStr.indexOf('ts') >= 0) {
-            return ['ts'];
+            return ['ts', 'js'];
         }
     }
 }

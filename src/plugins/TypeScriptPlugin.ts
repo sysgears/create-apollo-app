@@ -21,10 +21,23 @@ export default class TypeScriptPlugin implements ConfigPlugin {
             }];
 
             builder.config = spin.merge(builder.config, {
+                module: {
+                    rules: [
+                        {
+                            test: /\.html$/,
+                            loader: 'html-loader'
+                        },
+                    ]
+                },
                 plugins: [
                     new CheckerPlugin()
                 ]
             });
+
+            builder.config.resolve.extensions =
+                ['.']
+                .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
+                    .reduce((acc, val) => acc.concat(val));
 
             if (!stack.hasAny('dll')) {
                 for (let key in builder.config.entry) {

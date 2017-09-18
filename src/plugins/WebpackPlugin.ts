@@ -25,8 +25,19 @@ const createPlugins = (builder: Builder, spin: Spin) => {
             plugins.push(new webpack.NoEmitOnErrorsPlugin());
         }
     } else {
-        plugins.push(new webpack.optimize.UglifyJsPlugin({ minimize: true }));
-        plugins.push(new webpack.LoaderOptionsPlugin({ minimize: true }));
+        const uglifyOpts: any = { minimize: true };
+        if (stack.hasAny('angular')) {
+            // https://github.com/angular/angular/issues/10618
+            uglifyOpts.mangle = { keep_fnames: true };
+        }
+        plugins.push(new webpack.optimize.UglifyJsPlugin(uglifyOpts));
+        const loaderOpts: any = { minimize: true };
+        if (stack.hasAny('angular')) {
+            loaderOpts.htmlLoader = {
+                minimize: false // workaround for ng2
+            };
+        }
+        plugins.push(new webpack.LoaderOptionsPlugin(loaderOpts));
         plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
     }
 
@@ -145,6 +156,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
         headers: { 'Access-Control-Allow-Origin': '*' },
         quiet: false,
         noInfo: true,
+        historyApiFallback: true,
         stats: { colors: true, chunkModules: false },
     };
 
