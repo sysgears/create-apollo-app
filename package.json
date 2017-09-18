@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "scripts": {
     "clean": "rm -rf ./lib",
     "compile": "tsc",
