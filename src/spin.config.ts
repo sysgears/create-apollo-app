@@ -17,6 +17,7 @@ import WebAssetsPlugin from './plugins/WebAssetsPlugin';
 import ReactPlugin from './plugins/ReactPlugin';
 import WebpackPlugin from './plugins/WebpackPlugin';
 import TCombPlugin from "./plugins/TCombPlugin";
+import FlowRuntimePLugin from "./plugins/FlowRuntimePlugin";
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -34,6 +35,7 @@ const createConfig = cmd => {
         new ReactNativeWebPlugin(),
         new StyledComponentsPlugin(),
         new TCombPlugin(),
+        new FlowRuntimePLugin(),
     ];
     const config = new ConfigRc(plugins);
     const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
