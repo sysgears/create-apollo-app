@@ -21,7 +21,7 @@ export default class ReactPlugin implements ConfigPlugin {
 
             builder.config.resolve.extensions =
                 ((stack.hasAny('web')
-                    || (stack.hasAny('server') && spin.options.ssr)) ?
+                    || stack.hasAny('server')) ?
                         ['.web.', '.'] : ['.']
                 ).map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
                     .reduce((acc, val) => acc.concat(val));

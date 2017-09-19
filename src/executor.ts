@@ -316,7 +316,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         });
     }
 
-    if (options.webpackDll && builder.child && platform === 'web' && !hasBackend) {
+    if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
         compiler.plugin('after-compile', (compilation, callback) => {
             compilation.assets[vendorHashesJson.name] = vendorSource;
             compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;

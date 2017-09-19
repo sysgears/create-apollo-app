@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "scripts": {
     "clean": "rm -rf ./lib",
     "compile": "tsc",
@@ -12,6 +12,7 @@
   "files": [
     "src",
     "lib",
+    "html-plugin-template.ejs",
     "spin.config.js",
     "spin.js",
     "webpack.config.js"

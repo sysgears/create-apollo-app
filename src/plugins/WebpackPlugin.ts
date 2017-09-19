@@ -84,19 +84,13 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                 plugins.push(new ManifestPlugin({
                     fileName: 'assets.json',
                 }));
-                let hasServer = false;
-                for (let name in spin.builders) {
-                    if (spin.builders[name].stack.hasAny('server')) {
-                        hasServer = true;
-                        break;
-                    }
-                }
-                if (!hasServer) {
-                    const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
-                    plugins.push(new HtmlWebpackPlugin({
-                        template: path.resolve('html-plugin-template.ejs'),
-                        inject: 'body',
-                    }));
+
+                if (!spin.options.ssr) {
+                  const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
+                  plugins.push(new HtmlWebpackPlugin({
+                    template: builder.htmlTemplate || path.join(__dirname, '../../html-plugin-template.ejs'),
+                    inject: 'body',
+                  }));
                 }
 
                 if (!spin.dev) {
