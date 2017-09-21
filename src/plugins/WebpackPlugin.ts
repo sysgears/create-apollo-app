@@ -14,13 +14,13 @@ const __WINDOWS__ = /^win/.test(process.platform);
 const createPlugins = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
     const webpack = requireModule('webpack');
-    const buildNodeEnv = spin.dev ? (stack.hasAny('test') ? 'test' : 'development') : 'production';
+    const buildNodeEnv = spin.dev ? (spin.test ? 'test' : 'development') : 'production';
 
     let plugins = [];
 
     if (spin.dev) {
         plugins.push(new webpack.NamedModulesPlugin());
-        if (stack.hasAny(['server', 'web'])) {
+        if (stack.hasAny(['server', 'web']) && !spin.test) {
             plugins.push(new webpack.HotModuleReplacementPlugin());
             plugins.push(new webpack.NoEmitOnErrorsPlugin());
         }
