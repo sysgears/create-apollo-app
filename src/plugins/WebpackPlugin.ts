@@ -191,7 +191,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     } else {
         if (stack.hasAny('server')) {
             const index = [];
-            if (spin.dev) {
+            if (spin.dev && !spin.test) {
                 if (__WINDOWS__) {
                     index.push('webpack/hot/poll?1000');
                 } else {
