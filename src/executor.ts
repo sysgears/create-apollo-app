@@ -102,20 +102,20 @@ class MobileAssetsPlugin {
     apply(compiler) {
         const self = this;
         compiler.plugin('after-compile', (compilation, callback) => {
-            _.each(compilation.chunks, chunk => {
-                _.each(chunk.files, file => {
-                    if (file.endsWith('.bundle')) {
-                        let assets = self.vendorAssets;
-                        compilation.modules.forEach(function (module) {
-                            if (module._asset) {
-                                assets.push(module._asset);
-                            }
-                        });
-                        compilation.assets[file.replace('.bundle', '') + '.assets'] = new RawSource(JSON.stringify(assets));
-                    }
+          compilation.chunks.forEach(chunk => {
+            chunk.files.forEach(file => {
+              if (file.endsWith('.bundle')) {
+                let assets = self.vendorAssets;
+                compilation.modules.forEach(function (module) {
+                  if (module._asset) {
+                    assets.push(module._asset);
+                  }
                 });
+                compilation.assets[file.replace('.bundle', '') + '.assets'] = new RawSource(JSON.stringify(assets));
+              }
             });
-            callback();
+          });
+          callback();
         });
     }
 }
@@ -299,8 +299,8 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
     });
     if (options.webpackDll && builder.child && platform !== 'web') {
         compiler.plugin('after-compile', (compilation, callback) => {
-            _.each(compilation.chunks, chunk => {
-                _.each(chunk.files, file => {
+              compilation.chunks.forEach(chunk => {
+                chunk.files.forEach(file => {
                     if (file.endsWith('.bundle')) {
                         let sourceListMap = new SourceListMap();
                         sourceListMap.add(vendorSourceListMap);
