@@ -35,12 +35,12 @@ const createConfig = cmd => {
         new TypeScriptPlugin(),
         new ES6Plugin(),
         new ReactHotLoaderPlugin(),
+        new TCombPlugin(),
+        new FlowRuntimePLugin(),
         new ReactNativePlugin(),
         new ReactNativeWebPlugin(),
         new StyledComponentsPlugin(),
         new AngularPlugin(),
-        new TCombPlugin(),
-        new FlowRuntimePLugin(),
     ];
     const config = new ConfigRc(plugins);
     const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;

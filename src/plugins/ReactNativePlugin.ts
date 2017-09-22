@@ -64,7 +64,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 return result;
             };
 
-            builder.config.resolve.extensions = [`.${stack.platform}.`, '.native', '.']
+            builder.config.resolve.extensions = [`.${stack.platform}.`, '.native.', '.']
                 .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
                 .reduce((acc, val) => acc.concat(val));
 

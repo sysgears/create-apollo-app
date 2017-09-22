@@ -74,6 +74,17 @@ ansi-styles@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-2.2.1.tgz#b432dd3358b634cf75e1e4664368240533c1ddbe"
 
+apollo-link@^0.6.1-beta.4:
+  version "0.6.1-beta.4"
+  resolved "https://registry.yarnpkg.com/apollo-link/-/apollo-link-0.6.1-beta.4.tgz#9a6c0ae4ce883a52e3091aeff28df9a2d51cff0f"
+  dependencies:
+    apollo-utilities "^0.2.0-beta.0"
+    zen-observable-ts "^0.4.3-beta.3"
+
+apollo-utilities@^0.2.0-beta.0:
+  version "0.2.0-beta.1"
+  resolved "https://registry.yarnpkg.com/apollo-utilities/-/apollo-utilities-0.2.0-beta.1.tgz#242cd3d1580c31766f7e9437f5de72097e494ab9"
+
 babel-code-frame@^6.22.0:
   version "6.22.0"
   resolved "https://registry.yarnpkg.com/babel-code-frame/-/babel-code-frame-6.22.0.tgz#027620bee567a88c32561574e7fd0801d33118e4"
@@ -642,3 +653,7 @@ yargs@^8.0.2:
     which-module "^2.0.0"
     y18n "^3.2.1"
     yargs-parser "^7.0.0"
+
+zen-observable-ts@^0.4.3-beta.3:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/zen-observable-ts/-/zen-observable-ts-0.4.4.tgz#c244c71eaebef79a985ccf9895bc90307a6e9712"
