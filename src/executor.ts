@@ -369,11 +369,20 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
         webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
 
-        const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
+        try {
+          const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
+          inspectorProxy = new InspectorProxy();
+        } catch (ignored) {};
         const copyToClipBoardMiddleware = requireModule('react-native/local-cli/server/middleware/copyToClipBoardMiddleware');
-        const cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
+        let cpuProfilerMiddleware;
+        try {
+          cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
+        } catch (ignored) {};
         const getDevToolsMiddleware = requireModule('react-native/local-cli/server/middleware/getDevToolsMiddleware');
-        const heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
+        let heapCaptureMiddleware;
+        try {
+          heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
+        } catch (ignored) {};
         const indexPageMiddleware = requireModule('react-native/local-cli/server/middleware/indexPage');
         const loadRawBodyMiddleware = requireModule('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
         const openStackFrameInEditorMiddleware = requireModule('react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware');
@@ -382,7 +391,6 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         const unless = requireModule('react-native/local-cli/server/middleware/unless');
         const symbolicateMiddleware = requireModule('haul/src/server/middleware/symbolicateMiddleware');
 
-        inspectorProxy = new InspectorProxy();
         const args = {
             port: config.
                 devServer.port, projectRoots: [path.resolve('.')],
@@ -403,10 +411,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
             .use(copyToClipBoardMiddleware)
             .use(statusPageMiddleware)
             .use(systraceProfileMiddleware)
-            .use(heapCaptureMiddleware)
-            .use(cpuProfilerMiddleware)
             .use(indexPageMiddleware)
-            .use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)))
             .use(debugMiddleware)
             .use(function (req, res, next) {
                 const platformPrefix = `/assets/${platform}/`;
@@ -435,6 +440,15 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
                     next();
                 }
             });
+        if (heapCaptureMiddleware) {
+            app.use(heapCaptureMiddleware)
+        }
+        if (cpuProfilerMiddleware) {
+            app.use(cpuProfilerMiddleware)
+        }
+        if (inspectorProxy) {
+            app.use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)))
+        }
     }
 
     const devMiddleware = webpackDevMiddleware(compiler, _.merge({}, config.devServer, {
@@ -476,7 +490,9 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
             wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
             ms = messageSocket.attachToServer(serverInstance, '/message');
             webSocketProxy.attachToServer(serverInstance, '/devtools');
-            inspectorProxy.attachToServer(serverInstance, '/inspector');
+            if (inspectorProxy) {
+              inspectorProxy.attachToServer(serverInstance, '/inspector');
+            }
         }
     });
     serverInstance.timeout = 0;

@@ -96,11 +96,12 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 },
             });
 
+            const reactVer = requireModule('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
             if (stack.hasAny('dll')) {
-                builder.config = spin.merge(builder.config, {
+              builder.config = spin.merge(builder.config, {
                     entry: {
                         vendor: [
-                            require.resolve('./react-native/react-native-polyfill.js'),
+                            require.resolve(`./react-native/react-native-polyfill-${reactVer}.js`),
                         ],
                     },
                 });
@@ -118,7 +119,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                     ],
                     entry: {
                         index: [
-                            require.resolve('./react-native/react-native-polyfill.js')
+                            require.resolve(`./react-native/react-native-polyfill-${reactVer}.js`)
                         ],
                     },
                 }, builder.config);
