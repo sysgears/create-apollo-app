@@ -748,7 +748,7 @@ const execute = (cmd, argv, builders: Object, options) => {
     if (cmd === 'exp') {
         startExp(options);
     } else if (cmd === 'test') {
-        spawn(path.join(process.cwd(), 'node_modules/.bin/mocha-webpack'),
+        const mochaWebpack = spawn(path.join(process.cwd(), 'node_modules/.bin/mocha-webpack'),
             [
                 '--include',
                 'babel-polyfill',
@@ -756,6 +756,9 @@ const execute = (cmd, argv, builders: Object, options) => {
                 'node_modules/spinjs/webpack.config.js',
             ].concat(process.argv.slice(process.argv.indexOf('test') + 1)), {
             stdio: [0, 1, 2],
+        });
+        mochaWebpack.on('close', code => {
+          process.exit(code);
         });
     } else {
         let prepareExpoPromise;
