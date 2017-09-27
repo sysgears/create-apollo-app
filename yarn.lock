@@ -135,6 +135,10 @@ concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
 
+containerized@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/containerized/-/containerized-1.0.2.tgz#dfed3149eab5042ef0b06e851c7d8f4dc6750d88"
+
 cross-spawn@^5.0.1:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-5.1.0.tgz#e8bd0efee58fcff6f8f94510a0a554bbfa235449"

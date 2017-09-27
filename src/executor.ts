@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as ip from 'ip';
 import * as url from 'url';
+import * as containerized from 'containerized';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import { RawSource } from 'webpack-sources';
 
@@ -214,11 +215,16 @@ function startServerWebpack(watch, builder, options) {
     }
 }
 
-function openFrontend(builder) {
+function openFrontend(builder, logger) {
     const openurl = requireModule('openurl');
     try {
-        if (builder.stack.hasAny('web') && builder.openBrowser !== false) {
-            openurl.open(`http://${ip.address()}:${builder.config.devServer.port}`);
+        if (builder.stack.hasAny('web')) {
+          const url = `http://${ip.address()}:${builder.config.devServer.port}`;
+          if (containerized() || builder.openBrowser === false) {
+            logger.info(`App is running at address: ${url}`);
+          } else {
+            openurl.open(url);
+          }
         } else if (builder.stack.hasAny('react-native')) {
             startExpoProject(builder.config, builder.stack.platform);
         }
@@ -351,7 +357,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         }
         if (frontendFirstStart) {
             frontendFirstStart = false;
-            openFrontend(builder);
+            openFrontend(builder, logger);
         }
     });
 
@@ -637,21 +643,23 @@ async function startExpoProject(config, platform) {
         qr.generate(address, code => {
             console.log(code);
         });
-        if (platform === 'android') {
+        if (!containerized()) {
+          if (platform === 'android') {
             const {success, error} = await Android.openProjectAsync(projectRoot);
 
             if (!success) {
-                console.error(error.message);
+              console.error(error.message);
             }
-        } else if (platform === 'ios') {
+          } else if (platform === 'ios') {
             const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
-                hostType: 'localhost',
+              hostType: 'localhost',
             });
             const {success, msg} = await Simulator.openUrlInSimulatorSafeAsync(localAddress);
 
             if (!success) {
-                console.error('Failed to start Simulator: ', msg);
+              console.error('Failed to start Simulator: ', msg);
             }
+          }
         }
     } catch (e) {
         console.error(e.stack);
