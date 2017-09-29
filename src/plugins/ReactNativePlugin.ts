@@ -43,7 +43,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 loader: requireModule.resolve('babel-loader'),
                 options: {
                     cacheDirectory: spin.dev,
-                    presets: [requireModule.resolve('babel-preset-react-native')],
+                    presets: [requireModule.resolve('babel-preset-expo')],
                     plugins: [
                         requireModule.resolve('haul/src/utils/fixRequireIssues'),
                     ],
