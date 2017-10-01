@@ -1,6 +1,6 @@
 <p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spin.js/master/logo.svg"></a></p>
 
-## Spin.js - is a tool that sets up great JavaScript build infrastructure for you
+## Spin.js - the best build tool - is the one that don't need build rules
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/sysgears.svg?style=social)](https://twitter.com/sysgears)
 
@@ -12,10 +12,11 @@ npm install -g spinjs
 
 ## Motivation
 
-> `spin.js` was created to radically simplify build rules writing for JavaScript projects. Its difference from many
-> other tools with the same goal is that `spin.js` is not tied to specific framework and does not attempt to lock you out
-> from changing build rules. `spin.js` does its best to provide you with very mature build setup from the minimal
-> information provided by you about your tech stack and lets you further customize every aspect of build setup when needed.
+> `spin.js` was created to free the developer from build rules writing for JavaScript projects as much as possible.
+> Its difference from many other build tools with similair goals is that `spin.js` is not tied to specific framework 
+> and does not attempt to lock you out from generated config. `spin.js` does its best to provide you with very mature
+> build setup from the minimal information provided by you about your tech stack and lets you further customize 
+> every aspect of build setup when needed.
 
 ## Basic Usage
 
