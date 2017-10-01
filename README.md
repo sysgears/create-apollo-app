@@ -52,6 +52,7 @@ At the moment `spin.js` supports the following technologies, that can be specifi
 |--------------------------|-----------|
 |webpack|Webpack|
 |es6|Code transpiled from the ECMAScript 6 to ECMAScript 5|
+|angular|Angular 4|
 |react|React|
 |react-native|React Native with Expo|
 |react-hot-loader|Use React Hot Loader during development|
