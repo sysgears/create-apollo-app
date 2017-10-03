@@ -219,9 +219,10 @@ function openFrontend(builder, logger) {
     const openurl = requireModule('openurl');
     try {
         if (builder.stack.hasAny('web')) {
-          const url = `http://${ip.address()}:${builder.config.devServer.port}`;
+          const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
+          const url = `http://localhost:${builder.config.devServer.port}`;
           if (containerized() || builder.openBrowser === false) {
-            logger.info(`App is running at address: ${url}`);
+            logger.info(`App is running at, Local: ${url} LAN: ${lanUrl}`);
           } else {
             openurl.open(url);
           }
@@ -638,9 +639,12 @@ async function startExpoProject(config, platform) {
         await startExpoServer(projectRoot, config.devServer.port);
 
         const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
-        console.log(`Expo address for ${platform}:`, address);
+        const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
+          hostType: 'localhost',
+        });
+        console.log(`Expo address for ${platform}, Local: ${localAddress}, LAN: ${address}`);
         console.log('To open this app on your phone scan this QR code in Expo Client (if it doesn\'t get started automatically)');
-        qr.generate(address, code => {
+        qr.generate(address, { small: true }, code => {
             console.log(code);
         });
         if (!containerized()) {
@@ -648,12 +652,9 @@ async function startExpoProject(config, platform) {
             const {success, error} = await Android.openProjectAsync(projectRoot);
 
             if (!success) {
-              console.error(error.message);
+              console.error(error.message)
             }
           } else if (platform === 'ios') {
-            const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
-              hostType: 'localhost',
-            });
             const {success, msg} = await Simulator.openUrlInSimulatorSafeAsync(localAddress);
 
             if (!success) {
