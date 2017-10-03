@@ -64,7 +64,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                 new webpack.DefinePlugin({
                     __CLIENT__: false, __SERVER__: true, __SSR__: spin.options.ssr && !spin.test,
                     __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                    __BACKEND_URL__: `"${backendUrl}"`,
+                    ...spin.options.defines
                 }),
             ]);
         } else {
@@ -72,10 +72,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                 new webpack.DefinePlugin({
                     __CLIENT__: true, __SERVER__: false, __SSR__: spin.options.ssr && !spin.test,
                     __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                    __BACKEND_URL__: (
-                        stack.platform !== 'web' ||
-                        url.parse(backendUrl).hostname !== 'localhost'
-                    ) ? `"${backendUrl}"` : false,
+                    ...spin.options.defines
                 }),
             ]);
 
