@@ -379,17 +379,17 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         try {
           const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
           inspectorProxy = new InspectorProxy();
-        } catch (ignored) {};
+        } catch (ignored) {}
         const copyToClipBoardMiddleware = requireModule('react-native/local-cli/server/middleware/copyToClipBoardMiddleware');
         let cpuProfilerMiddleware;
         try {
           cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
-        } catch (ignored) {};
+        } catch (ignored) {}
         const getDevToolsMiddleware = requireModule('react-native/local-cli/server/middleware/getDevToolsMiddleware');
         let heapCaptureMiddleware;
         try {
           heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
-        } catch (ignored) {};
+        } catch (ignored) {}
         const indexPageMiddleware = requireModule('react-native/local-cli/server/middleware/indexPage');
         const loadRawBodyMiddleware = requireModule('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
         const openStackFrameInEditorMiddleware = requireModule('react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware');
@@ -448,13 +448,13 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
                 }
             });
         if (heapCaptureMiddleware) {
-            app.use(heapCaptureMiddleware)
+            app.use(heapCaptureMiddleware);
         }
         if (cpuProfilerMiddleware) {
-            app.use(cpuProfilerMiddleware)
+            app.use(cpuProfilerMiddleware);
         }
         if (inspectorProxy) {
-            app.use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)))
+            app.use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)));
         }
     }
 
@@ -652,7 +652,7 @@ async function startExpoProject(config, platform) {
             const {success, error} = await Android.openProjectAsync(projectRoot);
 
             if (!success) {
-              console.error(error.message)
+              console.error(error.message);
             }
           } else if (platform === 'ios') {
             const {success, msg} = await Simulator.openUrlInSimulatorSafeAsync(localAddress);

@@ -13,15 +13,32 @@ export default class WebAssetsPlugin implements ConfigPlugin {
                     rules: [
                         {
                             test: /\.(png|ico|jpg|xml)$/,
-                            use: 'url-loader?name=[hash].[ext]&limit=10000',
+                            use: {
+                                loader: 'url-loader',
+                                options: {
+                                    name: '[hash].[ext]',
+                                    limit: 100000,
+                                },
+                            },
                         },
                         {
                             test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                            use: 'url-loader?name=./assets/[hash].[ext]&limit=10000',
+                            use: {
+                                loader: 'url-loader',
+                                options: {
+                                    name: './assets/[hash].[ext]',
+                                    limit: 100000,
+                                },
+                            },
                         },
                         {
                             test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                            use: 'file-loader?name=./assets/[hash].[ext]',
+                            use: {
+                                loader: 'file-loader',
+                                options: {
+                                    name: './assets/[hash].[ext]',
+                                },
+                            },
                         },
                     ]
                 }
@@ -32,15 +49,21 @@ export default class WebAssetsPlugin implements ConfigPlugin {
                     rules: [
                         {
                             test: /\.(png|ico|jpg|xml)$/,
-                            use: 'ignore-loader',
+                            use: {
+                                loader: 'ignore-loader',
+                            },
                         },
                         {
                             test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                            use: 'ignore-loader',
+                            use: {
+                                loader: 'ignore-loader',
+                            },
                         },
                         {
                             test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                            use: 'ignore-loader',
+                            use: {
+                                loader: 'ignore-loader',
+                            },
                         },
                     ]
                 }
