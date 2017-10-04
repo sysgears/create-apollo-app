@@ -14,25 +14,30 @@ export default class WebAssetsPlugin implements ConfigPlugin {
                         {
                             test: /\.(png|ico|jpg|xml)$/,
                             use: {
-                                loader: 'url-loader?name=[hash].[ext]',
+                                loader: 'url-loader',
                                 options: {
-                                    limit: 100000
+                                    name: '[hash].[ext]',
+                                    limit: 100000,
                                 },
                             },
                         },
                         {
                             test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                             use: {
-                                loader: 'url-loader?name=./assets/[hash].[ext]',
+                                loader: 'url-loader',
                                 options: {
-                                    limit: 100000
+                                    name: './assets/[hash].[ext]',
+                                    limit: 100000,
                                 },
                             },
                         },
                         {
                             test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                             use: {
-                                loader: 'file-loader?name=./assets/[hash].[ext]',
+                                loader: 'file-loader',
+                                options: {
+                                    name: './assets/[hash].[ext]',
+                                },
                             },
                         },
                     ]
