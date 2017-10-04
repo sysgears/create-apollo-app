@@ -20,6 +20,20 @@
         "question",
         "review"
       ]
+    },
+    {
+      "login": "mairh",
+      "name": "Ujjwal",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/4072250?v=3",
+      "profile": "https://github.com/mairh",
+      "contributions": [
+        "code",
+        "tool",
+        "doc",
+        "test",
+        "question",
+        "review"
+      ]
     }
   ]
 }
