@@ -491,7 +491,7 @@ function startWebpackDevServer(hasBackend, builder, options, reporter, logger) {
         });
     }
 
-    logger(`Webpack ${config.name} dev server listening on http://${ip.address()}:${config.devServer.port}`);
+    logger(`Webpack ${config.name} dev server listening on http://localhost:${config.devServer.port}`);
     serverInstance.listen(config.devServer.port, function () {
         if (platform !== 'web') {
             wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
@@ -723,7 +723,7 @@ async function startExpoProdServer(options) {
 
     const serverInstance: any = http.createServer(app);
 
-    console.log(`Production mobile packager listening on http://${ip.address()}:${packagerPort}`);
+    console.log(`Production mobile packager listening on http://localhost:${packagerPort}`);
     serverInstance.listen(packagerPort);
     serverInstance.timeout = 0;
     serverInstance.keepAliveTimeout = 0;

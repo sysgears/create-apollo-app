@@ -41,7 +41,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
     }
 
-    const backendUrl = spin.options.backendUrl.replace('{ip}', spin.dev ? ip.address() : 'localhost');
+    const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
 
     if (stack.hasAny('dll')) {
         const name = `vendor_${builder.parent.name}`;
@@ -64,7 +64,8 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                 new webpack.DefinePlugin({
                     __CLIENT__: false, __SERVER__: true, __SSR__: spin.options.ssr && !spin.test,
                     __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-                    ...spin.options.defines
+                    __BACKEND_URL__: `"${backendUrl}"`,
+                  ...spin.options.defines
                 }),
             ]);
         } else {
@@ -72,6 +73,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
                 new webpack.DefinePlugin({
                     __CLIENT__: true, __SERVER__: false, __SSR__: spin.options.ssr && !spin.test,
                     __DEV__: spin.dev, 'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+                    __BACKEND_URL__: `"${backendUrl}"`,
                     ...spin.options.defines
                 }),
             ]);
@@ -124,6 +126,8 @@ let webpackPortMap = {};
 
 const createConfig = (builder: Builder, spin: Spin) => {
     const stack = builder.stack;
+
+    const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
 
     const baseConfig: any = {
         name: builder.name,
@@ -212,8 +216,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
                 },
             };
         } else if (stack.hasAny('web')) {
-            const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
-            const {protocol, host} = url.parse(backendUrl);
+            const { protocol, host } = url.parse(backendUrl);
             const backendBaseUrl = protocol + '//' + host;
             let webpackDevPort;
             if (!builder.webpackDevPort) {
