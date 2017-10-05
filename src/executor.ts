@@ -644,7 +644,7 @@ async function startExpoProject(config, platform) {
         });
         console.log(`Expo address for ${platform}, Local: ${localAddress}, LAN: ${address}`);
         console.log('To open this app on your phone scan this QR code in Expo Client (if it doesn\'t get started automatically)');
-        qr.generate(address, { small: true }, code => {
+        qr.generate(address, code => {
             console.log(code);
         });
         if (!containerized()) {
