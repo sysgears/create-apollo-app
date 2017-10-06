@@ -173,6 +173,15 @@ const createConfig = (builder: Builder, spin: Spin) => {
                 whitelist: [/(^webpack|^react-native)/]
             })],
         }
+    } else {
+        config = {
+            ...config,
+            node: {
+                fs: 'empty',
+                net: 'empty',
+                tls: 'empty'
+            },
+        }
     }
 
     if (stack.hasAny('dll')) {
