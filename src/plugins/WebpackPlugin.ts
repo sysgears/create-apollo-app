@@ -141,11 +141,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
         watchOptions: {
             ignored: /build/,
         },
-        node: {
-            fs: 'empty',
-            net: 'empty',
-            tls: 'empty'
-        },
         bail: !spin.dev,
     };
 
