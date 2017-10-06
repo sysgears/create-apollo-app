@@ -142,7 +142,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
             ignored: /build/,
         },
         node: {
-            console: 'empty',
             fs: 'empty',
             net: 'empty',
             tls: 'empty'
