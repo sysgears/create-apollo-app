@@ -52,7 +52,8 @@ At the moment `spin.js` supports the following technologies, that can be specifi
 |Technology                |Description|
 |--------------------------|-----------|
 |webpack|Webpack|
-|es6|Code transpiled from the ECMAScript 6 to ECMAScript 5|
+|es6|Transpile code from the ECMAScript 6 to ECMAScript 5|
+|typescript|Transpile code from TypeScript to ECMAScript 5|
 |vue|Vue.js|
 |angular|Angular 4|
 |react|React|
