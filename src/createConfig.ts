@@ -20,6 +20,7 @@ import TypeScriptPlugin from './plugins/TypeScriptPlugin';
 import AngularPlugin from './plugins/AngularPlugin';
 import TCombPlugin from './plugins/TCombPlugin';
 import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
+import VuePlugin from './plugins/VuePlugin';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
@@ -41,6 +42,7 @@ const createConfig = cmd => {
         new ReactNativeWebPlugin(),
         new StyledComponentsPlugin(),
         new AngularPlugin(),
+        new VuePlugin(),
     ];
     const config = new ConfigRc(plugins);
     const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
