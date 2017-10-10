@@ -2,6 +2,7 @@ import * as yargs from 'yargs';
 
 import createConfig from './createConfig';
 import execute from './executor';
+import init from './init';
 
 const argv = yargs
     .command('build', 'compiles package for usage in production')
@@ -23,4 +24,9 @@ let config;
 if (cmd === 'watch' || cmd === 'build' || cmd === 'test') {
     config = createConfig(cmd);
 }
-execute(cmd, argv, config.builders, config.options);
+
+if (cmd === 'init') {
+    init();
+} else {
+    execute(cmd, argv, config.builders, config.options);
+}

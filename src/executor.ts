@@ -15,8 +15,6 @@ import { RawSource } from 'webpack-sources';
 import requireModule from './requireModule';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 
-const VirtualModules = requireModule('webpack-virtual-modules');
-
 const expoPorts = {};
 
 minilog.enable();
@@ -91,7 +89,7 @@ function webpackReporter(watch, outputPath, log, err?, stats?) {
     }
 }
 
-let frontendVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
+let frontendVirtualModules;
 
 class MobileAssetsPlugin {
     vendorAssets: any;
@@ -668,6 +666,11 @@ async function startExpoProject(config, platform) {
 }
 
 function startWebpack(platforms, watch, builder, options) {
+    const VirtualModules = requireModule('webpack-virtual-modules');
+    if (!frontendVirtualModules) {
+        frontendVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
+    }
+
     if (builder.stack.platform === 'server') {
         startServerWebpack(watch, builder, options);
     } else {

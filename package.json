@@ -21,6 +21,7 @@
     "spin": "./spin.js"
   },
   "devDependencies": {
+    "@types/inquirer": "^0.0.35",
     "@types/ip": "^0.0.30",
     "@types/lodash": "^4.14.71",
     "@types/mkdirp": "^0.5.0",
@@ -33,6 +34,7 @@
   },
   "dependencies": {
     "containerized": "^1.0.2",
+    "inquirer": "^3.3.0",
     "ip": "^1.1.5",
     "lodash": "^4.17.4",
     "minilog": "^3.1.0",
