@@ -2,6 +2,7 @@
 
 ## Spin.js - the best build tool - is the one that don't need build rules
 
+[![Join the chat at https://gitter.im/sysgears/spin.js](https://badges.gitter.im/sysgears/spin.js.svg)](https://gitter.im/sysgears/spin.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![npm version](https://badge.fury.io/js/spinjs.svg)](https://badge.fury.io/js/spinjs) [![Twitter Follow](https://img.shields.io/twitter/follow/sysgears.svg?style=social)](https://twitter.com/sysgears)
 
 ## Installation
@@ -128,6 +129,15 @@ that specified in `spin` command line, i.e. `watch`, `build`, `test`, etc.
 There are several built-in plugins supplied with `spin.js`. External plugins can be specified inside
 `options -> plugins` property.
 
+### Community support
+
+- [Gitter channel] - questions, answers, general discussions
+- [GitHub issues] - submit issues, send feature requests
+
+### Commercial support
+
+[SysGears](https://sysgears.com) team provides advanced support for commercial partners. A commercial partner will have a premium access to our team whether this is to help you with your code based on this project or related technologies used in it. Contact us using [Skype](http://hatscripts.com/addskype?sysgears) or via email: [info@sysgears.com](mailto:info@sysgears.com)
+
 ## Contributors
 
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
@@ -144,3 +154,5 @@ Copyright © 2017 [SysGears INC]. This source code is licensed under the [MIT] l
 
 [MIT]: LICENSE
 [SysGears INC]: http://sysgears.com
+[Gitter channel]: https://gitter.im/sysgears/spin.js
+[GitHub issues]: https://github.com/sysgears/spin.js/issues
