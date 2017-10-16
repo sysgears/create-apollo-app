@@ -1,89 +1,88 @@
 import * as fs from 'fs';
 
-import ConfigRc from './configRc';
-import Stack from './Stack';
-import requireModule from './requireModule';
-import Spin from './Spin';
+import { Builder } from './Builder';
 import { ConfigPlugin } from './ConfigPlugin';
+import ConfigRc from './configRc';
+import AngularPlugin from './plugins/AngularPlugin';
+import ApolloPlugin from './plugins/ApolloPlugin';
 import CssProcessorPlugin from './plugins/CssProcessorPlugin';
 import ES6Plugin from './plugins/ES6Plugin';
-import { Builder } from './Builder';
-import ApolloPlugin from './plugins/ApolloPlugin';
+import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
+import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
 import ReactNativePlugin from './plugins/ReactNativePlugin';
 import ReactNativeWebPlugin from './plugins/ReactNativeWebPlugin';
-import StyledComponentsPlugin from './plugins/StyledComponentsPlugin';
-import WebAssetsPlugin from './plugins/WebAssetsPlugin';
 import ReactPlugin from './plugins/ReactPlugin';
-import WebpackPlugin from './plugins/WebpackPlugin';
-import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
-import TypeScriptPlugin from './plugins/TypeScriptPlugin';
-import AngularPlugin from './plugins/AngularPlugin';
+import StyledComponentsPlugin from './plugins/StyledComponentsPlugin';
 import TCombPlugin from './plugins/TCombPlugin';
-import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
+import TypeScriptPlugin from './plugins/TypeScriptPlugin';
 import VuePlugin from './plugins/VuePlugin';
+import WebAssetsPlugin from './plugins/WebAssetsPlugin';
+import WebpackPlugin from './plugins/WebpackPlugin';
+import requireModule from './requireModule';
+import Spin from './Spin';
+import Stack from './Stack';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
 const createConfig = cmd => {
-    let builders = {};
+  const builders = {};
 
-    const plugins = [
-        new WebpackPlugin(),
-        new WebAssetsPlugin(),
-        new CssProcessorPlugin(),
-        new ApolloPlugin(),
-        new TypeScriptPlugin(),
-        new ES6Plugin(),
-        new ReactPlugin(),
-        new ReactHotLoaderPlugin(),
-        new TCombPlugin(),
-        new FlowRuntimePLugin(),
-        new ReactNativePlugin(),
-        new ReactNativeWebPlugin(),
-        new StyledComponentsPlugin(),
-        new AngularPlugin(),
-        new VuePlugin(),
-    ];
-    const config = new ConfigRc(plugins);
-    const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
-    let overrides;
-    if (fs.existsSync(overridesConfig)) {
-        overrides = requireModule('./' + overridesConfig);
-    } else {
-        overrides = {};
-    }
-    const spin = new Spin(cmd, config.builders, config.options, overrides.dependencyPlatforms || {});
+  const plugins = [
+    new WebpackPlugin(),
+    new WebAssetsPlugin(),
+    new CssProcessorPlugin(),
+    new ApolloPlugin(),
+    new TypeScriptPlugin(),
+    new ES6Plugin(),
+    new ReactPlugin(),
+    new ReactHotLoaderPlugin(),
+    new TCombPlugin(),
+    new FlowRuntimePLugin(),
+    new ReactNativePlugin(),
+    new ReactNativeWebPlugin(),
+    new StyledComponentsPlugin(),
+    new AngularPlugin(),
+    new VuePlugin()
+  ];
+  const config = new ConfigRc(plugins);
+  const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
+  const overrides = fs.existsSync(overridesConfig) ? requireModule('./' + overridesConfig) : {};
+  const spin = new Spin(cmd, config.builders, config.options, overrides.dependencyPlatforms || {});
 
-    for (let name in config.builders) {
-        const builder = config.builders[name];
-        const stack = builder.stack;
+  for (const name of Object.keys(config.builders)) {
+    const builder = config.builders[name];
+    const stack = builder.stack;
 
-        if (builder.enabled === false || builder.roles.indexOf(cmd) < 0) {
-            continue;
-        }
-
-        if (spin.options.webpackDll && !stack.hasAny('server')) {
-            const dllBuilder: Builder = {...builder} as Builder;
-            dllBuilder.name = builder.name + 'Dll';
-            dllBuilder.parent = builder;
-            dllBuilder.stack = new Stack(dllBuilder.stack.technologies, 'dll');
-            builders[dllBuilder.name] = dllBuilder;
-            builder.child = dllBuilder;
-        }
-        builders[name] = builder;
+    if (builder.enabled === false || builder.roles.indexOf(cmd) < 0) {
+      continue;
     }
 
-    for (let name in builders) {
-        const builder = builders[name];
-        config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
-        if (overrides[name]) {
-            builders[name].config = spin.mergeWithStrategy({
-                entry: 'replace',
-            }, builders[name].config, overrides[name]);
-        }
+    if (spin.options.webpackDll && !stack.hasAny('server')) {
+      const dllBuilder: Builder = { ...builder };
+      dllBuilder.name = builder.name + 'Dll';
+      dllBuilder.parent = builder;
+      dllBuilder.stack = new Stack(dllBuilder.stack.technologies, 'dll');
+      builders[dllBuilder.name] = dllBuilder;
+      builder.child = dllBuilder;
     }
+    builders[name] = builder;
+  }
 
-    return { builders, options: spin.options };
+  for (const name of Object.keys(builders)) {
+    const builder = builders[name];
+    config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
+    if (overrides[name]) {
+      builders[name].config = spin.mergeWithStrategy(
+        {
+          entry: 'replace'
+        },
+        builders[name].config,
+        overrides[name]
+      );
+    }
+  }
+
+  return { builders, options: spin.options };
 };
 
 export default createConfig;

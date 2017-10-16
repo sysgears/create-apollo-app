@@ -27,29 +27,30 @@
  * @flow
  */
 
-const requireModule = require('../../requireModule').default;
-const path = require('path');
+import * as path from 'path';
+import * as util from 'util';
 
-const util = requireModule('util');
+import requireModule from '../../requireModule';
+
 const utils = requireModule('loader-utils');
 const size = requireModule('image-size');
 const hasha = requireModule('hasha');
 const hashAssetFiles = requireModule('expo/tools/hashAssetFiles');
 const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
 
-type Config = {
-  platform: string,
-  bundle?: boolean,
-  root: string,
-  outputPath?: any,
-  publicPath?: any,
-};
+interface Config {
+  platform: string;
+  bundle?: boolean;
+  root: string;
+  outputPath?: any;
+  publicPath?: any;
+}
 
-type Info = {
-  width: number,
-  height: number,
-  type: string
-};
+interface Info {
+  width: number;
+  height: number;
+  type: string;
+}
 
 module.exports = async function assetLoader() {
   this.cacheable();
@@ -58,7 +59,7 @@ module.exports = async function assetLoader() {
 
   const query = utils.getOptions(this) || {};
   const options = this.options[query.config] || {};
-  const config: Config = {...options, ...query} as Config;
+  const config: Config = { ...options, ...query };
 
   let info: Info;
 
@@ -75,9 +76,7 @@ module.exports = async function assetLoader() {
   const assets = path.join('assets', config.bundle ? '' : config.platform);
   const suffix = `(@\\d+(\\.\\d+)?x)?(\\.(${config.platform}|native))?\\.${type}$`;
   const filename = path.basename(filepath).replace(new RegExp(suffix), '');
-  const longname = `${`${url.replace(/\//g, '_')}_${filename}`
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '')}.${type}`;
+  const longname = `${`${url.replace(/\//g, '_')}_${filename}`.toLowerCase().replace(/[^a-z0-9_]/g, '')}.${type}`;
 
   const result = await new Promise((resolve, reject) =>
     this.fs.readdir(dirname, (err, res) => {
@@ -86,12 +85,13 @@ module.exports = async function assetLoader() {
       } else {
         resolve(res);
       }
-    }));
+    })
+  );
 
   const map = AssetResolver.collect(result, {
     name: filename,
     type,
-    platform: config.platform,
+    platform: config.platform
   });
 
   const scales = Object.keys(map)
@@ -141,11 +141,12 @@ module.exports = async function assetLoader() {
 
             resolve({
               destination: dest,
-              content: res,
+              content: res
             });
           }
-        }));
-    }),
+        })
+      );
+    })
   );
 
   pairs.forEach((item: any) => {
@@ -153,9 +154,7 @@ module.exports = async function assetLoader() {
 
     if (config.outputPath) {
       // support functions as outputPath to generate them dynamically
-      dest = typeof config.outputPath === 'function'
-        ? config.outputPath(dest)
-        : path.join(config.outputPath, dest);
+      dest = typeof config.outputPath === 'function' ? config.outputPath(dest) : path.join(config.outputPath, dest);
     }
 
     this.emitFile(dest, item.content);
@@ -166,9 +165,7 @@ module.exports = async function assetLoader() {
   if (config.publicPath) {
     // support functions as publicPath to generate them dynamically
     publicPath = JSON.stringify(
-      typeof config.publicPath === 'function'
-        ? config.publicPath(url)
-        : path.join(config.publicPath, url),
+      typeof config.publicPath === 'function' ? config.publicPath(url) : path.join(config.publicPath, url)
     );
   }
 
@@ -176,9 +173,9 @@ module.exports = async function assetLoader() {
 
   const asset: any = {
     __packager_asset: true,
-    scales: scales,
+    scales,
     name: filename,
-    type: type,
+    type,
     hash: hashes.join(),
     ...info
   };
@@ -189,14 +186,14 @@ module.exports = async function assetLoader() {
   const finalAsset = await hashAssetFiles(asset);
   this._module._asset = finalAsset;
 
-  const assetStr = "{\n " + util.inspect(finalAsset).slice(1, -2) + `,\n  httpServerLocation: ${publicPath}` + "}";
+  const assetStr = '{\n ' + util.inspect(finalAsset).slice(1, -2) + `,\n  httpServerLocation: ${publicPath}` + '}';
 
   callback(
     null,
     `
     var AssetRegistry = require('react-native/Libraries/Image/AssetRegistry');
     module.exports = AssetRegistry.registerAsset(${assetStr});
-    `,
+    `
   );
 };
 
