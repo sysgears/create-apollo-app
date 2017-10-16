@@ -1,6 +1,6 @@
 function notifyWatcher(watcher) {
   const headers = {
-    'Content-Type': 'application/json; charset=UTF-8',
+    'Content-Type': 'application/json; charset=UTF-8'
   };
 
   watcher.res.writeHead(205, headers);
