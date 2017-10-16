@@ -18,6 +18,7 @@ export default class TypeScriptPlugin implements ConfigPlugin {
             jsRule.test = /\.ts$/;
             jsRule.use = [{
                 loader: requireModule.resolve('awesome-typescript-loader'),
+                options: {...builder.tsLoaderOptions}
             }];
 
             builder.config = spin.merge(builder.config, {
