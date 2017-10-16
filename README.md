@@ -61,6 +61,7 @@ At the moment `spin.js` supports the following technologies, that can be specifi
 |react-native|React Native with Expo|
 |react-hot-loader|Use React Hot Loader during development|
 |styled-components|Styled Components|
+|css|CSS stylesheets|
 |sass|SCSS stylesheets transpiled to CSS|
 |less|LESS stylesheets transpiled to CSS|
 |apollo|Apollo GraphQL|

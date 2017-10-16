@@ -49,7 +49,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
         };
       }
 
-      if (createRule) {
+      if (createRule && stack.hasAny('css')) {
         rules.push(createRule('css', []));
       }
 
