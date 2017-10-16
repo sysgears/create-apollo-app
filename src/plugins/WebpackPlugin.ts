@@ -208,7 +208,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
                     index.push('webpack/hot/signal.js');
                 }
             }
-            index.push('./src/server/index.js');
+            index.push(builder.entry || './src/server/index.js');
 
             config = {
                 ...config,
@@ -241,7 +241,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
                 ...config,
                 entry: {
                     index: (spin.dev ? [`webpack-hot-middleware/client`] : []).concat([
-                        './src/client/index.js',
+                        builder.entry || './src/client/index.js',
                     ]),
                 },
                 output: {
@@ -265,7 +265,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
                 ...config,
                 entry: {
                     index: [
-                        './src/mobile/index.js',
+                        builder.entry || './src/mobile/index.js',
                     ],
                 },
                 output: {

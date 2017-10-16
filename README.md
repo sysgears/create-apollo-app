@@ -99,6 +99,7 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |Builder Option            |Description|
 |--------------------------|-----------|
 |stack|an array or semicolon separated string with list of stack features for the builder|
+|entry|path to entry source file for this builder (`src/{platform}/index.{js,jsx,ts,tsx}` by default)|
 |enabled|whether this builder is enabled, `true` by default|
 |roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default| 
 |webpackDevPort|the local port used for Webpack Dev Server process to host web frontend files|
