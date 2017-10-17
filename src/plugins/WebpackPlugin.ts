@@ -30,7 +30,8 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       // https://github.com/angular/angular/issues/10618
       uglifyOpts.mangle = { keep_fnames: true };
     }
-    plugins.push(new webpack.optimize.UglifyJsPlugin(uglifyOpts));
+    const UglifyJsPlugin = requireModule('uglifyjs-webpack-plugin');
+    plugins.push(new UglifyJsPlugin(uglifyOpts));
     const loaderOpts: any = { minimize: true };
     if (stack.hasAny('angular')) {
       loaderOpts.htmlLoader = {
