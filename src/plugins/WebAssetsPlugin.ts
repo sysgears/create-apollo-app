@@ -1,5 +1,6 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
+import requireModule from '../requireModule';
 import Spin from '../Spin';
 
 export default class WebAssetsPlugin implements ConfigPlugin {
@@ -13,7 +14,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.(png|ico|jpg|xml)$/,
               use: {
-                loader: 'url-loader',
+                loader: requireModule.resolve('url-loader'),
                 options: {
                   name: '[hash].[ext]',
                   limit: 100000
@@ -23,7 +24,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: 'url-loader',
+                loader: requireModule.resolve('url-loader'),
                 options: {
                   name: './assets/[hash].[ext]',
                   limit: 100000
@@ -33,7 +34,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: 'file-loader',
+                loader: requireModule.resolve('file-loader'),
                 options: {
                   name: './assets/[hash].[ext]'
                 }
@@ -43,25 +44,26 @@ export default class WebAssetsPlugin implements ConfigPlugin {
         }
       });
     } else if (stack.hasAll(['webpack', 'server']) && !spin.options.ssr) {
+      const ignoreLoader = requireModule.resolve('ignore-loader');
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
             {
               test: /\.(png|ico|jpg|xml)$/,
               use: {
-                loader: 'ignore-loader'
+                loader: ignoreLoader
               }
             },
             {
               test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: 'ignore-loader'
+                loader: ignoreLoader
               }
             },
             {
               test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: 'ignore-loader'
+                loader: ignoreLoader
               }
             }
           ]

@@ -10,4 +10,12 @@ requireModule.resolve = name => {
   return require.resolve(modulePath);
 };
 
+requireModule.probe = name => {
+  try {
+    return requireModule.resolve(name);
+  } catch (e) {
+    return false;
+  }
+};
+
 export default requireModule;

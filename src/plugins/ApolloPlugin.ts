@@ -41,12 +41,14 @@ export default class ApolloPlugin implements ConfigPlugin {
           rules: [
             {
               test: /\.graphqls/,
-              use: 'raw-loader'
+              use: requireModule.resolve('raw-loader')
             },
             {
               test: /\.(graphql|gql)$/,
               exclude: /node_modules/,
-              use: ['graphql-tag/loader'].concat(persistGraphQL ? ['persistgraphql-webpack-plugin/graphql-loader'] : [])
+              use: [requireModule.resolve('graphql-tag/loader')].concat(
+                persistGraphQL ? [requireModule.resolve('persistgraphql-webpack-plugin/graphql-loader')] : []
+              )
             }
           ]
         }
@@ -56,7 +58,10 @@ export default class ApolloPlugin implements ConfigPlugin {
         const webpack = requireModule('webpack');
         const jsRuleFinder = new JSRuleFinder(builder);
         const jsRule = jsRuleFinder.rule;
-        jsRule.use = spin.merge(jsRule.use, persistGraphQL ? ['persistgraphql-webpack-plugin/js-loader'] : []);
+        jsRule.use = spin.merge(
+          jsRule.use,
+          persistGraphQL ? [requireModule.resolve('persistgraphql-webpack-plugin/js-loader')] : []
+        );
 
         builder.config = spin.merge(builder.config, {
           plugins: [new webpack.DefinePlugin({ __PERSIST_GQL__: persistGraphQL })].concat(

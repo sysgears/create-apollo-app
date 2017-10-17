@@ -11,16 +11,18 @@ export default class CssProcessorPlugin implements ConfigPlugin {
     if (stack.hasAll('webpack')) {
       let createRule;
       const rules = [];
+      const postCssLoader = requireModule.probe('postcss-loader');
       if (stack.hasAny('server')) {
         createRule = (ext, ruleList) => ({
           test: new RegExp(`\\.${ext}$`),
           use: dev
             ? [
-                { loader: 'isomorphic-style-loader' },
-                { loader: 'css-loader', options: { sourceMap: true } },
-                { loader: 'postcss-loader', options: { sourceMap: true } }
-              ].concat(ruleList)
-            : [{ loader: 'ignore-loader' }]
+                { loader: requireModule.resolve('isomorphic-style-loader') },
+                { loader: requireModule.resolve('css-loader'), options: { sourceMap: true } }
+              ]
+                .concat(postCssLoader ? { loader: postCssLoader, options: { sourceMap: true } } : [])
+                .concat(ruleList)
+            : [{ loader: requireModule.resolve('ignore-loader') }]
         });
       } else if (stack.hasAny('web')) {
         let ExtractTextPlugin;
@@ -37,13 +39,16 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             test: new RegExp(`\\.${ext}$`),
             use: dev
               ? [
-                  { loader: 'style-loader' },
-                  { loader: 'css-loader', options: { sourceMap: true, importLoaders: 1 } },
-                  { loader: 'postcss-loader', options: { sourceMap: true } }
-                ].concat(ruleList)
+                  { loader: requireModule.resolve('style-loader') },
+                  { loader: requireModule.resolve('css-loader'), options: { sourceMap: true, importLoaders: 1 } }
+                ]
+                  .concat(postCssLoader ? { loader: postCssLoader, options: { sourceMap: true } } : [])
+                  .concat(ruleList)
               : plugin.extract({
-                  fallback: 'style-loader',
-                  use: ['css-loader', 'postcss-loader'].concat(ruleList ? ruleList.map(rule => rule.loader) : [])
+                  fallback: requireModule.resolve('style-loader'),
+                  use: [requireModule.resolve('css-loader'), requireModule.resolve('postcss-loader')].concat(
+                    ruleList ? ruleList.map(rule => rule.loader) : []
+                  )
                 })
           };
         };
@@ -54,11 +59,15 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       }
 
       if (createRule && stack.hasAny('sass')) {
-        rules.push(createRule('scss', [{ loader: `sass-loader`, options: { sourceMap: true } }]));
+        rules.push(
+          createRule('scss', [{ loader: requireModule.resolve(`sass-loader`), options: { sourceMap: true } }])
+        );
       }
 
       if (createRule && stack.hasAny('less')) {
-        rules.push(createRule('less', [{ loader: `less-loader`, options: { sourceMap: true } }]));
+        rules.push(
+          createRule('less', [{ loader: requireModule.resolve(`less-loader`), options: { sourceMap: true } }])
+        );
       }
 
       builder.config = spin.merge(builder.config, {

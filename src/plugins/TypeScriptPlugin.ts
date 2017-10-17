@@ -28,7 +28,7 @@ export default class TypeScriptPlugin implements ConfigPlugin {
           rules: [
             {
               test: /\.html$/,
-              loader: 'html-loader'
+              loader: requireModule.resolve('html-loader')
             }
           ]
         },
