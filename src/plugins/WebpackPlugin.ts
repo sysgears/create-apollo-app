@@ -25,7 +25,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       plugins.push(new webpack.NoEmitOnErrorsPlugin());
     }
   } else {
-    const uglifyOpts: any = { minimize: true };
+    const uglifyOpts: any = {};
     if (stack.hasAny('angular')) {
       // https://github.com/angular/angular/issues/10618
       uglifyOpts.mangle = { keep_fnames: true };
