@@ -46,6 +46,12 @@ spin test "src/**/*.spec.js"
 ```
 will run tests located in `.spec.js` files via Mocha Webpack.
 
+To see generated Webpack config add `-v` option to any of the above commands, e.g.:
+``` bash
+spin -v watch
+```
+will launch project in development mode and will dump generated Webpack config in a terminal.
+
 ## Supported technologies stack
 
 At the moment `spin.js` supports the following technologies, that can be specified inside `stack` property:
