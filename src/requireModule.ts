@@ -1,18 +1,21 @@
 import * as path from 'path';
+import * as requireRelative from 'require-relative';
 
-const requireModule: any = name => {
-  const modulePath = path.join(process.cwd(), name.indexOf('.') !== 0 ? 'node_modules' : '', name);
-  return require(modulePath);
+const requireModule: any = (name, relativeTo) => {
+  return name.indexOf('.') !== 0
+    ? requireRelative(name, relativeTo)
+    : require(path.join(relativeTo || process.cwd(), name));
 };
 
-requireModule.resolve = name => {
-  const modulePath = path.join(process.cwd(), name.indexOf('.') !== 0 ? 'node_modules' : '', name);
-  return require.resolve(modulePath);
+requireModule.resolve = (name, relativeTo) => {
+  return name.indexOf('.') !== 0
+    ? requireRelative.resolve(name, relativeTo)
+    : require.resolve(path.join(relativeTo || process.cwd(), name));
 };
 
-requireModule.probe = name => {
+requireModule.probe = (name, relativeTo) => {
   try {
-    return requireModule.resolve(name);
+    return requireModule.resolve(name, relativeTo);
   } catch (e) {
     return false;
   }

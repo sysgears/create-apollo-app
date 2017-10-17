@@ -8,10 +8,6 @@ export default class ReactNativeWebPlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['react-native-web', 'server', 'webpack'])) {
-      const nodeExternals = requireModule('webpack-node-externals');
-      const nodeExternalsFn = nodeExternals({
-        whitelist: [/(^webpack|^react-native)/]
-      });
       builder.config = spin.merge(builder.config, {
         resolve: {
           alias: {
@@ -19,14 +15,18 @@ export default class ReactNativeWebPlugin implements ConfigPlugin {
           }
         }
       });
+
       builder.config.externals = (context, request, callback) => {
-        return nodeExternalsFn(context, request, (...args) => {
-          if (request.indexOf('react-native') >= 0) {
-            return callback(null, 'commonjs ' + request + '-web');
-          } else {
-            return callback.apply(this, args);
-          }
-        });
+        if (request.indexOf('react-native') >= 0) {
+          return callback(null, 'commonjs ' + request + '-web');
+        } else if (
+          request.indexOf('webpack') < 0 &&
+          !request.startsWith('.') &&
+          requireModule.probe(request, context)
+        ) {
+          return callback(null, 'commonjs ' + request);
+        }
+        callback();
       };
     }
   }

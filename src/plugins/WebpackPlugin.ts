@@ -185,11 +185,12 @@ const createConfig = (builder: Builder, spin: Spin) => {
         __dirname: true,
         __filename: true
       },
-      externals: [
-        requireModule('webpack-node-externals')({
-          whitelist: [/(^webpack|^react-native)/]
-        })
-      ]
+      externals: (context, request, callback) => {
+        if (request.indexOf('webpack') < 0 && !request.startsWith('.') && requireModule.probe(request, context)) {
+          return callback(null, 'commonjs ' + request);
+        }
+        callback();
+      }
     };
   } else {
     config = {
