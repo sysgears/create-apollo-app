@@ -10,9 +10,9 @@ let persistPlugins;
 
 export default class ApolloPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
-    if (builder.stack.hasAll(['apollo', 'webpack'])) {
-      const persistGraphQL = spin.options.persistGraphQL && !spin.test && !builder.stack.hasAny('dll');
-      if (builder.stack.hasAny(['server', 'web']) && !builder.stack.hasAny('dll')) {
+    if (!builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack'])) {
+      const persistGraphQL = spin.options.persistGraphQL && !spin.test;
+      if (builder.stack.hasAny(['server', 'web'])) {
         if (!persistPlugins) {
           const PersistGraphQLPlugin = requireModule('persistgraphql-webpack-plugin');
           const moduleName = path.resolve('node_modules/persisted_queries.json');
@@ -64,11 +64,10 @@ export default class ApolloPlugin implements ConfigPlugin {
         );
 
         builder.config = spin.merge(builder.config, {
-          plugins: [new webpack.DefinePlugin({ __PERSIST_GQL__: persistGraphQL })].concat(
-            builder.stack.hasAny('dll')
-              ? []
-              : [builder.stack.hasAny('server') ? persistPlugins.server : persistPlugins.client]
-          )
+          plugins: [
+            new webpack.DefinePlugin({ __PERSIST_GQL__: persistGraphQL }),
+            builder.stack.hasAny('server') ? persistPlugins.server : persistPlugins.client
+          ]
         });
       }
     }

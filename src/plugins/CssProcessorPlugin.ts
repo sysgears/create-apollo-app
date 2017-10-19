@@ -8,7 +8,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
     const stack = builder.stack;
     const dev = spin.dev;
 
-    if (stack.hasAll('webpack')) {
+    if (stack.hasAll('webpack') && !stack.hasAny('dll')) {
       let createRule;
       const rules = [];
       const postCssLoader = requireModule.probe('postcss-loader');

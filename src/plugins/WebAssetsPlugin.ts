@@ -7,7 +7,10 @@ export default class WebAssetsPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 
-    if (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && spin.options.ssr)) {
+    if (
+      !stack.hasAny('dll') &&
+      (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && spin.options.ssr))
+    ) {
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
@@ -43,7 +46,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
           ]
         }
       });
-    } else if (stack.hasAll(['webpack', 'server']) && !spin.options.ssr) {
+    } else if (!stack.hasAny('dll') && stack.hasAll(['webpack', 'server']) && !spin.options.ssr) {
       const ignoreLoader = requireModule.resolve('ignore-loader');
       builder.config = spin.merge(builder.config, {
         module: {
