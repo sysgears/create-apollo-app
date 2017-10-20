@@ -1,10 +1,14 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class TCombPlugin implements ConfigPlugin {
+export default class TCombPlugin implements StackPlugin {
+  public detect(builder, spin: Spin): boolean {
+    return undefined;
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

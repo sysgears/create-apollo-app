@@ -12,6 +12,7 @@ import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
 import { RawSource } from 'webpack-sources';
 
+import plugins from './plugins';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import requireModule from './requireModule';
 

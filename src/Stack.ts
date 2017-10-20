@@ -9,7 +9,7 @@ export default class Stack {
       } else if (tech.constructor === Array) {
         return acc.concat(tech);
       } else {
-        return acc.concat(tech.split(':'));
+        return acc.concat(tech.split(/[\s+:]/));
       }
     }, []);
     if (this.hasAny('server')) {

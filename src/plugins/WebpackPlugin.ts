@@ -3,11 +3,10 @@ import * as path from 'path';
 import * as url from 'url';
 
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
+import { Dependencies } from '../Dependencies';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
-
-const pkg = requireModule('./package.json');
+import { StackPlugin } from '../StackPlugin';
 
 const __WINDOWS__ = /^win/.test(process.platform);
 
@@ -125,6 +124,9 @@ const createPlugins = (builder: Builder, spin: Spin) => {
 
 const getDepsForNode = (builder, depPlatforms) => {
   const deps = [];
+
+  const pkg = requireModule('./package.json');
+
   for (const key of Object.keys(pkg.dependencies)) {
     const val = depPlatforms[key];
     if (
@@ -302,13 +304,22 @@ const createConfig = (builder: Builder, spin: Spin) => {
   return config;
 };
 
-export default class WebpackPlugin implements ConfigPlugin {
-  public configure(builder: Builder, spin: Spin) {
+export default class WebpackPlugin implements StackPlugin {
+  public init(builder: any, spin: Spin): Dependencies {
     const stack = builder.stack;
 
-    if (stack.hasAny('webpack')) {
-      builder.config = builder.config || {};
-      builder.config = spin.merge(builder.config, createConfig(builder, spin));
-    }
+    return {
+      deps: [],
+      devDeps: ['webpack'].concat(stack.hasAny('web') ? ['webpack-manifest-plugin', 'html-webpack-plugin'] : [])
+    };
+  }
+
+  public detect(builder: any, spin: Spin): boolean {
+    return builder.stack.hasAny('webpack');
+  }
+
+  public configure(builder: Builder, spin: Spin) {
+    builder.config = builder.config || {};
+    builder.config = spin.merge(builder.config, createConfig(builder, spin));
   }
 }
