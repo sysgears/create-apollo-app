@@ -14,7 +14,7 @@ const __WINDOWS__ = /^win/.test(process.platform);
 const createPlugins = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
   const webpack = requireModule('webpack');
-  const buildNodeEnv = spin.dev ? (spin.test ? 'test' : 'development') : 'production';
+  const buildNodeEnv = process.env.NODE_ENV || (spin.dev ? (spin.test ? 'test' : 'development') : 'production');
 
   let plugins = [];
 
