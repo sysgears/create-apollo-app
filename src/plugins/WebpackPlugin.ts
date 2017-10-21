@@ -43,6 +43,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
   }
 
   const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
+  const graphqlUrl = spin.options.graphqlUrl.replace('{ip}', ip.address());
 
   if (stack.hasAny('dll')) {
     const name = `vendor_${builder.parent.name}`;
@@ -71,6 +72,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           __DEV__: spin.dev,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
           __BACKEND_URL__: `"${backendUrl}"`,
+          __GRAPHQL_URL__: `"${graphqlUrl}"`,
           ...spin.options.defines
         })
       ]);
@@ -83,6 +85,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           __DEV__: spin.dev,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
           __BACKEND_URL__: `"${backendUrl}"`,
+          __GRAPHQL_URL__: `"${graphqlUrl}"`,
           ...spin.options.defines
         })
       ]);

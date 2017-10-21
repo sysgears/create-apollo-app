@@ -47,6 +47,7 @@ export default class ConfigRc {
     options.frontendBuildDir = options.frontendBuildDir || 'build/client';
     options.dllBuildDir = options.dllBuildDir || 'build/dll';
     options.backendUrl = options.backendUrl || 'http://localhost:8080';
+    options.graphqlUrl = options.graphqlUrl || options.backendUrl;
     options.webpackDll = options.webpackDll !== undefined ? options.webpackDll : true;
   }
 }
