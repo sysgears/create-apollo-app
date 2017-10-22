@@ -74,17 +74,22 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                   )
                   .concat(ruleList)
               : plugin.extract({
-                  fallback: requireModule.resolve('style-loader'),
+                  fallback: requireModule.resolve('isomorphic-style-loader'),
                   use: [
-                    requireModule.resolve('css-loader').concat(
+                    {
+                      loader: requireModule.resolve('css-loader'),
+                      options: { importLoaders: postCssLoader ? 1 : 0 }
+                    }
+                  ]
+                    .concat(
                       postCssLoader
                         ? {
                             loader: postCssLoader,
                             options: useDefaultPostCss ? postCssDefaultConfig() : {}
-                          }
+                          } as any
                         : []
                     )
-                  ].concat(ruleList ? ruleList.map(rule => rule.loader) : [])
+                    .concat(ruleList ? ruleList.map(rule => rule.loader) : [])
                 })
           };
         };
