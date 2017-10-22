@@ -39,13 +39,13 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             test: new RegExp(`\\.${ext}$`),
             use: dev
               ? [
-                  { loader: requireModule.resolve('style-loader') },
+                  { loader: requireModule.resolve('isomorphic-style-loader') },
                   { loader: requireModule.resolve('css-loader'), options: { sourceMap: true, importLoaders: 1 } }
                 ]
                   .concat(postCssLoader ? { loader: postCssLoader, options: { sourceMap: true } } : [])
                   .concat(ruleList)
               : plugin.extract({
-                  fallback: requireModule.resolve('style-loader'),
+                  fallback: requireModule.resolve('isomorphic-style-loader'),
                   use: [requireModule.resolve('css-loader'), requireModule.resolve('postcss-loader')].concat(
                     ruleList ? ruleList.map(rule => rule.loader) : []
                   )
