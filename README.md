@@ -1,8 +1,8 @@
-<p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spin.js/master/logo.svg"></a></p>
+<p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spinjs/master/logo.svg"></a></p>
 
-## Spin.js - the best build tool - is the one that don't need build rules
+## spinjs - the best build tool - is the one that don't need build rules
 
-[![Join the chat at https://gitter.im/sysgears/spin.js](https://badges.gitter.im/sysgears/spin.js.svg)](https://gitter.im/sysgears/spin.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/sysgears/spinjs](https://badges.gitter.im/sysgears/spinjs.svg)](https://gitter.im/sysgears/spinjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![npm version](https://badge.fury.io/js/spinjs.svg)](https://badge.fury.io/js/spinjs) [![Twitter Follow](https://img.shields.io/twitter/follow/sysgears.svg?style=social)](https://twitter.com/sysgears)
 
 ## Installation
@@ -13,15 +13,15 @@ npm install -g spinjs
 
 ## Motivation
 
-> `spin.js` was created to free the developer from build rules writing for JavaScript projects as much as possible.
-> Its difference from many other build tools with similair goals is that `spin.js` is not tied to specific framework 
-> and does not attempt to lock you out from generated config. `spin.js` does its best to provide you with very mature
+> `spinjs` was created to free the developer from build rules writing for JavaScript projects as much as possible.
+> Its difference from many other build tools with similair goals is that `spinjs` is not tied to specific framework 
+> and does not attempt to lock you out from generated config. `spinjs` does its best to provide you with very mature
 > build setup from the minimal information provided by you about your tech stack and lets you further customize 
 > every aspect of build setup when needed.
 
 ## Basic Usage
 
-The basic `spin.js` usage is simple: you describe the stack used in your application in the property `spin` of `package.json`:
+The basic `spinjs` usage is simple: you describe the stack used in your application in the property `spin` of `package.json`:
 ```json
 {
   "spin": "webpack:es6:apollo:react-native:ios"
@@ -54,7 +54,7 @@ will launch project in development mode and will dump generated Webpack config i
 
 ## Supported technologies stack
 
-At the moment `spin.js` supports the following technologies, that can be specified inside `stack` property:
+At the moment `spinjs` supports the following technologies, that can be specified inside `stack` property:
 
 |Technology                |Description|
 |--------------------------|-----------|
@@ -78,7 +78,7 @@ At the moment `spin.js` supports the following technologies, that can be specifi
 
 ## Concepts
 
-`spin.js` configures and launches multiple builders in parallel to build the project. If stack for the project is specified
+`spinjs` configures and launches multiple builders in parallel to build the project. If stack for the project is specified
 in `spin` property of `package.json`, then only one builder is launched. To specify multiple builders the following 
 configuration should be used:
 ```json
@@ -99,10 +99,10 @@ configuration should be used:
 }
 ```
 
-The 'spin.js' configuration can be specified in `.spinrc.json` instead of `package.json`, it should contain the value of 
+The 'spinjs' configuration can be specified in `.spinrc.json` instead of `package.json`, it should contain the value of 
 `spin` property in this case.
 
-Each builder has a name and a `stack` property at minimum. Builder properties recognized by `spin.js`:
+Each builder has a name and a `stack` property at minimum. Builder properties recognized by `spinjs`:
 
 |Builder Option            |Description|
 |--------------------------|-----------|
@@ -112,14 +112,14 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default| 
 |webpackDevPort|the local port used for Webpack Dev Server process to host web frontend files|
 
-Builder can also have builder-specific options, depending on its stack, recognized by `spin.js` plugins.
+Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.
 
 Options that are non-specific to each builder but rather to application as a whole can be specified in 
 `options` property on the same level as `builders` property. Supported options:
 
 |General Option            |Description|
 |--------------------------|-----------|
-|plugins|Additional `spin.js` plugins module names|
+|plugins|Additional `spinjs` plugins module names|
 |backendBuildDir|Output directory for code targeted to run under Node.js|
 |frontendBuildDir|Output directory for code targeted to run in Web Browser and on mobile devices| 
 |dllBuildDir|Output directory for Webpack DLL files used to speed up incremental builds|
@@ -129,11 +129,11 @@ Options that are non-specific to each builder but rather to application as a who
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
 
-Each `spin.js` plugin tries to handle subset of technologies in the builder stack to configure build tools 
+Each `spinjs` plugin tries to handle subset of technologies in the builder stack to configure build tools 
 usually used for this stack the best way. After configuration of the builder it gets executed in the mode
 that specified in `spin` command line, i.e. `watch`, `build`, `test`, etc. 
 
-There are several built-in plugins supplied with `spin.js`. External plugins can be specified inside
+There are several built-in plugins supplied with `spinjs`. External plugins can be specified inside
 `options -> plugins` property.
 
 ### Community support
@@ -150,7 +150,7 @@ There are several built-in plugins supplied with `spin.js`. External plugins can
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-| [<img src="https://avatars1.githubusercontent.com/u/1259926?v=3" width="100px;"/><br /><sub>Victor Vlasenko</sub>](https://ua.linkedin.com/in/victorvlasenko)<br />[💻](https://github.com/sysgears/spin.js/commits?author=vlasenko "Code") [🔧](#tool-vlasenko "Tools") [📖](https://github.com/sysgears/spin.js/commits?author=vlasenko "Documentation") [⚠️](https://github.com/sysgears/spin.js/commits?author=vlasenko "Tests") [💬](#question-vlasenko "Answering Questions") [👀](#review-vlasenko "Reviewed Pull Requests") | [<img src="https://avatars0.githubusercontent.com/u/4072250?v=3" width="100px;"/><br /><sub>Ujjwal</sub>](https://github.com/mairh)<br />[💻](https://github.com/sysgears/spin.js/commits?author=mairh "Code") [🔧](#tool-mairh "Tools") [📖](https://github.com/sysgears/spin.js/commits?author=mairh "Documentation") [⚠️](https://github.com/sysgears/spin.js/commits?author=mairh "Tests") [💬](#question-mairh "Answering Questions") [👀](#review-mairh "Reviewed Pull Requests") |
+| [<img src="https://avatars1.githubusercontent.com/u/1259926?v=3" width="100px;"/><br /><sub>Victor Vlasenko</sub>](https://ua.linkedin.com/in/victorvlasenko)<br />[💻](https://github.com/sysgears/spinjs/commits?author=vlasenko "Code") [🔧](#tool-vlasenko "Tools") [📖](https://github.com/sysgears/spinjs/commits?author=vlasenko "Documentation") [⚠️](https://github.com/sysgears/spinjs/commits?author=vlasenko "Tests") [💬](#question-vlasenko "Answering Questions") [👀](#review-vlasenko "Reviewed Pull Requests") | [<img src="https://avatars0.githubusercontent.com/u/4072250?v=3" width="100px;"/><br /><sub>Ujjwal</sub>](https://github.com/mairh)<br />[💻](https://github.com/sysgears/spinjs/commits?author=mairh "Code") [🔧](#tool-mairh "Tools") [📖](https://github.com/sysgears/spinjs/commits?author=mairh "Documentation") [⚠️](https://github.com/sysgears/spinjs/commits?author=mairh "Tests") [💬](#question-mairh "Answering Questions") [👀](#review-mairh "Reviewed Pull Requests") |
 | :---: | :---: |
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
@@ -161,5 +161,5 @@ Copyright © 2017 [SysGears INC]. This source code is licensed under the [MIT] l
 
 [MIT]: LICENSE
 [SysGears INC]: http://sysgears.com
-[Gitter channel]: https://gitter.im/sysgears/spin.js
-[GitHub issues]: https://github.com/sysgears/spin.js/issues
+[Gitter channel]: https://gitter.im/sysgears/spinjs
+[GitHub issues]: https://github.com/sysgears/spinjs/issues
