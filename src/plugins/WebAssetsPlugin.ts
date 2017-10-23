@@ -1,5 +1,5 @@
 import { Builder } from '../Builder';
-import { Dependencies } from '../Dependencies';
+import { InitConfig } from '../InitConfig';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
@@ -9,12 +9,12 @@ export default class WebAssetsPlugin implements StackPlugin {
     return !builder.stack.hasAny('dll') && builder.stack.hasAll('webpack') && builder.stack.hasAny('server', 'web');
   }
 
-  public init(builder: any, spin: Spin): Dependencies {
+  public init(builder: any, spin: Spin): InitConfig {
     const stack = builder.stack;
 
     return {
-      deps: [],
-      devDeps: []
+      dependencies: [],
+      devDependencies: []
         .concat(stack.hasAny('web') ? ['url-loader', 'file-loader'] : [])
         .concat(stack.hasAny('server') ? ['ignore-loader'] : [])
     };

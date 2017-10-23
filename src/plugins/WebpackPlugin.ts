@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as url from 'url';
 
 import { Builder } from '../Builder';
-import { Dependencies } from '../Dependencies';
+import { InitConfig } from '../InitConfig';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
@@ -305,12 +305,25 @@ const createConfig = (builder: Builder, spin: Spin) => {
 };
 
 export default class WebpackPlugin implements StackPlugin {
-  public init(builder: any, spin: Spin): Dependencies {
+  public init(builder: any, spin: Spin): InitConfig {
     const stack = builder.stack;
 
     return {
-      deps: [],
-      devDeps: ['webpack'].concat(stack.hasAny('web') ? ['webpack-manifest-plugin', 'html-webpack-plugin'] : [])
+      dependencies: [],
+      devDependencies: ['webpack', 'webpack-virtual-modules'].concat(
+        stack.hasAny('web')
+          ? [
+              'connect',
+              'http-proxy-middleware',
+              'wait-on',
+              'openurl',
+              'webpack-dev-middleware',
+              'webpack-hot-middleware',
+              'webpack-manifest-plugin',
+              'html-webpack-plugin'
+            ]
+          : []
+      )
     };
   }
 

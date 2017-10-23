@@ -216,7 +216,6 @@ const startServerWebpack = (watch, builder, options) => {
 };
 
 const openFrontend = (builder, logger) => {
-  const openurl = requireModule('openurl');
   try {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
@@ -224,6 +223,7 @@ const openFrontend = (builder, logger) => {
       if (containerized() || builder.openBrowser === false) {
         logger.info(`App is running at, Local: ${localUrl} LAN: ${lanUrl}`);
       } else {
+        const openurl = requireModule('openurl');
         openurl.open(localUrl);
       }
     } else if (builder.stack.hasAny('react-native')) {
@@ -246,8 +246,6 @@ const debugMiddleware = (req, res, next) => {
 const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
   const webpack = requireModule('webpack');
   const connect = requireModule('connect');
-  const compression = requireModule('compression');
-  const mime = requireModule('mime');
   const webpackDevMiddleware = requireModule('webpack-dev-middleware');
   const webpackHotMiddleware = requireModule('webpack-hot-middleware');
   const httpProxyMiddleware = requireModule('http-proxy-middleware');
@@ -388,6 +386,9 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let inspectorProxy;
 
   if (platform !== 'web') {
+    const mime = requireModule('mime');
+    const compression = requireModule('compression');
+
     mime.define({ 'application/javascript': ['bundle'] });
     mime.define({ 'application/json': ['assets'] });
 

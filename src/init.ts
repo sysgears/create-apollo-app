@@ -4,8 +4,10 @@ import * as inquirer from 'inquirer';
 import * as autocomplete from 'inquirer-autocomplete-prompt';
 import * as minilog from 'minilog';
 import * as path from 'path';
+import * as merge from 'webpack-merge';
+
 import ConfigRc from './configRc';
-import { Dependencies } from './Dependencies';
+import { InitConfig } from './InitConfig';
 import plugins from './plugins';
 import Spin from './Spin';
 import { StackPlugin } from './StackPlugin';
@@ -14,13 +16,13 @@ inquirer.registerPrompt('autocomplete', autocomplete);
 
 const logger = minilog(`init`);
 
-export default () => {
+export default argv => {
   if (fs.existsSync('package.json')) {
     throw new Error('Unable to continue, package.json exists');
   }
 
   const values = [
-    'react-apollo-server: React Apollo GraphQL Express Server',
+    'react-apollo-server-ts: React Apollo GraphQL Express Server',
     'react-apollo-web: React Apollo GraphQL Web frontend'
   ];
   const questions = [
@@ -65,13 +67,13 @@ export default () => {
           }
         }
       };
-    } else if (template === 'react-apollo-server') {
+    } else if (template === 'react-apollo-server-ts') {
       packageJson = {
         ...packageJson,
         spin: {
           builders: {
-            web: {
-              stack: 'webpack apollo react styled-components sass es6 server',
+            server: {
+              stack: 'webpack apollo react styled-components sass ts server',
               openBrowser: true
             }
           }
@@ -84,18 +86,19 @@ export default () => {
     fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
     const config = new ConfigRc(plugins);
     const spin = new Spin('init', config.builders, config.options, {});
-    const allDeps: Dependencies = { deps: [], devDeps: [] };
+    let finalConfig: InitConfig = {};
     for (const name of Object.keys(config.builders)) {
       const builder = config.builders[name];
 
       for (const plugin of config.plugins) {
         if (plugin.detect(builder, spin) && plugin.init) {
-          const pluginDeps = plugin.init(builder, spin);
-          allDeps.deps.push.apply(allDeps.deps, pluginDeps.deps);
-          allDeps.devDeps.push.apply(allDeps.devDeps, pluginDeps.devDeps);
+          const initConfig = plugin.init(builder, spin);
+          finalConfig = merge.smart(finalConfig, initConfig);
         }
       }
     }
-    logger.info('Deps:', allDeps);
+    if (argv.verbose) {
+      logger.debug('Init Config:', finalConfig);
+    }
   });
 };
