@@ -1,4 +1,5 @@
 import { Builder } from '../Builder';
+import { InitConfig } from '../InitConfig';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
@@ -7,6 +8,13 @@ import JSRuleFinder from './shared/JSRuleFinder';
 export default class TCombPlugin implements StackPlugin {
   public detect(builder, spin: Spin): boolean {
     return undefined;
+  }
+
+  public init(builder: any, spin: Spin): InitConfig {
+    return {
+      dependencies: ['tcomb'],
+      devDependencies: ['babel-plugin-tcomb']
+    };
   }
 
   public configure(builder: Builder, spin: Spin) {
