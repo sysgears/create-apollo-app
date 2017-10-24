@@ -73,7 +73,7 @@ export default argv => {
         spin: {
           builders: {
             server: {
-              stack: 'webpack apollo react styled-components sass ts server'
+              stack: 'webpack apollo react styled-components sass ts tslint server'
             }
           }
         }

@@ -10,6 +10,7 @@ import ReactPlugin from './ReactPlugin';
 import SpinJSPlugin from './SpinJSPlugin';
 import StyledComponentsPlugin from './StyledComponentsPlugin';
 import TCombPlugin from './TCombPlugin';
+import TSLintPlugin from './TSLintPlugin';
 import TypeScriptPlugin from './TypeScriptPlugin';
 import VuePlugin from './VuePlugin';
 import WebAssetsPlugin from './WebAssetsPlugin';
@@ -22,6 +23,7 @@ export default [
   new CssProcessorPlugin(),
   new ApolloPlugin(),
   new TypeScriptPlugin(),
+  new TSLintPlugin(),
   new ES6Plugin(),
   new ReactPlugin(),
   new ReactHotLoaderPlugin(),
