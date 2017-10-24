@@ -11,7 +11,7 @@ export default class ES6Plugin implements ConfigPlugin {
         builder.config = spin.merge(
           {
             entry: {
-              index: [requireModule.resolve('babel-polyfill')]
+              index: ['babel-polyfill']
             }
           },
           builder.config

@@ -683,7 +683,7 @@ const startExpoProject = async (config, platform, logger) => {
       "To open this app on your phone scan this QR code in Expo Client (if it doesn't get started automatically)"
     );
     qr.generate(address, code => {
-      logger.info(code);
+      logger.info('\n' + code);
     });
     if (!containerized()) {
       if (platform === 'android') {

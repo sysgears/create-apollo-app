@@ -89,7 +89,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       if (stack.hasAny('dll')) {
         builder.config = spin.merge(builder.config, {
           entry: {
-            vendor: [require.resolve(`./react-native/react-native-polyfill-${reactVer}.js`)]
+            vendor: [`spinjs/lib/plugins/react-native/react-native-polyfill-${reactVer}.js`]
           }
         });
       } else {
@@ -106,7 +106,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
               })
             ],
             entry: {
-              index: [require.resolve(`./react-native/react-native-polyfill-${reactVer}.js`)]
+              index: [`spinjs/lib/plugins/react-native/react-native-polyfill-${reactVer}.js`]
             }
           },
           builder.config
