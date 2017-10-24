@@ -305,7 +305,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
 };
 
 export default class WebpackPlugin implements StackPlugin {
-  public init(builder: any, spin: Spin): InitConfig {
+  public init(builder: Builder, spin: Spin): InitConfig {
     const stack = builder.stack;
 
     return {
@@ -327,7 +327,7 @@ export default class WebpackPlugin implements StackPlugin {
     };
   }
 
-  public detect(builder: any, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAny('webpack');
   }
 

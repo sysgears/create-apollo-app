@@ -5,7 +5,7 @@ import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class FlowRuntimePLugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll(['flow-runtime', 'webpack']) && !builder.stack.hasAny('dll');
   }
 

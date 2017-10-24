@@ -8,11 +8,11 @@ import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class ReactPlugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll(['react', 'webpack']);
   }
 
-  public init(builder: any, spin: Spin): InitConfig {
+  public init(builder: Builder, spin: Spin): InitConfig {
     return {
       dependencies: [
         'prop-types',

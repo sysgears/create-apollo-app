@@ -9,7 +9,7 @@ import JSRuleFinder from './shared/JSRuleFinder';
 let persistPlugins;
 
 export default class ApolloPlugin implements StackPlugin {
-  public detect(builder: any, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return !builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack']);
   }
 

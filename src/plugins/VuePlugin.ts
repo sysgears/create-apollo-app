@@ -5,11 +5,11 @@ import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
 
 export default class VuePlugin implements StackPlugin {
-  public detect(builder: any, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll(['vue', 'webpack']);
   }
 
-  public init(builder: any, spin: Spin): InitConfig {
+  public init(builder: Builder, spin: Spin): InitConfig {
     return {
       dependencies: []
         .concat(

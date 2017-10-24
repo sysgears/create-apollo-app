@@ -5,7 +5,7 @@ import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class ES6Plugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll(['es6', 'webpack']);
   }
 

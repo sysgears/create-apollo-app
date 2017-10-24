@@ -6,11 +6,11 @@ import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class TCombPlugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return undefined;
   }
 
-  public init(builder: any, spin: Spin): InitConfig {
+  public init(builder: Builder, spin: Spin): InitConfig {
     return {
       dependencies: ['tcomb'],
       devDependencies: ['babel-plugin-tcomb']

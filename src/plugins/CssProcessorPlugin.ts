@@ -4,7 +4,7 @@ import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
 
 export default class CssProcessorPlugin implements StackPlugin {
-  public detect(builder: any, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll('webpack') && !builder.stack.hasAny('dll');
   }
 

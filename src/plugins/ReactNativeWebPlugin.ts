@@ -4,7 +4,7 @@ import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
 
 export default class ReactNativeWebPlugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll(['react-native-web', 'server', 'webpack']);
   }
 

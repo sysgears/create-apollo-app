@@ -5,8 +5,8 @@ import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
 
 export default class WebAssetsPlugin implements StackPlugin {
-  public detect(builder: any, spin: Spin): boolean {
-    return !builder.stack.hasAny('dll') && builder.stack.hasAll('webpack') && builder.stack.hasAny('server', 'web');
+  public detect(builder: Builder, spin: Spin): boolean {
+    return !builder.stack.hasAny('dll') && builder.stack.hasAll('webpack') && builder.stack.hasAny(['server', 'web']);
   }
 
   public init(builder: any, spin: Spin): InitConfig {

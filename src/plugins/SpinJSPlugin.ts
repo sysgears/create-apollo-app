@@ -4,15 +4,13 @@ import Spin from '../Spin';
 import { StackPlugin } from '../StackPlugin';
 
 export default class SpinJSPlugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return true;
   }
 
-  public init(builder: any, spin: Spin): InitConfig {
+  public init(builder: Builder, spin: Spin): InitConfig {
     return {
       devDependencies: ['spinjs']
     };
   }
-
-  public configure(builder: Builder, spin: Spin) {}
 }

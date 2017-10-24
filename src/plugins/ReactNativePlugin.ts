@@ -23,7 +23,7 @@ const registerBabel = () => {
 };
 
 export default class ReactNativePlugin implements StackPlugin {
-  public detect(builder, spin: Spin): boolean {
+  public detect(builder: Builder, spin: Spin): boolean {
     return builder.stack.hasAll(['react-native', 'webpack']);
   }
 
