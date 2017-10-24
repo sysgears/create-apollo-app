@@ -7,6 +7,7 @@ import ReactHotLoaderPlugin from './ReactHotLoaderPlugin';
 import ReactNativePlugin from './ReactNativePlugin';
 import ReactNativeWebPlugin from './ReactNativeWebPlugin';
 import ReactPlugin from './ReactPlugin';
+import SpinJSPlugin from './SpinJSPlugin';
 import StyledComponentsPlugin from './StyledComponentsPlugin';
 import TCombPlugin from './TCombPlugin';
 import TypeScriptPlugin from './TypeScriptPlugin';
@@ -15,6 +16,7 @@ import WebAssetsPlugin from './WebAssetsPlugin';
 import WebpackPlugin from './WebpackPlugin';
 
 export default [
+  new SpinJSPlugin(),
   new WebpackPlugin(),
   new WebAssetsPlugin(),
   new CssProcessorPlugin(),
