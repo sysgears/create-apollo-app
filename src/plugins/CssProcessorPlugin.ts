@@ -15,14 +15,12 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       if (stack.hasAny('server')) {
         createRule = (ext, ruleList) => ({
           test: new RegExp(`\\.${ext}$`),
-          use: dev
-            ? [
-                { loader: requireModule.resolve('isomorphic-style-loader') },
-                { loader: requireModule.resolve('css-loader'), options: { sourceMap: true } }
-              ]
-                .concat(postCssLoader ? { loader: postCssLoader, options: { sourceMap: true } } : [])
-                .concat(ruleList)
-            : [{ loader: requireModule.resolve('ignore-loader') }]
+          use: [
+            { loader: requireModule.resolve('isomorphic-style-loader') },
+            { loader: requireModule.resolve('css-loader'), options: { sourceMap: true } }
+          ]
+            .concat(postCssLoader ? { loader: postCssLoader, options: { sourceMap: true } } : [])
+            .concat(ruleList)
         });
       } else if (stack.hasAny('web')) {
         let ExtractTextPlugin;
