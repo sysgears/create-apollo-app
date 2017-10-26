@@ -730,7 +730,7 @@ const allocateExpoPorts = async expoPlatforms => {
 
 const startExpoProdServer = async (options, logger) => {
   const connect = requireModule('connect');
-  const mime = requireModule('mime');
+  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
   const compression = requireModule('compression');
 
   logger.info(`Starting Expo prod server`);
