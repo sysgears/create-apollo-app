@@ -246,7 +246,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   const webpack = requireModule('webpack');
   const connect = requireModule('connect');
   const compression = requireModule('compression');
-  const mime = requireModule('mime');
+  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
   const webpackDevMiddleware = requireModule('webpack-dev-middleware');
   const webpackHotMiddleware = requireModule('webpack-hot-middleware');
   const httpProxyMiddleware = requireModule('http-proxy-middleware');
