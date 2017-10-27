@@ -34,6 +34,15 @@
         "question",
         "review"
       ]
+    },
+    {
+      "login": "cdmbase",
+      "name": "cdmbase",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/20957416?v=4",
+      "profile": "https://github.com/cdmbase",
+      "contributions": [
+        "code"
+      ]
     }
   ]
 }
