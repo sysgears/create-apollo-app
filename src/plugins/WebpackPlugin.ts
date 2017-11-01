@@ -192,6 +192,8 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       node: {
+        __dirname: true,
+        __filename: true,
         fs: 'empty',
         net: 'empty',
         tls: 'empty'
