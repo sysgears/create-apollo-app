@@ -181,10 +181,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       target: 'node',
-      node: {
-        __dirname: true,
-        __filename: true
-      },
       externals: (context, request, callback) => {
         if (request.indexOf('webpack') < 0 && !request.startsWith('.') && requireModule.probe(request, context)) {
           return callback(null, 'commonjs ' + request);
