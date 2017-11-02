@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -34,12 +34,27 @@ const __WINDOWS__ = /^win/.test(process.platform);
 let server;
 let startBackend = false;
 let backendFirstStart = true;
+let nodeDebugOpt;
 
 process.on('exit', () => {
   if (server) {
     server.kill('SIGTERM');
   }
 });
+
+const spawnServer = (serverPath, debugOpt, logger) => {
+  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2] });
+  logger(`Spawning ${['node', debugOpt, serverPath].join(' ')}`);
+  server.on('exit', code => {
+    if (code === 250) {
+      // App requested full reload
+      startBackend = true;
+    }
+    logger('Backend has been stopped');
+    server = undefined;
+    runServer(serverPath, logger);
+  });
+};
 
 const runServer = (serverPath, logger) => {
   if (!fs.existsSync(serverPath)) {
@@ -48,16 +63,22 @@ const runServer = (serverPath, logger) => {
   if (startBackend) {
     startBackend = false;
     logger('Starting backend');
-    server = spawn('node', [serverPath], { stdio: [0, 1, 2] });
-    server.on('exit', code => {
-      if (code === 250) {
-        // App requested full reload
-        startBackend = true;
-      }
-      logger('Backend has been stopped');
-      server = undefined;
-      runServer(serverPath, logger);
-    });
+
+    if (!nodeDebugOpt) {
+      exec('node -v', (error, stdout, stderr) => {
+        if (error) {
+          spinLogger.error(error);
+          process.exit(1);
+        }
+        const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
+        const nodeMajor = parseInt(nodeVersion[1], 10);
+        const nodeMinor = parseInt(nodeVersion[2], 10);
+        nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
+        spawnServer(serverPath, nodeDebugOpt, logger);
+      });
+    } else {
+      spawnServer(serverPath, nodeDebugOpt, logger);
+    }
   }
 };
 
