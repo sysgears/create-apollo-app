@@ -19,7 +19,7 @@ export default class ES6Plugin implements ConfigPlugin {
       }
 
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules/;
       jsRule.use = {
         loader: requireModule.resolve('babel-loader'),

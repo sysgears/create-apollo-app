@@ -46,7 +46,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       };
 
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules\/(?!react-native|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/;
       const origUse = jsRule.use;
       jsRule.use = req => (req.resource.indexOf('node_modules') >= 0 ? reactNativeRule : origUse);

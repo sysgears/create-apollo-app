@@ -10,7 +10,7 @@ export default class FlowRuntimePLugin implements ConfigPlugin {
 
     if (stack.hasAll(['flow-runtime', 'webpack']) && !stack.hasAny('dll')) {
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.use = spin.merge(jsRule.use, {
         options: {
           plugins: [

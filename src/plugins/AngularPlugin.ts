@@ -14,12 +14,12 @@ export default class AngularPlugin implements ConfigPlugin {
       const webpack = requireModule('webpack');
 
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const tsRule = jsRuleFinder.findAndCreateTSRule();
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
             {
-              test: jsRule.test,
+              test: tsRule.test,
               use: requireModule.resolve('angular2-template-loader')
             }
           ]

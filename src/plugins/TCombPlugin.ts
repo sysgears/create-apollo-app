@@ -10,7 +10,7 @@ export default class TCombPlugin implements ConfigPlugin {
 
     if (stack.hasAll(['tcomb', 'webpack']) && !stack.hasAny('dll')) {
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.use = spin.merge(jsRule.use, {
         options: {
           plugins: [[requireModule.resolve('babel-plugin-tcomb')]]

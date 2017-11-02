@@ -56,12 +56,12 @@ export default class ApolloPlugin implements ConfigPlugin {
 
       if (builder.stack.hasAny(['server', 'web'])) {
         const webpack = requireModule('webpack');
-        const jsRuleFinder = new JSRuleFinder(builder);
-        const jsRule = jsRuleFinder.rule;
-        jsRule.use = spin.merge(
-          jsRule.use,
-          persistGraphQL ? [requireModule.resolve('persistgraphql-webpack-plugin/js-loader')] : []
-        );
+
+        if (persistGraphQL) {
+          const jsRuleFinder = new JSRuleFinder(builder);
+          const jsRule = jsRuleFinder.findAndCreateJSRule();
+          jsRule.use = spin.merge(jsRule.use, [requireModule.resolve('persistgraphql-webpack-plugin/js-loader')]);
+        }
 
         builder.config = spin.merge(builder.config, {
           plugins: [

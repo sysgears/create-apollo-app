@@ -13,10 +13,10 @@ export default class TypeScriptPlugin implements ConfigPlugin {
 
     if (stack.hasAll(['ts', 'webpack'])) {
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const tsRule = jsRuleFinder.findAndCreateTSRule();
       const { CheckerPlugin } = requireModule('awesome-typescript-loader');
-      jsRule.test = /\.ts$/;
-      jsRule.use = [
+      tsRule.test = /\.ts$/;
+      tsRule.use = [
         {
           loader: requireModule.resolve('awesome-typescript-loader'),
           options: { ...builder.tsLoaderOptions }
