@@ -1,14 +1,18 @@
 import * as path from 'path';
 
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
 let persistPlugins;
 
-export default class ApolloPlugin implements ConfigPlugin {
+export default class ApolloPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return !builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack']);
+  }
+
   public configure(builder: Builder, spin: Spin) {
     if (!builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack'])) {
       const persistGraphQL = spin.options.persistGraphQL && !spin.test;

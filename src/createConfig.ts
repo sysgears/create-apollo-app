@@ -1,49 +1,18 @@
 import * as fs from 'fs';
 
 import { Builder } from './Builder';
-import { ConfigPlugin } from './ConfigPlugin';
 import ConfigRc from './configRc';
-import AngularPlugin from './plugins/AngularPlugin';
-import ApolloPlugin from './plugins/ApolloPlugin';
-import CssProcessorPlugin from './plugins/CssProcessorPlugin';
-import ES6Plugin from './plugins/ES6Plugin';
-import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
-import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
-import ReactNativePlugin from './plugins/ReactNativePlugin';
-import ReactNativeWebPlugin from './plugins/ReactNativeWebPlugin';
-import ReactPlugin from './plugins/ReactPlugin';
-import StyledComponentsPlugin from './plugins/StyledComponentsPlugin';
-import TCombPlugin from './plugins/TCombPlugin';
-import TypeScriptPlugin from './plugins/TypeScriptPlugin';
-import VuePlugin from './plugins/VuePlugin';
-import WebAssetsPlugin from './plugins/WebAssetsPlugin';
-import WebpackPlugin from './plugins/WebpackPlugin';
+import plugins from './plugins';
 import requireModule from './requireModule';
 import Spin from './Spin';
 import Stack from './Stack';
+import { StackPlugin } from './StackPlugin';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
 const createConfig = cmd => {
   const builders = {};
 
-  const plugins = [
-    new WebpackPlugin(),
-    new WebAssetsPlugin(),
-    new CssProcessorPlugin(),
-    new ApolloPlugin(),
-    new TypeScriptPlugin(),
-    new ES6Plugin(),
-    new ReactPlugin(),
-    new ReactHotLoaderPlugin(),
-    new TCombPlugin(),
-    new FlowRuntimePLugin(),
-    new ReactNativePlugin(),
-    new ReactNativeWebPlugin(),
-    new StyledComponentsPlugin(),
-    new AngularPlugin(),
-    new VuePlugin()
-  ];
   const config = new ConfigRc(plugins);
   const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
   const overrides = fs.existsSync(overridesConfig) ? requireModule('./' + overridesConfig) : {};
@@ -70,7 +39,9 @@ const createConfig = cmd => {
 
   for (const name of Object.keys(builders)) {
     const builder = builders[name];
-    config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
+    config.plugins.forEach(
+      (plugin: StackPlugin) => plugin.detect(builder, spin) && plugin.configure && plugin.configure(builder, spin)
+    );
     if (overrides[name]) {
       builders[name].config = spin.mergeWithStrategy(
         {

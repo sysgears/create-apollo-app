@@ -3,17 +3,18 @@ import * as fs from 'fs';
 import { Builder } from './Builder';
 import requireModule from './requireModule';
 import Stack from './Stack';
-
-const pkg = requireModule('./package.json');
+import { StackPlugin } from './StackPlugin';
 
 const SPIN_CONFIG_NAME = '.spinrc.json';
 
 export default class ConfigRc {
   public options: any;
   public builders: { [x: string]: Builder };
-  public plugins: object[];
+  public plugins: StackPlugin[];
 
   constructor(plugins) {
+    const pkg = requireModule('./package.json');
+
     let config = pkg.spin ? pkg.spin : JSON.parse(fs.readFileSync(SPIN_CONFIG_NAME).toString());
 
     if (typeof config === 'string' || (typeof config === 'object' && config.constructor === Array)) {

@@ -1,9 +1,9 @@
 import * as path from 'path';
 
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
 let babelRegisterDone = false;
@@ -22,7 +22,11 @@ const registerBabel = () => {
   }
 };
 
-export default class ReactNativePlugin implements ConfigPlugin {
+export default class ReactNativePlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['react-native', 'webpack']);
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

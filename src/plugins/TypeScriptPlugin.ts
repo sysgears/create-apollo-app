@@ -2,12 +2,45 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
+import { InitConfig } from '../InitConfig';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class TypeScriptPlugin implements ConfigPlugin {
+export default class TypeScriptPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['ts', 'webpack']);
+  }
+
+  public init(builder: Builder, spin: Spin): InitConfig {
+    return {
+      dependencies: [],
+      devDependencies: ['@types/node', '@types/webpack-env', 'typescript', 'awesome-typescript-loader', 'html-loader'],
+      fs: {
+        ['tsconfig.json']: {
+          compilerOptions: {
+            target: 'es5',
+            module: 'commonjs',
+            lib: ['es2016'],
+            moduleResolution: 'node',
+            sourceMap: true,
+            declaration: true,
+            noImplicitAny: false,
+            rootDir: 'src',
+            outDir: 'lib',
+            allowSyntheticDefaultImports: true,
+            experimentalDecorators: true,
+            pretty: true,
+            removeComments: true
+          },
+          include: ['**/*.ts'],
+          exclude: ['node_modules', 'dist', 'lib']
+        }
+      }
+    };
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

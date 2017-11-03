@@ -29,7 +29,7 @@ if (cmd === 'watch' || cmd === 'build' || cmd === 'test') {
 }
 
 if (cmd === 'init') {
-  init();
+  init(argv);
 } else {
   execute(cmd, argv, config.builders, config.options);
 }

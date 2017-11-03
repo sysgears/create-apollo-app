@@ -1,12 +1,16 @@
 import * as path from 'path';
 
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class AngularPlugin implements ConfigPlugin {
+export default class AngularPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['angular', 'webpack']);
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

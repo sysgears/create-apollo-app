@@ -1,10 +1,14 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class ES6Plugin implements ConfigPlugin {
+export default class ES6Plugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['es6', 'webpack']);
+  }
+
   public configure(builder: Builder, spin: Spin) {
     if (builder.stack.hasAll(['es6', 'webpack'])) {
       if (builder.stack.hasAny('es6') && !builder.stack.hasAny('dll')) {

@@ -1,16 +1,29 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
+import { InitConfig } from '../InitConfig';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 
-export default class WebAssetsPlugin implements ConfigPlugin {
+export default class WebAssetsPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return !builder.stack.hasAny('dll') && builder.stack.hasAll('webpack') && builder.stack.hasAny(['server', 'web']);
+  }
+
+  public init(builder: any, spin: Spin): InitConfig {
+    const stack = builder.stack;
+
+    return {
+      dependencies: [],
+      devDependencies: []
+        .concat(stack.hasAny('web') ? ['url-loader', 'file-loader'] : [])
+        .concat(stack.hasAny('server') ? ['ignore-loader'] : [])
+    };
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 
-    if (
-      !stack.hasAny('dll') &&
-      (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && spin.options.ssr))
-    ) {
+    if (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && spin.options.ssr)) {
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
@@ -46,7 +59,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
           ]
         }
       });
-    } else if (!stack.hasAny('dll') && stack.hasAll(['webpack', 'server']) && !spin.options.ssr) {
+    } else if (stack.hasAll(['webpack', 'server']) && !spin.options.ssr) {
       const ignoreLoader = requireModule.resolve('ignore-loader');
       builder.config = spin.merge(builder.config, {
         module: {

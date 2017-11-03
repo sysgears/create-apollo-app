@@ -1,10 +1,14 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class FlowRuntimePLugin implements ConfigPlugin {
+export default class FlowRuntimePLugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['flow-runtime', 'webpack']) && !builder.stack.hasAny('dll');
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

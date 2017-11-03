@@ -236,7 +236,6 @@ const startServerWebpack = (watch, builder, options) => {
 };
 
 const openFrontend = (builder, logger) => {
-  const openurl = requireModule('openurl');
   try {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
@@ -244,6 +243,7 @@ const openFrontend = (builder, logger) => {
       if (containerized() || builder.openBrowser === false) {
         logger.info(`App is running at, Local: ${localUrl} LAN: ${lanUrl}`);
       } else {
+        const openurl = requireModule('openurl');
         openurl.open(localUrl);
       }
     } else if (builder.stack.hasAny('react-native')) {

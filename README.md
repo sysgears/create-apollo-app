@@ -24,7 +24,7 @@ npm install -g spinjs
 The basic `spinjs` usage is simple: you describe the stack used in your application in the property `spin` of `package.json`:
 ```json
 {
-  "spin": "webpack:es6:apollo:react-native:ios"
+  "spin": "webpack es6 apollo react-native ios"
 }
 ```
 and you are all set. 
@@ -86,13 +86,13 @@ configuration should be used:
     "spin": {
         "builders": {
             "backend": {
-                "stack": "webpack:es6:apollo:react:styled-components:sass:server"
+                "stack": "webpack es6 apollo react styled-components sass server"
             },
             "frontend": {
-                "stack": "webpack:es6:apollo:react:styled-components:sass:web"    
+                "stack": "webpack es6 apollo react styled-components sass web"    
             },
             "mobile": {
-                "stack": "webpack:es6:apollo:react-native:styled-components:sass:ios"        
+                "stack": "webpack es6 apollo react-native styled-components sass ios"        
             }
         }
     }
@@ -106,7 +106,7 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 
 |Builder Option            |Description|
 |--------------------------|-----------|
-|stack|an array or semicolon separated string with list of stack features for the builder|
+|stack|an array or whitespace separated string with list of stack features for the builder|
 |entry|path to entry source file for this builder (`src/{platform}/index.{js,jsx,ts,tsx}` by default)|
 |enabled|whether this builder is enabled, `true` by default|
 |roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default| 

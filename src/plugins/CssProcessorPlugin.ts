@@ -1,7 +1,7 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 
 const postCssDefaultConfig = () => {
   return {
@@ -13,7 +13,11 @@ const postCssDefaultConfig = () => {
   };
 };
 
-export default class CssProcessorPlugin implements ConfigPlugin {
+export default class CssProcessorPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll('webpack') && !builder.stack.hasAny('dll');
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
     const dev = spin.dev;

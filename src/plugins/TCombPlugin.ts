@@ -1,10 +1,22 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
+import { InitConfig } from '../InitConfig';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class TCombPlugin implements ConfigPlugin {
+export default class TCombPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return undefined;
+  }
+
+  public init(builder: Builder, spin: Spin): InitConfig {
+    return {
+      dependencies: ['tcomb'],
+      devDependencies: ['babel-plugin-tcomb']
+    };
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

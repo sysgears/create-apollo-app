@@ -2,11 +2,32 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
+import { InitConfig } from '../InitConfig';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class ReactPlugin implements ConfigPlugin {
+export default class ReactPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['react', 'webpack']);
+  }
+
+  public init(builder: Builder, spin: Spin): InitConfig {
+    return {
+      dependencies: [
+        'prop-types',
+        'react',
+        'react-dom',
+        'react-redux',
+        'react-router',
+        'react-router-dom',
+        'react-router-redux',
+        'redux'
+      ],
+      devDependencies: ['react-addons-test-utils', 'react-test-renderer', 'redux-devtools-extension']
+    };
+  }
+
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 

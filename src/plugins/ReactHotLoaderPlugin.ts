@@ -1,14 +1,16 @@
 import { Builder } from '../Builder';
-import { ConfigPlugin } from '../ConfigPlugin';
 import requireModule from '../requireModule';
 import Spin from '../Spin';
+import { StackPlugin } from '../StackPlugin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
-export default class ReactHotLoaderPlugin implements ConfigPlugin {
-  public configure(builder: Builder, spin: Spin) {
-    const stack = builder.stack;
+export default class ReactHotLoaderPlugin implements StackPlugin {
+  public detect(builder: Builder, spin: Spin): boolean {
+    return builder.stack.hasAll(['react-hot-loader', 'webpack']) && !builder.stack.hasAny('dll');
+  }
 
-    if (stack.hasAll(['react-hot-loader', 'webpack']) && spin.dev && !spin.test && !stack.hasAny('dll')) {
+  public configure(builder: Builder, spin: Spin) {
+    if (spin.dev && !spin.test) {
       builder.config = spin.mergeWithStrategy(
         {
           entry: 'prepend'
