@@ -13,12 +13,14 @@ export default class StyledComponentsPlugin implements ConfigPlugin {
       (stack.hasAny('web') || (stack.hasAny('server') && spin.options.ssr))
     ) {
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.findAndCreateJSRule();
-      jsRule.use = spin.merge(jsRule.use, {
-        options: {
-          plugins: [[requireModule.resolve('babel-plugin-styled-components'), { ssr: spin.options.ssr }]]
-        }
-      });
+      const jsRule = jsRuleFinder.findJSRule();
+      if (jsRule) {
+        jsRule.use = spin.merge(jsRule.use, {
+          options: {
+            plugins: [[requireModule.resolve('babel-plugin-styled-components'), { ssr: spin.options.ssr }]]
+          }
+        });
+      }
     }
   }
 }
