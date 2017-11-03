@@ -14,7 +14,6 @@ export default class TypeScriptPlugin implements ConfigPlugin {
     if (stack.hasAll(['ts', 'webpack'])) {
       const jsRuleFinder = new JSRuleFinder(builder);
       const tsRule = jsRuleFinder.findAndCreateTSRule();
-      const { CheckerPlugin } = requireModule('awesome-typescript-loader');
       tsRule.test = /\.ts$/;
       tsRule.use = [
         {
@@ -22,18 +21,6 @@ export default class TypeScriptPlugin implements ConfigPlugin {
           options: { ...builder.tsLoaderOptions }
         }
       ];
-
-      builder.config = spin.merge(builder.config, {
-        module: {
-          rules: [
-            {
-              test: /\.html$/,
-              loader: requireModule.resolve('html-loader')
-            }
-          ]
-        },
-        plugins: [new CheckerPlugin()]
-      });
 
       builder.config.resolve.extensions = ['.']
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))

@@ -44,6 +44,20 @@ export default class AngularPlugin implements ConfigPlugin {
           },
           builder.config
         );
+
+        const { CheckerPlugin } = requireModule('awesome-typescript-loader');
+
+        builder.config = spin.merge(builder.config, {
+          module: {
+            rules: [
+              {
+                test: /\.html$/,
+                loader: requireModule.resolve('html-loader')
+              }
+            ]
+          },
+          plugins: [new CheckerPlugin()]
+        });
       }
     }
   }
