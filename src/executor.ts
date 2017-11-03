@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -12,7 +12,6 @@ import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
 import { RawSource } from 'webpack-sources';
 
-import plugins from './plugins';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import requireModule from './requireModule';
 
@@ -35,12 +34,27 @@ const __WINDOWS__ = /^win/.test(process.platform);
 let server;
 let startBackend = false;
 let backendFirstStart = true;
+let nodeDebugOpt;
 
 process.on('exit', () => {
   if (server) {
     server.kill('SIGTERM');
   }
 });
+
+const spawnServer = (serverPath, debugOpt, logger) => {
+  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2] });
+  logger(`Spawning ${['node', debugOpt, serverPath].join(' ')}`);
+  server.on('exit', code => {
+    if (code === 250) {
+      // App requested full reload
+      startBackend = true;
+    }
+    logger('Backend has been stopped');
+    server = undefined;
+    runServer(serverPath, logger);
+  });
+};
 
 const runServer = (serverPath, logger) => {
   if (!fs.existsSync(serverPath)) {
@@ -49,16 +63,22 @@ const runServer = (serverPath, logger) => {
   if (startBackend) {
     startBackend = false;
     logger('Starting backend');
-    server = spawn('node', [serverPath], { stdio: [0, 1, 2] });
-    server.on('exit', code => {
-      if (code === 250) {
-        // App requested full reload
-        startBackend = true;
-      }
-      logger('Backend has been stopped');
-      server = undefined;
-      runServer(serverPath, logger);
-    });
+
+    if (!nodeDebugOpt) {
+      exec('node -v', (error, stdout, stderr) => {
+        if (error) {
+          spinLogger.error(error);
+          process.exit(1);
+        }
+        const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
+        const nodeMajor = parseInt(nodeVersion[1], 10);
+        const nodeMinor = parseInt(nodeVersion[2], 10);
+        nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
+        spawnServer(serverPath, nodeDebugOpt, logger);
+      });
+    } else {
+      spawnServer(serverPath, nodeDebugOpt, logger);
+    }
   }
 };
 
@@ -246,6 +266,8 @@ const debugMiddleware = (req, res, next) => {
 const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
   const webpack = requireModule('webpack');
   const connect = requireModule('connect');
+  const compression = requireModule('compression');
+  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
   const webpackDevMiddleware = requireModule('webpack-dev-middleware');
   const webpackHotMiddleware = requireModule('webpack-hot-middleware');
   const httpProxyMiddleware = requireModule('http-proxy-middleware');
@@ -386,9 +408,6 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let inspectorProxy;
 
   if (platform !== 'web') {
-    const mime = requireModule('mime');
-    const compression = requireModule('compression');
-
     mime.define({ 'application/javascript': ['bundle'] });
     mime.define({ 'application/json': ['assets'] });
 
@@ -685,7 +704,7 @@ const startExpoProject = async (config, platform, logger) => {
       "To open this app on your phone scan this QR code in Expo Client (if it doesn't get started automatically)"
     );
     qr.generate(address, code => {
-      logger.info(code);
+      logger.info('\n' + code);
     });
     if (!containerized()) {
       if (platform === 'android') {
@@ -732,7 +751,7 @@ const allocateExpoPorts = async expoPlatforms => {
 
 const startExpoProdServer = async (options, logger) => {
   const connect = requireModule('connect');
-  const mime = requireModule('mime');
+  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
   const compression = requireModule('compression');
 
   logger.info(`Starting Expo prod server`);

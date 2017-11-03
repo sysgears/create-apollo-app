@@ -10,20 +10,24 @@ export default class FlowRuntimePLugin implements StackPlugin {
   }
 
   public configure(builder: Builder, spin: Spin) {
-    const jsRuleFinder = new JSRuleFinder(builder);
-    const jsRule = jsRuleFinder.rule;
-    jsRule.use = spin.merge(jsRule.use, {
-      options: {
-        plugins: [
-          [
-            requireModule.resolve('babel-plugin-flow-runtime'),
-            {
-              assert: true,
-              annotate: true
-            }
+    const stack = builder.stack;
+
+    if (stack.hasAll(['flow-runtime', 'webpack']) && !stack.hasAny('dll')) {
+      const jsRuleFinder = new JSRuleFinder(builder);
+      const jsRule = jsRuleFinder.findAndCreateJSRule();
+      jsRule.use = spin.merge(jsRule.use, {
+        options: {
+          plugins: [
+            [
+              requireModule.resolve('babel-plugin-flow-runtime'),
+              {
+                assert: true,
+                annotate: true
+              }
+            ]
           ]
-        ]
-      }
-    });
+        }
+      });
+    }
   }
 }

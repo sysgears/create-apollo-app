@@ -22,12 +22,14 @@ export default class TCombPlugin implements StackPlugin {
 
     if (stack.hasAll(['tcomb', 'webpack']) && !stack.hasAny('dll')) {
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
-      jsRule.use = spin.merge(jsRule.use, {
-        options: {
-          plugins: [[requireModule.resolve('babel-plugin-tcomb')]]
-        }
-      });
+      const jsRule = jsRuleFinder.findJSRule();
+      if (jsRule) {
+        jsRule.use = spin.merge(jsRule.use, {
+          options: {
+            plugins: [[requireModule.resolve('babel-plugin-tcomb')]]
+          }
+        });
+      }
     }
   }
 }

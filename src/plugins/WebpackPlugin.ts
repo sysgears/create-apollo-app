@@ -13,7 +13,7 @@ const __WINDOWS__ = /^win/.test(process.platform);
 const createPlugins = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
   const webpack = requireModule('webpack');
-  const buildNodeEnv = spin.dev ? (spin.test ? 'test' : 'development') : 'production';
+  const buildNodeEnv = process.env.NODE_ENV || (spin.dev ? (spin.test ? 'test' : 'development') : 'production');
 
   let plugins = [];
 
@@ -183,10 +183,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       target: 'node',
-      node: {
-        __dirname: true,
-        __filename: true
-      },
       externals: (context, request, callback) => {
         if (request.indexOf('webpack') < 0 && !request.startsWith('.') && requireModule.probe(request, context)) {
           return callback(null, 'commonjs ' + request);
@@ -198,6 +194,8 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       node: {
+        __dirname: true,
+        __filename: true,
         fs: 'empty',
         net: 'empty',
         tls: 'empty'

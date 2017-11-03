@@ -23,7 +23,7 @@ export default class ReactHotLoaderPlugin implements StackPlugin {
         }
       );
       const jsRuleFinder = new JSRuleFinder(builder);
-      const jsRule = jsRuleFinder.rule;
+      const jsRule = jsRuleFinder.findAndCreateJSRule();
       const isBabelUsed = jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0;
       jsRule.use = spin.merge(jsRule.use, {
         options: {

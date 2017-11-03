@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.15",
+  "version": "0.4.26",
   "scripts": {
     "clean": "rm -rf ./lib",
     "compile": "tsc",
@@ -9,7 +9,7 @@
     "tests": " ",
     "test": "npm run tests && npm run lint",
     "precommit": "lint-staged",
-    "prepublish": "npm run clean && npm run compile"
+    "prepublishOnly": "npm run clean && npm run compile"
   },
   "files": [
     "src",
