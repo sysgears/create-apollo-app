@@ -162,7 +162,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
 
   const baseDevServerConfig = {
     hot: true,
-    contentBase: '/',
     publicPath: '/',
     headers: { 'Access-Control-Allow-Origin': '*' },
     quiet: false,
@@ -257,7 +256,10 @@ const createConfig = (builder: Builder, spin: Spin) => {
       config = {
         ...config,
         entry: {
-          index: (spin.dev ? [`webpack-hot-middleware/client`] : []).concat([builder.entry || './src/client/index.js'])
+          index: (spin.dev
+            ? ['webpack/hot/dev-server', `webpack-dev-server/client?http://localhost:${webpackDevPort}/`]
+            : []
+          ).concat([builder.entry || './src/client/index.js'])
         },
         output: {
           filename: '[name].[hash].js',

@@ -265,12 +265,6 @@ const debugMiddleware = (req, res, next) => {
 
 const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
   const webpack = requireModule('webpack');
-  const connect = requireModule('connect');
-  const compression = requireModule('compression');
-  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
-  const webpackDevMiddleware = requireModule('webpack-dev-middleware');
-  const webpackHotMiddleware = requireModule('webpack-hot-middleware');
-  const httpProxyMiddleware = requireModule('http-proxy-middleware');
   const waitOn = requireModule('wait-on');
 
   const config = builder.config;
@@ -397,9 +391,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     }
   });
 
-  const app = connect();
-
-  const serverInstance: any = http.createServer(app);
+  let serverInstance: any;
 
   let webSocketProxy;
   let messageSocket;
@@ -407,7 +399,31 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let ms;
   let inspectorProxy;
 
-  if (platform !== 'web') {
+  if (platform === 'web') {
+    const WebpackDevServer = requireModule('webpack-dev-server');
+
+    serverInstance = new WebpackDevServer(compiler, {
+      ...config.devServer,
+      reporter: ({ state, stats }) => {
+        if (state) {
+          logger('bundle is now VALID.');
+        } else {
+          logger('bundle is now INVALID.');
+        }
+        reporter(null, stats);
+      }
+    });
+  } else {
+    const connect = requireModule('connect');
+    const compression = requireModule('compression');
+    const httpProxyMiddleware = requireModule('http-proxy-middleware');
+    const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
+    const webpackDevMiddleware = requireModule('webpack-dev-middleware');
+    const webpackHotMiddleware = requireModule('webpack-hot-middleware');
+
+    const app = connect();
+
+    serverInstance = http.createServer(app);
     mime.define({ 'application/javascript': ['bundle'] });
     mime.define({ 'application/json': ['assets'] });
 
@@ -499,43 +515,42 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     if (inspectorProxy) {
       app.use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)));
     }
-  }
-
-  const devMiddleware = webpackDevMiddleware(
-    compiler,
-    _.merge({}, config.devServer, {
-      reporter({ state, stats }) {
-        if (state) {
-          logger('bundle is now VALID.');
-        } else {
-          logger('bundle is now INVALID.');
-        }
-        reporter(null, stats);
-      }
-    })
-  );
-
-  app
-    .use((req, res, next) => {
-      if (platform !== 'web') {
-        // Workaround for Expo Client bug in parsing Content-Type header with charset
-        const origSetHeader = res.setHeader;
-        res.setHeader = (key, value) => {
-          let val = value;
-          if (key === 'Content-Type' && value.indexOf('application/javascript') >= 0) {
-            val = value.split(';')[0];
+    const devMiddleware = webpackDevMiddleware(
+      compiler,
+      _.merge({}, config.devServer, {
+        reporter({ state, stats }) {
+          if (state) {
+            logger('bundle is now VALID.');
+          } else {
+            logger('bundle is now INVALID.');
           }
-          origSetHeader.call(res, key, val);
-        };
-      }
-      return devMiddleware(req, res, next);
-    })
-    .use(webpackHotMiddleware(compiler, { log: false }));
+          reporter(null, stats);
+        }
+      })
+    );
 
-  if (config.devServer.proxy) {
-    Object.keys(config.devServer.proxy).forEach(key => {
-      app.use(httpProxyMiddleware(key, config.devServer.proxy[key]));
-    });
+    app
+      .use((req, res, next) => {
+        if (platform !== 'web') {
+          // Workaround for Expo Client bug in parsing Content-Type header with charset
+          const origSetHeader = res.setHeader;
+          res.setHeader = (key, value) => {
+            let val = value;
+            if (key === 'Content-Type' && value.indexOf('application/javascript') >= 0) {
+              val = value.split(';')[0];
+            }
+            origSetHeader.call(res, key, val);
+          };
+        }
+        return devMiddleware(req, res, next);
+      })
+      .use(webpackHotMiddleware(compiler, { log: false }));
+
+    if (config.devServer.proxy) {
+      Object.keys(config.devServer.proxy).forEach(key => {
+        app.use(httpProxyMiddleware(key, config.devServer.proxy[key]));
+      });
+    }
   }
 
   logger(`Webpack ${config.name} dev server listening on http://localhost:${config.devServer.port}`);
