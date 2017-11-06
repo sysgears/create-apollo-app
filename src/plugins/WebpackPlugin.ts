@@ -269,7 +269,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           port: webpackDevPort
         }
       };
-      if (spin.options.ssr) {
+      if (spin.options.devProxy || builder.devProxy) {
         config.devServer.proxy = {
           '!/*.hot-update.{json,js}': {
             target: backendBaseUrl,

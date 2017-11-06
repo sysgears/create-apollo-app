@@ -128,6 +128,7 @@ Options that are non-specific to each builder but rather to application as a who
 |webpackDll|Utilize Webpack DLLs to speed up incremental builds|
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
+|devProxy|Proxy all unknown requests from front-end running on Webpack during development to back-end|
 
 Each `spinjs` plugin tries to handle subset of technologies in the builder stack to configure build tools 
 usually used for this stack the best way. After configuration of the builder it gets executed in the mode
