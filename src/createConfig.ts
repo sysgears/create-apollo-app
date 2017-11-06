@@ -71,11 +71,14 @@ const createConfig = cmd => {
   for (const name of Object.keys(builders)) {
     const builder = builders[name];
     config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
+
+    const strategy = {
+      entry: 'replace'
+    };
     if (overrides[name]) {
-      const strategy = {
-        entry: 'replace'
-      };
       builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[name]);
+    }
+    if (builder.webpackConfig) {
       builder.config = spin.mergeWithStrategy(strategy, builder.config, builder.webpackConfig);
     }
   }
