@@ -266,15 +266,17 @@ const createConfig = (builder: Builder, spin: Spin) => {
         },
         devServer: {
           ...baseDevServerConfig,
-          port: webpackDevPort,
-          proxy: {
-            '!/*.hot-update.{json,js}': {
-              target: backendBaseUrl,
-              logLevel: 'info'
-            }
-          }
+          port: webpackDevPort
         }
       };
+      if (spin.options.ssr) {
+        config.devServer.proxy = {
+          '!/*.hot-update.{json,js}': {
+            target: backendBaseUrl,
+            logLevel: 'info'
+          }
+        };
+      }
     } else if (stack.hasAny('react-native')) {
       config = {
         ...config,
