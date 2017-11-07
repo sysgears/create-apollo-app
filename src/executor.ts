@@ -768,11 +768,11 @@ const startExpoProdServer = async (options, logger) => {
   const connect = requireModule('connect');
   const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
   const compression = requireModule('compression');
+  const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+  const { UrlUtils } = requireModule('xdl');
 
   logger.info(`Starting Expo prod server`);
   const packagerPort = 3030;
-  const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
-  startExpoServer(projectRoot, packagerPort);
 
   const app = connect();
   app
@@ -783,6 +783,7 @@ const startExpoProdServer = async (options, logger) => {
     })
     .use(compression())
     .use(debugMiddleware)
+    .use(statusPageMiddleware)
     .use((req, res, next) => {
       const platform = url.parse(req.url, true).query.platform;
       if (platform) {
@@ -805,12 +806,19 @@ const startExpoProdServer = async (options, logger) => {
   serverInstance.listen(packagerPort);
   serverInstance.timeout = 0;
   serverInstance.keepAliveTimeout = 0;
+
+  const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
+  await startExpoServer(projectRoot, packagerPort);
+  const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
+    hostType: 'localhost'
+  });
+  logger.info(`Expo server running on address: ${localAddress}`);
 };
 
 const startExp = async (options, logger) => {
   const projectRoot = path.join(process.cwd(), '.expo', 'all');
   setupExpoDir(projectRoot, 'all');
-  if (['ba', 'bi', 'build:android', 'build:ios'].indexOf(process.argv[3]) >= 0) {
+  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p'].indexOf(process.argv[3]) >= 0) {
     await startExpoProdServer(options, logger);
   }
   const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {

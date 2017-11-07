@@ -24,7 +24,7 @@ const argv = yargs
 
 const cmd = argv._[0];
 let config;
-if (cmd === 'watch' || cmd === 'build' || cmd === 'test') {
+if (cmd === 'watch' || cmd === 'build' || cmd === 'test' || cmd === 'exp') {
   config = createConfig(cmd);
 }
 
