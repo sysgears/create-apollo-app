@@ -11,7 +11,7 @@ let babelRegisterDone = false;
 const registerBabel = () => {
   if (!babelRegisterDone) {
     requireModule('babel-register')({
-      presets: [requireModule.resolve('babel-preset-es2015'), requireModule.resolve('babel-preset-flow')],
+      presets: [requireModule.resolve('babel-preset-env'), requireModule.resolve('babel-preset-flow')],
       ignore: /node_modules(?!\/(haul|react-native))/,
       retainLines: true,
       sourceMaps: 'inline'

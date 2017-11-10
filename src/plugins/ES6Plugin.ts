@@ -27,7 +27,7 @@ export default class ES6Plugin implements ConfigPlugin {
           cacheDirectory: spin.dev,
           presets: [
             requireModule.resolve('babel-preset-react'),
-            [requireModule.resolve('babel-preset-es2015'), { modules: false }],
+            [requireModule.resolve('babel-preset-env'), { modules: false }],
             requireModule.resolve('babel-preset-stage-0')
           ],
           plugins: [

@@ -49,6 +49,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
     plugins = [
       new webpack.DefinePlugin({
         __DEV__: spin.dev,
+        __TEST__: spin.test,
         'process.env.NODE_ENV': `"${buildNodeEnv}"`
       }),
       new webpack.DllPlugin({
@@ -69,6 +70,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           __SERVER__: true,
           __SSR__: spin.options.ssr && !spin.test,
           __DEV__: spin.dev,
+          __TEST__: spin.test,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
           __BACKEND_URL__: `"${backendUrl}"`,
           ...spin.options.defines
@@ -81,6 +83,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           __SERVER__: false,
           __SSR__: spin.options.ssr && !spin.test,
           __DEV__: spin.dev,
+          __TEST__: spin.test,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
           __BACKEND_URL__: `"${backendUrl}"`,
           ...spin.options.defines

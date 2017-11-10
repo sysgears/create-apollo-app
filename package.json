@@ -1,15 +1,15 @@
 {
   "name": "spinjs",
-  "version": "0.4.31",
+  "version": "0.4.32",
   "scripts": {
     "clean": "rm -rf ./lib",
-    "compile": "tsc",
+    "build": "tsc",
     "watch": "tsc -w",
     "lint": "tslint --fix -p tsconfig.json --type-check",
     "tests": " ",
-    "test": "npm run tests && npm run lint",
+    "test": "yarn tests && yarn lint",
     "precommit": "lint-staged",
-    "prepublishOnly": "npm run clean && npm run compile"
+    "prepare": "yarn clean && yarn build"
   },
   "files": [
     "src",
