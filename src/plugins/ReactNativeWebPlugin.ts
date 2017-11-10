@@ -7,7 +7,7 @@ export default class ReactNativeWebPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
 
-    if (stack.hasAll(['react-native-web', 'server', 'webpack'])) {
+    if (stack.hasAll(['react-native-web', 'webpack']) && stack.hasAny(['server', 'web'])) {
       builder.config = spin.merge(builder.config, {
         resolve: {
           alias: {
