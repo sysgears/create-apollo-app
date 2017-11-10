@@ -16,18 +16,20 @@ export default class ReactNativeWebPlugin implements ConfigPlugin {
         }
       });
 
-      builder.config.externals = (context, request, callback) => {
-        if (request.indexOf('react-native') >= 0) {
-          return callback(null, 'commonjs ' + request + '-web');
-        } else if (
-          request.indexOf('webpack') < 0 &&
-          !request.startsWith('.') &&
-          requireModule.probe(request, context)
-        ) {
-          return callback(null, 'commonjs ' + request);
-        }
-        callback();
-      };
+      if (stack.hasAny('server')) {
+        builder.config.externals = (context, request, callback) => {
+          if (request.indexOf('react-native') >= 0) {
+            return callback(null, 'commonjs ' + request + '-web');
+          } else if (
+            request.indexOf('webpack') < 0 &&
+            !request.startsWith('.') &&
+            requireModule.probe(request, context)
+          ) {
+            return callback(null, 'commonjs ' + request);
+          }
+          callback();
+        };
+      }
     }
   }
 }
