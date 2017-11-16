@@ -841,15 +841,29 @@ const execute = (cmd, argv, builders: object, options) => {
   if (cmd === 'exp') {
     startExp(options, spinLogger);
   } else if (cmd === 'test') {
-    const mochaWebpack = spawn(
-      path.join(process.cwd(), 'node_modules/.bin/mocha-webpack'),
-      ['--include', 'babel-polyfill', '--webpack-config', 'node_modules/spinjs/webpack.config.js'].concat(
-        process.argv.slice(process.argv.indexOf('test') + 1)
-      ),
-      {
-        stdio: [0, 1, 2]
+    let builder;
+    for (const name of Object.keys(builders)) {
+      builder = builders[name];
+      if (builder.roles.indexOf('test') >= 0) {
+        break;
       }
-    );
+    }
+    const testArgs = ['--include', 'babel-polyfill', '--webpack-config', 'node_modules/spinjs/webpack.config.js'];
+    if (builder.stack.hasAny('react')) {
+      const majorVer = requireModule('react/package.json').version.split('.')[0];
+      const reactVer = majorVer >= 16 ? majorVer : 15;
+      if (reactVer >= 16) {
+        testArgs.push('--include', 'raf/polyfill');
+      }
+    }
+
+    const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
+    testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
+    spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
+
+    const mochaWebpack = spawn(testCmd, testArgs, {
+      stdio: [0, 1, 2]
+    });
     mochaWebpack.on('close', code => {
       process.exit(code);
     });
