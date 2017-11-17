@@ -13,8 +13,10 @@ export default class ConfigRc {
   public builders: { [x: string]: Builder };
   public plugins: object[];
 
-  constructor(plugins) {
-    let config = pkg.spin ? pkg.spin : JSON.parse(fs.readFileSync(SPIN_CONFIG_NAME).toString());
+  constructor(plugins, argv) {
+    let config = argv.c
+      ? JSON.parse(fs.readFileSync(argv.c).toString())
+      : pkg.spin ? pkg.spin : JSON.parse(fs.readFileSync(SPIN_CONFIG_NAME).toString());
 
     if (typeof config === 'string' || (typeof config === 'object' && config.constructor === Array)) {
       config = {

@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 import * as minilog from 'minilog';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
+import * as serveStatic from 'serve-static';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
 import { RawSource } from 'webpack-sources';
@@ -471,6 +472,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         next();
       })
       .use(compression())
+      .use('/debugger-ui', serveStatic(path.resolve('node_modules/react-native/local-cli/server/util/debugger-ui')))
       .use(getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()))
       .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
       .use(liveReloadMiddleware(compiler))

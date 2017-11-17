@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.38",
+  "version": "0.4.39",
   "scripts": {
     "clean": "rm -rf ./lib",
     "build": "tsc",
@@ -57,6 +57,7 @@
     "minilog": "^3.1.0",
     "mkdirp": "^0.5.1",
     "require-relative": "^0.8.7",
+    "serve-static": "^1.13.1",
     "source-list-map": "^2.0.0",
     "source-map-support": "^0.4.15",
     "webpack-merge": "^4.1.0",

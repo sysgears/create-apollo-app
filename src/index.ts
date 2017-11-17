@@ -13,6 +13,10 @@ const argv = yargs
   .command('exp', 'launches server for exp and exp tool')
   .command('test [mocha-webpack options]', 'runs package tests')
   .demandCommand(1, '')
+  .option('c', {
+    describe: 'Specify path to config file',
+    type: 'string'
+  })
   .option('verbose', {
     alias: 'v',
     default: false,
@@ -28,7 +32,7 @@ if (argv.help && cmd !== 'exp') {
   yargs.showHelp();
 } else {
   if (cmd === 'watch' || cmd === 'build' || cmd === 'test' || cmd === 'exp') {
-    config = createConfig(cmd);
+    config = createConfig(cmd, argv);
   }
 
   if (cmd === 'init') {

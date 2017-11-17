@@ -24,7 +24,7 @@ import Stack from './Stack';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
-const createConfig = cmd => {
+const createConfig = (cmd, argv) => {
   const builders = {};
 
   const plugins = [
@@ -44,7 +44,7 @@ const createConfig = cmd => {
     new AngularPlugin(),
     new VuePlugin()
   ];
-  const config = new ConfigRc(plugins);
+  const config = new ConfigRc(plugins, argv);
   const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
   const overrides = fs.existsSync(overridesConfig) ? requireModule('./' + overridesConfig) : {};
   const spin = new Spin(cmd, config.builders, config.options, overrides.dependencyPlatforms || {});
