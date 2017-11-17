@@ -778,7 +778,6 @@ const startExpoProdServer = async (options, logger) => {
   app
     .use((req, res, next) => {
       req.path = req.url.split('?')[0];
-      // logger.debug('req:', req.url);
       next();
     })
     .use(compression())
@@ -792,6 +791,11 @@ const startExpoProdServer = async (options, logger) => {
           res.writeHead(200, { 'Content-Type': mime.lookup(filePath) });
           fs.createReadStream(filePath).pipe(res);
         } else {
+          if (req.url.indexOf('.bundle?') >= 0) {
+            logger.error(
+              `Bundle for '${platform}' platform is missing! You need to build bundles both for Android and iOS.`
+            );
+          }
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(`{'message': 'File not found: ${filePath}'}`);
         }
