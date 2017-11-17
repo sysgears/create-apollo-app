@@ -310,9 +310,10 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   compiler.plugin('after-emit', (compilation, callback) => {
     if (backendFirstStart) {
       if (hasBackend) {
-        logger.debug('Webpack dev server is waiting for backend to start...');
-        const { host } = url.parse(options.backendUrl.replace('{ip}', ip.address()));
-        waitOn({ resources: [`tcp:${host}`] }, err => {
+        const { protocol, hostname, port } = url.parse(options.backendUrl.replace('{ip}', ip.address()));
+        const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
+        logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
+        waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
           if (err) {
             logger.error(err);
             callback();
