@@ -38,7 +38,7 @@ export default class ConfigRc {
       builder.name = name;
       builder.stack = new Stack(config.options.stack, typeof builder === 'object' ? builder.stack : builder);
       builder.roles = builder.roles || ['build', 'watch'];
-      builder.backendUrl = config.options.backendUrl || 'http://localhost:8080';
+      builder.backendUrl = builder.backendUrl || config.options.backendUrl || 'http://localhost:8080';
       builders[builder.name] = builder;
     }
     this.builders = builders;
