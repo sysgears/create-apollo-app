@@ -42,7 +42,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
     plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
   }
 
-  const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
+  const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
 
   if (stack.hasAny('dll')) {
     const name = `vendor_${builder.parent.name}`;
@@ -146,7 +146,7 @@ const webpackPortMap = {};
 const createConfig = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
 
-  const backendUrl = spin.options.backendUrl.replace('{ip}', ip.address());
+  const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
 
   const baseConfig: any = {
     name: builder.name,

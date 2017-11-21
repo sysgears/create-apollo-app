@@ -311,7 +311,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   compiler.plugin('after-emit', (compilation, callback) => {
     if (backendFirstStart) {
       if (hasBackend) {
-        const { protocol, hostname, port } = url.parse(options.backendUrl.replace('{ip}', ip.address()));
+        const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
         const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
         logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
         waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
@@ -781,6 +781,7 @@ const startExpoProdServer = async (options, logger) => {
   app
     .use((req, res, next) => {
       req.path = req.url.split('?')[0];
+      // console.log('req:', req.url);
       next();
     })
     .use(compression())

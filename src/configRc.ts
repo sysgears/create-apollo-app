@@ -38,6 +38,7 @@ export default class ConfigRc {
       builder.name = name;
       builder.stack = new Stack(config.options.stack, typeof builder === 'object' ? builder.stack : builder);
       builder.roles = builder.roles || ['build', 'watch'];
+      builder.backendUrl = config.options.backendUrl || 'http://localhost:8080';
       builders[builder.name] = builder;
     }
     this.builders = builders;
@@ -48,7 +49,6 @@ export default class ConfigRc {
     options.backendBuildDir = options.backendBuildDir || 'build/server';
     options.frontendBuildDir = options.frontendBuildDir || 'build/client';
     options.dllBuildDir = options.dllBuildDir || 'build/dll';
-    options.backendUrl = options.backendUrl || 'http://localhost:8080';
     options.webpackDll = options.webpackDll !== undefined ? options.webpackDll : true;
   }
 }

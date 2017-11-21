@@ -110,6 +110,7 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |entry|path to entry source file for this builder (`src/{platform}/index.{js,jsx,ts,tsx}` by default)|
 |enabled|whether this builder is enabled, `true` by default|
 |roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default| 
+|backendUrl|URL to a REST/GraphQL API of the application endpoint(http://localhost:8080 by default)|
 |webpackDevPort|the local port used for Webpack Dev Server process to host web frontend files|
 
 Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.
@@ -123,7 +124,8 @@ Options that are non-specific to each builder but rather to application as a who
 |backendBuildDir|Output directory for code targeted to run under Node.js|
 |frontendBuildDir|Output directory for code targeted to run in Web Browser and on mobile devices| 
 |dllBuildDir|Output directory for Webpack DLL files used to speed up incremental builds|
-|backendUrl|URL to a REST/GraphQL API of the application endpoint|
+|backendUrl|Same as corresponding builder option|
+|stack|Same as corresponding builder option, but prepended to each builder stack|
 |ssr|Use server side rendering for the application (makes requiring web assets inside server code possible)| 
 |webpackDll|Utilize Webpack DLLs to speed up incremental builds|
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
