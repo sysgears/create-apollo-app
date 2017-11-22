@@ -183,6 +183,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       target: 'node',
+      output: {
+        devtoolModuleFilenameTemplate: spin.dev ? ({ resourcePath }) => path.resolve(resourcePath) : undefined
+      },
       externals: (context, request, callback) => {
         if (request.indexOf('webpack') < 0 && !request.startsWith('.') && requireModule.probe(request, context)) {
           return callback(null, 'commonjs ' + request);
@@ -212,6 +215,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
         vendor: getDepsForNode(builder, spin.depPlatforms)
       },
       output: {
+        ...config.output,
         filename: `${name}.[hash]_dll.js`,
         path: path.resolve(spin.options.dllBuildDir),
         library: name
@@ -235,8 +239,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index
         },
         output: {
-          devtoolModuleFilenameTemplate: spin.dev ? '../../[resource-path]' : undefined,
-          devtoolFallbackModuleFilenameTemplate: spin.dev ? '../../[resource-path];[hash]' : undefined,
+          ...config.output,
           filename: '[name].js',
           sourceMapFilename: '[name].[chunkhash].js.map',
           path: path.resolve(spin.options.backendBuildDir),
@@ -265,6 +268,8 @@ const createConfig = (builder: Builder, spin: Spin) => {
           ).concat([builder.entry || './src/client/index.js'])
         },
         output: {
+          ...config.output,
+          devtoolModuleFilenameTemplate: spin.dev ? ({ resourcePath }) => `${resourcePath}` : undefined,
           filename: '[name].[hash].js',
           path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
           publicPath: '/'
@@ -289,6 +294,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index: [builder.entry || './src/mobile/index.js']
         },
         output: {
+          ...config.output,
           filename: `index.mobile.bundle`,
           publicPath: '/',
           path: path.resolve(path.join(spin.options.frontendBuildDir, builder.name))
