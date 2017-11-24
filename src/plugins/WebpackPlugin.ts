@@ -228,6 +228,10 @@ const createConfig = (builder: Builder, spin: Spin) => {
       }
     };
   } else {
+    if (spin.dev) {
+      config.module.unsafeCache = false;
+      config.resolve.unsafeCache = false;
+    }
     if (stack.hasAny('server')) {
       const index = [];
       if (spin.dev && !spin.test) {
