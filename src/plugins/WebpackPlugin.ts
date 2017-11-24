@@ -187,10 +187,16 @@ const createConfig = (builder: Builder, spin: Spin) => {
         devtoolModuleFilenameTemplate: spin.dev ? ({ resourcePath }) => path.resolve(resourcePath) : undefined
       },
       externals: (context, request, callback) => {
-        if (request.indexOf('webpack') < 0 && !request.startsWith('.') && requireModule.probe(request, context)) {
-          return callback(null, 'commonjs ' + request);
+        if (request.indexOf('webpack') < 0 && !request.startsWith('.')) {
+          const fullPath = requireModule.probe(request, context);
+          if (fullPath) {
+            const ext = path.extname(fullPath);
+            if (fullPath.indexOf('node_modules') >= 0 && ['.js', '.jsx', '.json'].indexOf(ext) >= 0) {
+              return callback(null, 'commonjs ' + request);
+            }
+          }
         }
-        callback();
+        return callback();
       }
     };
   } else {

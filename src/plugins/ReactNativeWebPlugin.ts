@@ -17,17 +17,13 @@ export default class ReactNativeWebPlugin implements ConfigPlugin {
       });
 
       if (stack.hasAny('server')) {
+        const originalExternals = builder.config.externals;
         builder.config.externals = (context, request, callback) => {
           if (request.indexOf('react-native') >= 0) {
             return callback(null, 'commonjs ' + request + '-web');
-          } else if (
-            request.indexOf('webpack') < 0 &&
-            !request.startsWith('.') &&
-            requireModule.probe(request, context)
-          ) {
-            return callback(null, 'commonjs ' + request);
+          } else {
+            return originalExternals(context, request, callback);
           }
-          callback();
         };
       }
     }
