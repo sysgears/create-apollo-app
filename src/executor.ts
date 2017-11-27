@@ -279,7 +279,9 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let vendorSource;
   let vendorMap;
 
-  if (options.webpackDll && builder.child) {
+  const webpackDll = builder.webpackDll !== undefined ? builder.webpackDll : options.webpackDll;
+
+  if (webpackDll && builder.child) {
     const name = `vendor_${platform}`;
     const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
     config.plugins.push(
@@ -331,7 +333,8 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
       callback();
     }
   });
-  if (options.webpackDll && builder.child && platform !== 'web') {
+
+  if (webpackDll && builder.child && platform !== 'web') {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
@@ -354,7 +357,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     });
   }
 
-  if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
+  if (webpackDll && builder.child && platform === 'web' && !options.ssr) {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.assets[vendorHashesJson.name] = vendorSource;
       compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
@@ -382,7 +385,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
           assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
         }
       });
-      if (options.webpackDll) {
+      if (webpackDll) {
         assetsMap['vendor.js'] = vendorHashesJson.name;
       }
       fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
@@ -840,10 +843,17 @@ const startExp = async (options, logger) => {
 
 const execute = (cmd, argv, builders: object, options) => {
   if (argv.verbose) {
+    // TODO: Remove these changes before committing. For debug only. Prints genned webpack conf in file.
+    let configString = '';
     Object.keys(builders).forEach(name => {
       const builder = builders[name];
-      spinLogger.log(`${name} = `, require('util').inspect(builder.config, false, null));
+      const builderConfig = require('util').inspect(builder.config, false, null);
+      configString += `var ${name} = ${builderConfig};\n\n`;
+      spinLogger.log(`${name} = `, builderConfig);
     });
+    const previewConfigPath = path.join(process.cwd(), 'webpack.config.preview.js');
+    fs.writeFileSync(previewConfigPath, configString);
+    spinLogger.log(`Saved webpack config preview to ${previewConfigPath}`);
   }
 
   if (cmd === 'exp') {
@@ -897,10 +907,10 @@ const execute = (cmd, argv, builders: object, options) => {
         if (stack.hasAny(['dll', 'test'])) {
           continue;
         }
+        const webpackDll = builder.webpackDll !== undefined ? builder.webpackDll : options.webpackDll;
         const prepareDllPromise: PromiseLike<any> =
-          cmd === 'watch' && options.webpackDll && builder.child
-            ? buildDll(stack.platform, builder.child.config, options)
-            : Promise.resolve();
+          webpackDll && builder.child ? buildDll(stack.platform, builder.child.config, options) : Promise.resolve();
+
         prepareDllPromise.then(() => startWebpack(platforms, watch, builder, options));
       }
     });
