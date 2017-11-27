@@ -15,7 +15,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
         module: {
           rules: [
             {
-              test: /\.(png|ico|jpg|xml)$/,
+              test: /\.(png|ico|jpg|gif|xml)$/,
               use: {
                 loader: requireModule.resolve('url-loader'),
                 options: {
