@@ -46,9 +46,12 @@ export default class ConfigRc {
     this.plugins = plugins.concat((config.plugins || []).map(name => new (require(name))()));
     const options: any = this.options;
 
+    const spinModeCmd = argv._[0];
+    const isDev = spinModeCmd === 'watch' || spinModeCmd === 'test';
+
     options.backendBuildDir = options.backendBuildDir || 'build/server';
     options.frontendBuildDir = options.frontendBuildDir || 'build/client';
     options.dllBuildDir = options.dllBuildDir || 'build/dll';
-    options.webpackDll = options.webpackDll !== undefined ? options.webpackDll : true;
+    options.webpackDll = options.webpackDll !== undefined ? options.webpackDll : isDev;
   }
 }
