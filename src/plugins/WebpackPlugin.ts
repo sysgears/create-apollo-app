@@ -279,7 +279,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
         },
         output: {
           ...config.output,
-          devtoolModuleFilenameTemplate: spin.dev ? ({ resourcePath }) => `${resourcePath}` : undefined,
           filename: '[name].[hash].js',
           path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
           publicPath: '/'
