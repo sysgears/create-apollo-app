@@ -8,6 +8,7 @@ import ApolloPlugin from './plugins/ApolloPlugin';
 import CssProcessorPlugin from './plugins/CssProcessorPlugin';
 import ES6Plugin from './plugins/ES6Plugin';
 import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
+import NativeScriptDevPlugin from './plugins/NativeScriptDevPlugin';
 import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
 import ReactNativePlugin from './plugins/ReactNativePlugin';
 import ReactNativeWebPlugin from './plugins/ReactNativeWebPlugin';
@@ -40,6 +41,7 @@ const createConfig = (cmd, argv) => {
     new FlowRuntimePLugin(),
     new ReactNativePlugin(),
     new ReactNativeWebPlugin(),
+    new NativeScriptDevPlugin(),
     new StyledComponentsPlugin(),
     new AngularPlugin(),
     new VuePlugin()
