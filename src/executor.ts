@@ -74,8 +74,11 @@ const runServer = (serverPath, logger) => {
         const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
         const nodeMajor = parseInt(nodeVersion[1], 10);
         const nodeMinor = parseInt(nodeVersion[2], 10);
+        const freeportAsync = requireModule('freeport-async');
         nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
-        spawnServer(serverPath, nodeDebugOpt, logger);
+        freeportAsync(9229).then(debugPort => {
+          spawnServer(serverPath, nodeDebugOpt + '=' + debugPort, logger);
+        });
       });
     } else {
       spawnServer(serverPath, nodeDebugOpt, logger);
