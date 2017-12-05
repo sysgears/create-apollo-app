@@ -62,7 +62,11 @@
     "source-map-support": "^0.4.15",
     "webpack-merge": "^4.1.0",
     "webpack-sources": "^1.0.1",
-    "yargs": "^8.0.2"
+    "yargs": "^8.0.2",
+    "minimatch": "^3.0.4",
+    "semver": "^5.4.1",
+    "shelljs": "^0.6.0",
+    "nativescript-hook": "^0.2.2"
   },
   "prettier": {
     "printWidth": 120,
