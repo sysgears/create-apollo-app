@@ -789,9 +789,9 @@ const startExpoProdServer = async (options, logger) => {
       debug(`Prod mobile packager request: ${req.url}`);
       next();
     })
+    .use(statusPageMiddleware)
     .use(compression())
     .use(debugMiddleware)
-    .use(statusPageMiddleware)
     .use((req, res, next) => {
       const platform = url.parse(req.url, true).query.platform;
       if (platform) {
@@ -836,16 +836,18 @@ const startExpoProdServer = async (options, logger) => {
 const startExp = async (options, logger) => {
   const projectRoot = path.join(process.cwd(), '.expo', 'all');
   setupExpoDir(projectRoot, 'all');
-  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p'].indexOf(process.argv[3]) >= 0) {
+  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[3]) >= 0) {
     await startExpoProdServer(options, logger);
   }
-  const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
-    cwd: projectRoot,
-    stdio: [0, 1, 2]
-  });
-  exp.on('exit', code => {
-    process.exit(code);
-  });
+  if (process.argv[3] !== 'server') {
+    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
+      cwd: projectRoot,
+      stdio: [0, 1, 2]
+    });
+    exp.on('exit', code => {
+      process.exit(code);
+    });
+  }
 };
 
 const execute = (cmd, argv, builders: object, options) => {
