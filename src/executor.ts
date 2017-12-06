@@ -273,36 +273,20 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
 
   const configOutputPath = config.output.path;
 
-  let vendorHashesJson;
-  let vendorSourceListMap;
-  let vendorSource;
-  let vendorMap;
+  let vendorDllFiles;
 
   if (options.webpackDll && builder.child) {
-    const name = `vendor_${platform}`;
-    const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
+    vendorDllFiles = getVendorDllFiles(builder, options);
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
-        manifest: requireModule('./' + jsonPath)
+        manifest: requireModule(`./${vendorDllFiles.vendorDllJson.path}`)
       })
     );
-    vendorHashesJson = JSON.parse(
-      fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString()
-    );
-    vendorSource = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
-    );
-    vendorMap = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.map')).toString()
-    );
+
     if (platform !== 'web') {
-      const vendorAssets = JSON.parse(
-        fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
-      );
-      config.plugins.push(new MobileAssetsPlugin(vendorAssets));
+      config.plugins.push(new MobileAssetsPlugin(vendorDllFiles.vendorAssets));
     }
-    vendorSourceListMap = fromStringWithSourceMap(vendorSource.source(), JSON.parse(vendorMap.source()));
   }
 
   const compiler = webpack(config);
@@ -336,7 +320,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         chunk.files.forEach(file => {
           if (file.endsWith('.bundle')) {
             const sourceListMap = new SourceListMap();
-            sourceListMap.add(vendorSourceListMap);
+            sourceListMap.add(vendorDllFiles.vendorSourceListMap);
             sourceListMap.add(
               fromStringWithSourceMap(
                 compilation.assets[file].source(),
@@ -355,13 +339,13 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
 
   if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
     compiler.plugin('after-compile', (compilation, callback) => {
-      compilation.assets[vendorHashesJson.name] = vendorSource;
-      compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
+      compilation.assets[vendorDllFiles.vendorHashesJson.name] = vendorDllFiles.vendorBundle.source;
+      compilation.assets[`${vendorDllFiles.vendorHashesJson.name}.map`] = vendorDllFiles.vendorBundle.sourceMap;
       callback();
     });
     compiler.plugin('compilation', compilation => {
       compilation.plugin('html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
-        htmlPluginData.assets.js.unshift('/' + vendorHashesJson.name);
+        htmlPluginData.assets.js.unshift(`/${vendorDllFiles.vendorHashesJson.name}`);
         callback(null, htmlPluginData);
       });
     });
@@ -382,7 +366,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         }
       });
       if (options.webpackDll) {
-        assetsMap['vendor.js'] = vendorHashesJson.name;
+        assetsMap['vendor.js'] = vendorDllFiles.vendorHashesJson.name;
       }
       fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
     }
@@ -835,6 +819,33 @@ const startExp = async (options, logger) => {
   exp.on('exit', code => {
     process.exit(code);
   });
+};
+
+const getVendorDllFiles = (builder, options) => {
+  const platform = builder.stack.platform;
+  const name = `vendor_${platform}`;
+
+  return {
+    vendorDllJson: {
+      path: path.join(options.dllBuildDir, `${name}_dll.json`)
+    },
+    vendorHashesJson: JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString()),
+    vendorBundle: {
+      source: new RawSource(fs.readFileSync(path.join(options.dllBuildDir, this.vendorHashesJson.name)).toString()),
+      sourceMap: new RawSource(
+        fs.readFileSync(path.join(options.dllBuildDir, this.vendorHashesJson.name + '.map')).toString()
+      )
+    },
+    get vendorAssets() {
+      return JSON.parse(
+        fs.readFileSync(path.join(options.dllBuildDir, this.vendorHashesJson.name + '.assets')).toString()
+      );
+    },
+    vendorSourceListMap: fromStringWithSourceMap(
+      this.vendorBundle.source.source(),
+      JSON.parse(this.vendorBundle.sourceMap.source())
+    )
+  };
 };
 
 const execute = (cmd, argv, builders: object, options) => {
