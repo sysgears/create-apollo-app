@@ -57,7 +57,9 @@ const createConfig = (cmd, argv) => {
       continue;
     }
 
-    if (spin.options.webpackDll && !stack.hasAny('server')) {
+    const webpackDll = builder.webpackDll !== undefined ? builder.webpackDll : spin.options.webpackDll;
+
+    if (webpackDll && !stack.hasAny('server')) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
       dllBuilder.parent = builder;

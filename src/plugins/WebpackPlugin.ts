@@ -108,7 +108,9 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           );
         }
 
-        if (!spin.dev) {
+        const webpackDll = builder.webpackDll !== undefined ? builder.webpackDll : spin.options.webpackDll;
+
+        if (!webpackDll) {
           plugins.push(
             new webpack.optimize.CommonsChunkPlugin({
               name: 'vendor',
