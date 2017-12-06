@@ -814,7 +814,12 @@ const startExpoProdServer = async (options, logger) => {
   const serverInstance: any = http.createServer(app);
 
   logger.info(`Production mobile packager listening on http://localhost:${packagerPort}`);
-  serverInstance.listen(packagerPort);
+  await new Promise((resolve, reject) => {
+    serverInstance.listen(packagerPort, () => {
+      resolve();
+    });
+  });
+
   serverInstance.timeout = 0;
   serverInstance.keepAliveTimeout = 0;
 
