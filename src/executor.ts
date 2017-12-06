@@ -898,7 +898,7 @@ const execute = (cmd, argv, builders: object, options) => {
           continue;
         }
         const prepareDllPromise: PromiseLike<any> =
-          cmd === 'watch' && options.webpackDll && builder.child
+          options.webpackDll && builder.child
             ? buildDll(stack.platform, builder.child.config, options)
             : Promise.resolve();
         prepareDllPromise.then(() => startWebpack(platforms, watch, builder, options));
