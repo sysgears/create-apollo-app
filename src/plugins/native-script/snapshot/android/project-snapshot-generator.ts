@@ -165,7 +165,7 @@ export default class ProjectSnapshotGenerator {
 
             if (generationOptions.install) {
               this.cleanSnapshotArtefacts(this.options.projectRoot);
-              this.installSnapshotArtefacts(this.options.projectRoot);
+              installSnapshotArtefacts(this.options.projectRoot);
               logger.info(
                 generationOptions.useLibs
                   ? 'Snapshot is included in the app as dynamically linked library (.so file).'
@@ -179,11 +179,11 @@ export default class ProjectSnapshotGenerator {
       });
   };
 
-  private calculateBuildPath(projectRoot: any) {
+  public calculateBuildPath(projectRoot: any) {
     return join(this.calculateProjectPath(projectRoot), 'snapshot-build', 'build');
   }
 
-  private cleanSnapshotArtefacts(projectRoot: any) {
+  public cleanSnapshotArtefacts(projectRoot: any) {
     const platformPath = this.calculateProjectPath(projectRoot);
 
     // Remove blob files from prepared folder
@@ -193,58 +193,60 @@ export default class ProjectSnapshotGenerator {
     const configurationsPath = resolveAndroidConfigurationsPath(projectRoot);
     shelljs.rm('-rf', join(configurationsPath, SNAPSHOT_PACKAGE_NAME));
   }
-
-  private installSnapshotArtefacts(projectRoot: any) {
-    const buildPath = this.calculateBuildPath(projectRoot);
-    const platformPath = this.calculateProjectPath(projectRoot);
-
-    const appPath = resolveAndroidAppPath(projectRoot);
-    const configurationsPath = resolveAndroidConfigurationsPath(projectRoot);
-    const configDestinationPath = join(configurationsPath, SNAPSHOT_PACKAGE_NAME);
-
-    // Remove build folder to make sure that the apk will be fully rebuild
-    shelljs.rm('-rf', join(platformPath, 'build'));
-
-    // Copy include.gradle to the specified destination in the platforms folder
-    shelljs.mkdir('-p', configDestinationPath);
-    shelljs.cp(join(buildPath, 'include.gradle'), join(configDestinationPath, 'include.gradle'));
-
-    // Copy tns-java-classes.js
-    if (shelljs.test('-e', join(buildPath, 'tns-java-classes.js'))) {
-      shelljs.cp(join(buildPath, 'tns-java-classes.js'), join(appPath, 'tns-java-classes.js'));
-    }
-
-    if (shelljs.test('-e', join(buildPath, 'ndk-build/libs'))) {
-      // useLibs = true
-      const libsDestinationPath = join(platformPath, 'src', SNAPSHOT_PACKAGE_NAME, 'jniLibs');
-
-      // Copy the libs to the specified destination in the platforms folder
-      shelljs.mkdir('-p', libsDestinationPath);
-      shelljs.cp('-R', join(buildPath, 'ndk-build/libs') + '/', libsDestinationPath);
-    } else {
-      // useLibs = false
-      const blobsSrcPath = join(buildPath, 'snapshots/blobs');
-      const blobsDestinationPath = resolve(appPath, '../snapshots');
-      const appPackageJsonPath = join(appPath, 'package.json');
-
-      // Copy the blobs in the prepared app folder
-      shelljs.cp('-R', blobsSrcPath + '/', resolve(appPath, '../snapshots'));
-
-      /*
-       Rename TNSSnapshot.blob files to snapshot.blob files. The xxd tool uses the file name for the name of the static array. This is why the *.blob files are initially named  TNSSnapshot.blob. After the xxd step, they must be renamed to snapshot.blob, because this is the filename that the Android runtime is looking for.
-       */
-      shelljs.exec('find ' + blobsDestinationPath + " -name '*.blob' -execdir mv {} snapshot.blob ';'");
-
-      // Update the package.json file
-      const appPackageJson = shelljs.test('-e', appPackageJsonPath)
-        ? JSON.parse(readFileSync(appPackageJsonPath, 'utf8'))
-        : {};
-      appPackageJson.android = appPackageJson.android || {};
-      appPackageJson.android.heapSnapshotBlob = '../snapshots';
-      writeFileSync(appPackageJsonPath, JSON.stringify(appPackageJson, null, 2));
-    }
-  }
 }
+
+const installSnapshotArtefacts = (projectRoot: any) => {
+  const buildPath = this.calculateBuildPath(projectRoot);
+  const platformPath = this.calculateProjectPath(projectRoot);
+
+  const appPath = resolveAndroidAppPath(projectRoot);
+  const configurationsPath = resolveAndroidConfigurationsPath(projectRoot);
+  const configDestinationPath = join(configurationsPath, SNAPSHOT_PACKAGE_NAME);
+
+  // Remove build folder to make sure that the apk will be fully rebuild
+  shelljs.rm('-rf', join(platformPath, 'build'));
+
+  // Copy include.gradle to the specified destination in the platforms folder
+  shelljs.mkdir('-p', configDestinationPath);
+  shelljs.cp(join(buildPath, 'include.gradle'), join(configDestinationPath, 'include.gradle'));
+
+  // Copy tns-java-classes.js
+  if (shelljs.test('-e', join(buildPath, 'tns-java-classes.js'))) {
+    shelljs.cp(join(buildPath, 'tns-java-classes.js'), join(appPath, 'tns-java-classes.js'));
+  }
+
+  if (shelljs.test('-e', join(buildPath, 'ndk-build/libs'))) {
+    // useLibs = true
+    const libsDestinationPath = join(platformPath, 'src', SNAPSHOT_PACKAGE_NAME, 'jniLibs');
+
+    // Copy the libs to the specified destination in the platforms folder
+    shelljs.mkdir('-p', libsDestinationPath);
+    shelljs.cp('-R', join(buildPath, 'ndk-build/libs') + '/', libsDestinationPath);
+  } else {
+    // useLibs = false
+    const blobsSrcPath = join(buildPath, 'snapshots/blobs');
+    const blobsDestinationPath = resolve(appPath, '../snapshots');
+    const appPackageJsonPath = join(appPath, 'package.json');
+
+    // Copy the blobs in the prepared app folder
+    shelljs.cp('-R', blobsSrcPath + '/', resolve(appPath, '../snapshots'));
+
+    /*
+     Rename TNSSnapshot.blob files to snapshot.blob files. The xxd tool uses the file name for the name of the static array. This is why the *.blob files are initially named  TNSSnapshot.blob. After the xxd step, they must be renamed to snapshot.blob, because this is the filename that the Android runtime is looking for.
+     */
+    shelljs.exec('find ' + blobsDestinationPath + " -name '*.blob' -execdir mv {} snapshot.blob ';'");
+
+    // Update the package.json file
+    const appPackageJson = shelljs.test('-e', appPackageJsonPath)
+      ? JSON.parse(readFileSync(appPackageJsonPath, 'utf8'))
+      : {};
+    appPackageJson.android = appPackageJson.android || {};
+    appPackageJson.android.heapSnapshotBlob = '../snapshots';
+    writeFileSync(appPackageJsonPath, JSON.stringify(appPackageJson, null, 2));
+  }
+};
+
+export { installSnapshotArtefacts };
 
 const versionIsPrerelease = version => version.indexOf('-') > -1;
 const v8VersionsFileExists = () => existsSync(V8_VERSIONS_LOCAL_PATH);

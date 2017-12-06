@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import semver from 'semver';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as semver from 'semver';
 
 const isTypeScript = ({ projectDir, packageJson }: any = {}) => {
   packageJson = packageJson || getPackageJson(projectDir);
@@ -49,7 +49,7 @@ const getProjectDir = ({ nestingLvl } = { nestingLvl: 0 }) => {
       return false;
     }
 
-    const installedPackage = path.resolve(initCwd, 'node_modules', 'nativescript-dev-webpack');
+    const installedPackage = path.resolve(initCwd, 'node_modules', 'spinjs');
     if (!fs.existsSync(installedPackage)) {
       return false;
     }

@@ -3,3 +3,4 @@ node_modules
 lib
 *.xml
 *.iml
+yarn-error.log

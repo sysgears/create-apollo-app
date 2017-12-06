@@ -3,13 +3,27 @@
   "version": "0.4.46",
   "scripts": {
     "clean": "rm -rf ./lib",
-    "build": "tsc",
+    "build": "tsc && node install-native-script-dev.js",
     "watch": "tsc -w",
     "lint": "tslint --fix -p tsconfig.json --type-check",
     "tests": " ",
     "test": "yarn tests && yarn lint",
     "precommit": "lint-staged",
     "prepare": "yarn clean && yarn build"
+  },
+  "nativescript": {
+    "hooks": [
+      {
+        "type": "before-prepareJSApp",
+        "script": "src/plugins/native-script/hooks/before-prepareJS.ts",
+        "inject": true
+      },
+      {
+        "type": "after-prepare",
+        "script": "src/plugins/native-script/hooks/after-prepare.ts",
+        "inject": true
+      }
+    ]
   },
   "files": [
     "src",
