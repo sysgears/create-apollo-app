@@ -149,14 +149,16 @@ const startClientWebpack = (hasBackend, watch, builder, options) => {
 
   const config = builder.config;
 
-  config.plugins.push(frontendVirtualModules);
+  const vendorDllFiles = getVendorDllFiles(builder, options);
+
+  addPluginsToClientWebpackConfig(builder, watch, options, webpack, vendorDllFiles);
 
   const logger = minilog(`webpack-for-${config.name}`);
   try {
     const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
 
     if (watch) {
-      startWebpackDevServer(hasBackend, builder, options, reporter, logger);
+      startWebpackDevServer(hasBackend, builder, options, reporter, logger, vendorDllFiles);
     } else {
       if (builder.stack.platform !== 'web') {
         config.plugins.push(new MobileAssetsPlugin());
@@ -264,7 +266,7 @@ const debugMiddleware = (req, res, next) => {
   }
 };
 
-const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
+const startWebpackDevServer = (hasBackend, builder, options, reporter, logger, vendorDllFiles) => {
   const webpack = requireModule('webpack');
   const waitOn = requireModule('wait-on');
 
@@ -272,22 +274,6 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   const platform = builder.stack.platform;
 
   const configOutputPath = config.output.path;
-
-  let vendorDllFiles;
-
-  if (options.webpackDll && builder.child) {
-    vendorDllFiles = getVendorDllFiles(builder, options);
-    config.plugins.push(
-      new webpack.DllReferencePlugin({
-        context: process.cwd(),
-        manifest: requireModule(`./${vendorDllFiles.vendorDllJson.path}`)
-      })
-    );
-
-    if (platform !== 'web') {
-      config.plugins.push(new MobileAssetsPlugin(vendorDllFiles.vendorAssets));
-    }
-  }
 
   const compiler = webpack(config);
 
@@ -819,6 +805,32 @@ const startExp = async (options, logger) => {
   exp.on('exit', code => {
     process.exit(code);
   });
+};
+
+const addPluginsToClientWebpackConfig = (builder, watch, options, webpack, vendorDllFiles) => {
+  const config = builder.config;
+  const platform = builder.stack.platform;
+
+  config.plugins.push(frontendVirtualModules);
+
+  if (watch) {
+    if (options.webpackDll && builder.child) {
+      config.plugins.push(
+        new webpack.DllReferencePlugin({
+          context: process.cwd(),
+          manifest: requireModule(`./${vendorDllFiles.vendorDllJson.path}`)
+        })
+      );
+
+      if (platform !== 'web') {
+        config.plugins.push(new MobileAssetsPlugin(vendorDllFiles.vendorAssets));
+      }
+    }
+  }
+
+  if (!watch && platform !== 'web' && !options.webpackDll) {
+    config.plugins.push(new MobileAssetsPlugin());
+  }
 };
 
 const getVendorDllFiles = (builder, options) => {
