@@ -1,6 +1,7 @@
 import { exec, spawn } from 'child_process';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
+import * as Debug from 'debug';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as ip from 'ip';
@@ -16,6 +17,7 @@ import { RawSource } from 'webpack-sources';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import requireModule from './requireModule';
 
+const debug = Debug('spinjs');
 const expoPorts = {};
 
 minilog.enable();
@@ -471,7 +473,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
       .use(loadRawBodyMiddleware)
       .use((req, res, next) => {
         req.path = req.url.split('?')[0];
-        // logger.debug('req:', req.path);
+        debug(`Dev mobile packager request: ${req.path}`);
         next();
       })
       .use(compression())
@@ -784,7 +786,7 @@ const startExpoProdServer = async (options, logger) => {
   app
     .use((req, res, next) => {
       req.path = req.url.split('?')[0];
-      // console.log('req:', req.url);
+      debug(`Prod mobile packager request: ${req.url}`);
       next();
     })
     .use(compression())
@@ -813,9 +815,9 @@ const startExpoProdServer = async (options, logger) => {
 
   const serverInstance: any = http.createServer(app);
 
-  logger.info(`Production mobile packager listening on http://localhost:${packagerPort}`);
   await new Promise((resolve, reject) => {
     serverInstance.listen(packagerPort, () => {
+      logger.info(`Production mobile packager listening on http://localhost:${packagerPort}`);
       resolve();
     });
   });
