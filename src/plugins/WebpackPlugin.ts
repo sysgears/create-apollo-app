@@ -147,6 +147,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
 
   const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
+  const cwd = process.cwd();
 
   const baseConfig: any = {
     name: builder.name,
@@ -155,10 +156,14 @@ const createConfig = (builder: Builder, spin: Spin) => {
       rules: []
     },
     resolve: {
-      modules: [path.join(process.cwd(), 'node_modules'), 'node_modules']
+      modules: [path.join(cwd, 'node_modules'), 'node_modules']
     },
     watchOptions: {
       ignored: /build/
+    },
+    output: {
+      devtoolModuleFilenameTemplate: info =>
+        'webpack:///./' + path.relative(cwd, info.absoluteResourcePath.split('?')[0]).replace(/\\/g, '/')
     },
     bail: !spin.dev
   };
