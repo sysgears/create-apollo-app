@@ -272,7 +272,6 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   const platform = builder.stack.platform;
 
   const configOutputPath = config.output.path;
-  config.output.path = '/';
 
   let vendorHashesJson;
   let vendorSourceListMap;
