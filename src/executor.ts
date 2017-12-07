@@ -799,12 +799,11 @@ const addPluginsToClientWebpackCompiler = (compiler, builder, options, vendorDll
     mkdirp.sync(config.output.path);
     if (stats.compilation.assets['assets.json']) {
       const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
+      const sourceMapKeys = Object.keys(assetsMap).filter(assetName => assetName.indexOf('.map') !== -1);
+      sourceMapKeys.forEach(sourceMapKey => delete assetsMap[sourceMapKey]);
       _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
         const bundleJs = assets.constructor === Array ? assets[0] : assets;
         assetsMap[`${bundle}.js`] = bundleJs;
-        if (assets.length > 1) {
-          assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
-        }
       });
       if (options.webpackDll) {
         assetsMap['vendor.js'] = vendorDllFiles.vendorHashesJson.name;
