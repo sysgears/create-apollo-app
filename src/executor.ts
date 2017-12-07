@@ -161,10 +161,6 @@ const startClientWebpack = (hasBackend, watch, builder, options) => {
     if (watch) {
       startWebpackDevServer(hasBackend, builder, options, reporter, logger, vendorDllFiles);
     } else {
-      if (builder.stack.platform !== 'web') {
-        config.plugins.push(new MobileAssetsPlugin());
-      }
-
       const compiler = webpack(config);
 
       compiler.run(reporter);
