@@ -34,6 +34,7 @@ const __WINDOWS__ = /^win/.test(process.platform);
 
 let server;
 let startBackend = false;
+let frontendFirstStart;
 let backendFirstStart = true;
 let nodeDebugOpt;
 
@@ -277,90 +278,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger, v
 
   const compiler = webpack(config);
 
-  compiler.plugin('after-emit', (compilation, callback) => {
-    if (backendFirstStart) {
-      if (hasBackend) {
-        const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
-        const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
-        logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
-        waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
-          if (err) {
-            logger.error(err);
-            callback();
-          } else {
-            logger.debug('Backend has been started, resuming webpack dev server...');
-            backendFirstStart = false;
-            callback();
-          }
-        });
-      } else {
-        callback();
-      }
-    } else {
-      callback();
-    }
-  });
-  if (options.webpackDll && builder.child && platform !== 'web') {
-    compiler.plugin('after-compile', (compilation, callback) => {
-      compilation.chunks.forEach(chunk => {
-        chunk.files.forEach(file => {
-          if (file.endsWith('.bundle')) {
-            const sourceListMap = new SourceListMap();
-            sourceListMap.add(vendorDllFiles.vendorSourceListMap);
-            sourceListMap.add(
-              fromStringWithSourceMap(
-                compilation.assets[file].source(),
-                JSON.parse(compilation.assets[file + '.map'].source())
-              )
-            );
-            const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
-            compilation.assets[file] = new RawSource(sourceAndMap.source);
-            compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
-          }
-        });
-      });
-      callback();
-    });
-  }
-
-  if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
-    compiler.plugin('after-compile', (compilation, callback) => {
-      compilation.assets[vendorDllFiles.vendorHashesJson.name] = vendorDllFiles.vendorBundle.source;
-      compilation.assets[`${vendorDllFiles.vendorHashesJson.name}.map`] = vendorDllFiles.vendorBundle.sourceMap;
-      callback();
-    });
-    compiler.plugin('compilation', compilation => {
-      compilation.plugin('html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
-        htmlPluginData.assets.js.unshift(`/${vendorDllFiles.vendorHashesJson.name}`);
-        callback(null, htmlPluginData);
-      });
-    });
-  }
-
-  let frontendFirstStart = true;
-
-  compiler.plugin('done', stats => {
-    const dir = configOutputPath;
-    mkdirp.sync(dir);
-    if (stats.compilation.assets['assets.json']) {
-      const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
-      _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
-        const bundleJs = assets.constructor === Array ? assets[0] : assets;
-        assetsMap[`${bundle}.js`] = bundleJs;
-        if (assets.length > 1) {
-          assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
-        }
-      });
-      if (options.webpackDll) {
-        assetsMap['vendor.js'] = vendorDllFiles.vendorHashesJson.name;
-      }
-      fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
-    }
-    if (frontendFirstStart) {
-      frontendFirstStart = false;
-      openFrontend(builder, logger);
-    }
-  });
+  addPluginsToClientWebpackCompiler(compiler, builder, options, vendorDllFiles, logger, hasBackend);
 
   let serverInstance: any;
 
@@ -804,6 +722,99 @@ const startExp = async (options, logger) => {
   });
   exp.on('exit', code => {
     process.exit(code);
+  });
+};
+
+const addPluginsToClientWebpackCompiler = (compiler, builder, options, vendorDllFiles, logger, hasBackend) => {
+  const platform = builder.platform;
+  const config = builder.config;
+  const waitOn = requireModule('wait-on');
+
+  compiler.plugin('after-emit', (compilation, callback) => {
+    if (backendFirstStart) {
+      if (hasBackend) {
+        const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
+        const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
+        logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
+        waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
+          if (err) {
+            logger.error(err);
+            callback();
+          } else {
+            logger.debug('Backend has been started, resuming webpack dev server...');
+            backendFirstStart = false;
+            callback();
+          }
+        });
+      } else {
+        callback();
+      }
+    } else {
+      callback();
+    }
+  });
+
+  if (options.webpackDll && builder.child) {
+    if (platform !== 'web') {
+      compiler.plugin('after-compile', (compilation, callback) => {
+        compilation.chunks.forEach(chunk => {
+          chunk.files.forEach(file => {
+            if (file.endsWith('.bunlde')) {
+              const sourceListMap = new SourceListMap();
+              sourceListMap.add(vendorDllFiles.vendorSourceListMap);
+              sourceListMap.add('\n');
+              sourceListMap.add(
+                fromStringWithSourceMap(
+                  compilation.assets[file].source(),
+                  JSON.parse(compilation.assets[file + '.map'].source())
+                )
+              );
+
+              const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
+              compilation.assets[file] = new RawSource(sourceAndMap.source);
+              compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
+            }
+          });
+        });
+      });
+    } else {
+      if (!options.ssr) {
+        compiler.plugin('after-compile', (compilation, callback) => {
+          compilation.assets[vendorDllFiles.vendorHashesJson.name] = vendorDllFiles.vendorBundle.source;
+          compilation.assets[`${vendorDllFiles.vendorHashesJson.name}.map`] = vendorDllFiles.vendorBundle.sourceMap;
+          callback();
+        });
+
+        compiler.plugin('compilation', compilation => {
+          compilation.plugin('html-webpack-plugin-before-hmtl-processing', (htmlPluginData, callback) => {
+            htmlPluginData.assets.js.unshift(`/${vendorDllFiles.vendorHashesJson.name}`);
+            callback(null, htmlPluginData);
+          });
+        });
+      }
+    }
+  }
+
+  compiler.plugin('done', stats => {
+    mkdirp.sync(config.output.path);
+    if (stats.compilation.assets['assets.json']) {
+      const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
+      _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
+        const bundleJs = assets.constructor === Array ? assets[0] : assets;
+        assetsMap[`${bundle}.js`] = bundleJs;
+        if (assets.length > 1) {
+          assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
+        }
+      });
+      if (options.webpackDll) {
+        assetsMap['vendor.js'] = vendorDllFiles.vendorHashesJson.name;
+      }
+      fs.writeFileSync(path.join(config.output.path, 'assets.json'), JSON.stringify(assetsMap));
+    }
+    if (frontendFirstStart) {
+      frontendFirstStart = false;
+      openFrontend(builder, logger);
+    }
   });
 };
 
