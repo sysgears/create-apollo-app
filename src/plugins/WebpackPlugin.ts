@@ -162,8 +162,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
       ignored: /build/
     },
     output: {
-      devtoolModuleFilenameTemplate: info =>
-        'webpack:///./' + path.relative(cwd, info.absoluteResourcePath.split('?')[0]).replace(/\\/g, '/')
+      devtoolModuleFilenameTemplate: spin.dev
+        ? info => 'webpack:///./' + path.relative(cwd, info.absoluteResourcePath.split('?')[0]).replace(/\\/g, '/')
+        : info => path.relative(cwd, info.absoluteResourcePath)
     },
     bail: !spin.dev
   };
@@ -189,7 +190,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
       ...config,
       target: 'node',
       output: {
-        devtoolModuleFilenameTemplate: spin.dev ? ({ resourcePath }) => path.resolve(resourcePath) : undefined
+        devtoolModuleFilenameTemplate: spin.dev
+          ? ({ resourcePath }) => path.resolve(resourcePath)
+          : info => path.relative(cwd, info.absoluteResourcePath)
       },
       externals: (context, request, callback) => {
         if (request.indexOf('webpack') < 0 && !request.startsWith('.')) {
