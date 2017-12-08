@@ -165,7 +165,7 @@ const startClientWebpack = (hasBackend, watch, builder, options) => {
     const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
 
     if (watch) {
-      startWebpackDevServer(hasBackend, builder, options, reporter, logger, vendorDllFiles);
+      startWebpackDevServer(hasBackend, builder, options, reporter, logger, vendorDllFiles, compiler);
     } else {
       compiler.run(reporter);
     }
@@ -267,13 +267,11 @@ const debugMiddleware = (req, res, next) => {
   }
 };
 
-const startWebpackDevServer = (hasBackend, builder, options, reporter, logger, vendorDllFiles) => {
+const startWebpackDevServer = (hasBackend, builder, options, reporter, logger, vendorDllFiles, compiler) => {
   const webpack = requireModule('webpack');
 
   const config = builder.config;
   const platform = builder.stack.platform;
-
-  const compiler = webpack(config);
 
   let serverInstance: any;
 
