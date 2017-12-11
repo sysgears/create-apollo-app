@@ -35,7 +35,6 @@ const __WINDOWS__ = /^win/.test(process.platform);
 
 let server;
 let startBackend = false;
-let frontendFirstStart;
 let backendFirstStart = true;
 let nodeDebugOpt;
 
@@ -721,6 +720,7 @@ const startExp = async (options, logger) => {
 const addPluginsToClientWebpackCompiler = (compiler, builder, options, watch, vendorDllFiles, logger, hasBackend) => {
   const platform = builder.platform;
   const config = builder.config;
+  let frontendFirstStart = true;
 
   if (watch) {
     const waitOn = requireModule('wait-on');
