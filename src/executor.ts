@@ -784,7 +784,7 @@ const addPluginsToClientWebpackCompiler = (compiler, builder, options, watch, ve
         });
 
         compiler.plugin('compilation', compilation => {
-          compilation.plugin('html-webpack-plugin-before-hmtl-processing', (htmlPluginData, callback) => {
+          compilation.plugin('html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
             htmlPluginData.assets.js.unshift(`/${vendorDllFiles.vendorHashesJson.source.name}`);
             callback(null, htmlPluginData);
           });
