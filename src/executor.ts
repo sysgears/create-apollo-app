@@ -772,6 +772,7 @@ const addPluginsToClientWebpackCompiler = (compiler, builder, options, watch, ve
             }
           });
         });
+        callback();
       });
     } else {
       if (!options.ssr) {
