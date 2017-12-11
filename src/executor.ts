@@ -718,7 +718,7 @@ const startExp = async (options, logger) => {
 };
 
 const addPluginsToClientWebpackCompiler = (compiler, builder, options, watch, vendorDllFiles, logger, hasBackend) => {
-  const platform = builder.platform;
+  const platform = builder.stack.platform;
   const config = builder.config;
   let frontendFirstStart = true;
 
