@@ -755,7 +755,7 @@ const addPluginsToClientWebpackCompiler = (compiler, builder, options, watch, ve
       compiler.plugin('after-compile', (compilation, callback) => {
         compilation.chunks.forEach(chunk => {
           chunk.files.forEach(file => {
-            if (file.endsWith('.bunlde')) {
+            if (file.endsWith('.bundle')) {
               const sourceListMap = new SourceListMap();
               sourceListMap.add(vendorDllFiles.vendorSourceListMap);
               sourceListMap.add('\n');
