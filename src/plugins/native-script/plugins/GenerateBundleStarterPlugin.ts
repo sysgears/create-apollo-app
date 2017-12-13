@@ -1,5 +1,8 @@
+import * as minilog from 'minilog';
 import { RawSource } from 'webpack-sources';
 import { getPackageJson } from '../projectHelpers';
+
+const logger = minilog('GenerateBundleStarterPlugin');
 
 export default class {
   private bundles: any;
@@ -10,7 +13,7 @@ export default class {
   }
 
   public apply = (compiler: any) => {
-    this.webpackContext = compiler.options.context;
+    this.webpackContext = __dirname;
 
     compiler.plugin('emit', function(compilation, cb) {
       compilation.assets['package.json'] = this.generatePackageJson();
