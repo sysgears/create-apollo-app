@@ -1,15 +1,3 @@
-/* tslint:disable:no-var-requires no-namespace */
-
-declare namespace NodeJS {
-  interface Global {
-    self: any;
-    __BUNDLE_START_TIME__: any;
-    __DEV__: any;
-  }
-}
-
-declare var __DEV__: boolean;
-
 require('react-native/packager/src/Resolver/polyfills/polyfills.js');
 require('react-native/packager/src/Resolver/polyfills/console.js');
 require('react-native/packager/src/Resolver/polyfills/error-guard.js');

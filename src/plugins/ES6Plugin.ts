@@ -25,11 +25,12 @@ export default class ES6Plugin implements ConfigPlugin {
         loader: requireModule.resolve('babel-loader'),
         options: {
           cacheDirectory: spin.dev,
+          compact: !spin.dev,
           presets: [
             requireModule.resolve('babel-preset-react'),
             [requireModule.resolve('babel-preset-env'), { modules: false }],
             requireModule.resolve('babel-preset-stage-0')
-          ],
+          ].concat(spin.dev ? [] : requireModule.resolve('babel-preset-minify')),
           plugins: [
             requireModule.resolve('babel-plugin-transform-runtime'),
             requireModule.resolve('babel-plugin-transform-decorators-legacy'),

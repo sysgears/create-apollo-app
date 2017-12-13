@@ -230,7 +230,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       },
       output: {
         ...config.output,
-        filename: `${name}.[hash]_dll.js`,
+        filename: `${name}_[hash]_dll.js`,
         path: path.resolve(spin.options.dllBuildDir),
         library: name
       }

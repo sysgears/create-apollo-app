@@ -40,7 +40,10 @@ export default class ReactNativePlugin implements ConfigPlugin {
         loader: requireModule.resolve('babel-loader'),
         options: {
           cacheDirectory: spin.dev,
-          presets: [requireModule.resolve('babel-preset-expo')],
+          compact: !spin.dev,
+          presets: [requireModule.resolve('babel-preset-expo')].concat(
+            spin.dev ? [] : requireModule.resolve('babel-preset-minify')
+          ),
           plugins: [requireModule.resolve('haul/src/utils/fixRequireIssues')]
         }
       };
@@ -58,6 +61,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
+            { parser: { requireEnsure: false } },
             {
               test: mobileAssetTest,
               use: {
@@ -82,14 +86,15 @@ export default class ReactNativePlugin implements ConfigPlugin {
             })
           ],
           mainFields: ['react-native', 'browser', 'main']
-        }
+        },
+        target: 'webworker'
       });
 
       const reactVer = requireModule('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
       if (stack.hasAny('dll')) {
         builder.config = spin.merge(builder.config, {
           entry: {
-            vendor: [`spinjs/lib/plugins/react-native/react-native-polyfill-${reactVer}.js`]
+            vendor: [`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`]
           }
         });
       } else {
@@ -101,12 +106,12 @@ export default class ReactNativePlugin implements ConfigPlugin {
           {
             plugins: [
               new webpack.SourceMapDevToolPlugin({
-                test: new RegExp(`\\.(${jsRuleFinder.extensions.join('|')}|css|bundle)($|\\?)`, 'i'),
+                test: new RegExp(`\\.bundle$`),
                 filename: '[file].map'
               })
             ],
             entry: {
-              index: [`spinjs/lib/plugins/react-native/react-native-polyfill-${reactVer}.js`]
+              index: [`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`]
             }
           },
           builder.config
