@@ -2,6 +2,7 @@ import { exec, spawn } from 'child_process';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
 import * as Debug from 'debug';
+import * as detectPort from 'detect-port';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as ip from 'ip';
@@ -16,6 +17,8 @@ import { RawSource } from 'webpack-sources';
 
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import requireModule from './requireModule';
+
+const SPIN_DLL_VERSION = 1;
 
 const debug = Debug('spinjs');
 const expoPorts = {};
@@ -76,9 +79,8 @@ const runServer = (serverPath, logger) => {
         const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
         const nodeMajor = parseInt(nodeVersion[1], 10);
         const nodeMinor = parseInt(nodeVersion[2], 10);
-        const freeportAsync = requireModule('freeport-async');
         nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
-        freeportAsync(9229).then(debugPort => {
+        detectPort(9229).then(debugPort => {
           spawnServer(serverPath, nodeDebugOpt + '=' + debugPort, logger);
         });
       });
@@ -584,6 +586,9 @@ const isDllValid = (platform, config, options, logger): boolean => {
       return false;
     }
     const meta = JSON.parse(fs.readFileSync(hashesPath).toString());
+    if (SPIN_DLL_VERSION !== meta.version) {
+      return false;
+    }
     if (!fs.existsSync(path.join(options.dllBuildDir, meta.name))) {
       return false;
     }
@@ -646,7 +651,7 @@ const buildDll = (platform, config, options) => {
           });
           fs.writeFileSync(path.join(options.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
 
-          const meta = { name: vendorKey, hashes: {}, modules: config.entry.vendor };
+          const meta = { name: vendorKey, hashes: {}, modules: config.entry.vendor, version: SPIN_DLL_VERSION };
           for (const filename of Object.keys(json.content)) {
             if (filename.indexOf(' ') < 0) {
               meta.hashes[filename] = crypto
@@ -764,9 +769,8 @@ const startWebpack = async (platforms, watch, builder, options) => {
 
 const allocateExpoPorts = async expoPlatforms => {
   let startPort = 19000;
-  const freeportAsync = requireModule('freeport-async');
   for (const platform of expoPlatforms) {
-    const expoPort = await freeportAsync(startPort);
+    const expoPort = await detectPort(startPort);
     expoPorts[platform] = expoPort;
     startPort = expoPort + 1;
   }
