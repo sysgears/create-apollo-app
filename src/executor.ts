@@ -479,7 +479,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         next();
       })
       .use(compression())
-      .use('/debugger-ui', serveStatic(path.resolve('node_modules/react-native/local-cli/server/util/debugger-ui')))
+      .use('/debugger-ui', serveStatic(requireModule.resolve('react-native/local-cli/server/util/debugger-ui')))
       .use(getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()))
       .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
       .use(liveReloadMiddleware(compiler))
@@ -680,7 +680,7 @@ const setupExpoDir = (dir, platform) => {
   mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
   fs.writeFileSync(
     path.join(reactNativeDir, 'package.json'),
-    fs.readFileSync('node_modules/react-native/package.json')
+    fs.readFileSync(requireModule.resolve('react-native/package.json'))
   );
   fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
   const pkg = JSON.parse(fs.readFileSync('package.json').toString());
@@ -872,7 +872,12 @@ const execute = (cmd, argv, builders: object, options) => {
         break;
       }
     }
-    const testArgs = ['--include', 'babel-polyfill', '--webpack-config', 'node_modules/spinjs/webpack.config.js'];
+    const testArgs = [
+      '--include',
+      'babel-polyfill',
+      '--webpack-config',
+      requireModule.resolve('spinjs/webpack.config.js')
+    ];
     if (builder.stack.hasAny('react')) {
       const majorVer = requireModule('react/package.json').version.split('.')[0];
       const reactVer = majorVer >= 16 ? majorVer : 15;

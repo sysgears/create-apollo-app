@@ -78,7 +78,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
         resolve: {
           plugins: [
             new HasteResolver({
-              directories: [path.resolve('node_modules/react-native')]
+              directories: [requireModule.resolve('react-native')]
             }),
             new AssetResolver({
               platform: stack.platform,
@@ -94,7 +94,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       if (stack.hasAny('dll')) {
         builder.config = spin.merge(builder.config, {
           entry: {
-            vendor: [`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`]
+            vendor: [requireModule.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
           }
         });
       } else {
@@ -111,7 +111,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
               })
             ],
             entry: {
-              index: [`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`]
+              index: [requireModule.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
             }
           },
           builder.config
