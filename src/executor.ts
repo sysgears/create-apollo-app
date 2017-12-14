@@ -479,7 +479,15 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         next();
       })
       .use(compression())
-      .use('/debugger-ui', serveStatic(requireModule.resolve('react-native/local-cli/server/util/debugger-ui')))
+      .use(
+        '/debugger-ui',
+        serveStatic(
+          path.join(
+            path.dirname(requireModule.resolve('react-native/package.json')),
+            '/local-cli/server/util/debugger-ui'
+          )
+        )
+      )
       .use(getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()))
       .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
       .use(liveReloadMiddleware(compiler))
