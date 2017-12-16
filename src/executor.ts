@@ -510,7 +510,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
           for (const filePath of files) {
             if (fs.existsSync(filePath)) {
               assetExists = true;
-              res.writeHead(200, { 'Content-Type': mime.lookup(filePath) });
+              res.writeHead(200, { 'Content-Type': (mime.lookup || mime.getType)(filePath) });
               fs.createReadStream(filePath).pipe(res);
             }
           }
@@ -809,7 +809,7 @@ const startExpoProdServer = async (options, logger) => {
       if (platform) {
         const filePath = path.join(options.frontendBuildDir, platform, req.path);
         if (fs.existsSync(filePath)) {
-          res.writeHead(200, { 'Content-Type': mime.lookup(filePath) });
+          res.writeHead(200, { 'Content-Type': (mime.lookup || mime.getType)(filePath) });
           fs.createReadStream(filePath).pipe(res);
         } else {
           if (req.url.indexOf('.bundle?') >= 0) {
