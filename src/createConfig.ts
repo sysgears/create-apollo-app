@@ -53,10 +53,6 @@ const createConfig = (cmd, argv) => {
     const builder = config.builders[name];
     const stack = builder.stack;
 
-    if (builder.enabled === false || builder.roles.indexOf(cmd) < 0) {
-      continue;
-    }
-
     if (spin.options.webpackDll && !stack.hasAny('server')) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
