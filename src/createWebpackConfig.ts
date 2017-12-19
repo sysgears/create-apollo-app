@@ -1,9 +1,6 @@
 import createConfig from './createConfig';
 
 export default (configPath, builderName) => {
-  const config = createConfig('watch', { c: configPath }).builders;
-  if (!config[builderName]) {
-    throw new Error(`Spin.js builder '${builderName}' doesn't exist`);
-  }
+  const config = createConfig('watch', { c: configPath }, builderName).builders;
   return config[builderName].config;
 };

@@ -15,7 +15,6 @@ import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
 import { RawSource } from 'webpack-sources';
 
-import { Builder } from './Builder';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import requireModule from './requireModule';
 
@@ -863,15 +862,7 @@ const startExp = async (options, logger) => {
   }
 };
 
-const execute = (cmd, argv, inputBuilders: { [key: string]: Builder }, options) => {
-  const builders: { [key: string]: Builder } = {};
-  for (const name of Object.keys(inputBuilders)) {
-    const builder = inputBuilders[name];
-    if (builder.enabled !== false && builder.roles.indexOf(cmd) >= 0) {
-      builders[name] = builder;
-    }
-  }
-
+const execute = (cmd, argv, builders: object, options) => {
   if (argv.verbose) {
     Object.keys(builders).forEach(name => {
       const builder = builders[name];
