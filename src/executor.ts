@@ -16,6 +16,7 @@ import * as url from 'url';
 import { RawSource } from 'webpack-sources';
 
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
+import VendorDllFilesFetcher from './plugins/shared/VendorDllFilesFetcher';
 import requireModule from './requireModule';
 
 const SPIN_DLL_VERSION = 1;
@@ -156,21 +157,22 @@ const startClientWebpack = (hasBackend, watch, builder, options) => {
 
   const config = builder.config;
 
-  config.plugins.push(frontendVirtualModules);
+  const vendorDllFiles = new VendorDllFilesFetcher(options.dllBuildDir, builder.stack.platform);
 
   const logger = minilog(`webpack-for-${config.name}`);
+
+  addPluginsToClientWebpackConfig(builder, watch, options, webpack, vendorDllFiles);
+
+  const compiler = webpack(config);
+
+  addPluginsToClientWebpackCompiler(compiler, builder, options, watch, vendorDllFiles, logger, hasBackend);
+
   try {
     const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
 
     if (watch) {
-      startWebpackDevServer(hasBackend, builder, options, reporter, logger);
+      startWebpackDevServer(hasBackend, builder, options, reporter, logger, vendorDllFiles, compiler);
     } else {
-      if (builder.stack.platform !== 'web') {
-        config.plugins.push(new MobileAssetsPlugin());
-      }
-
-      const compiler = webpack(config);
-
       compiler.run(reporter);
     }
   } catch (err) {
@@ -271,134 +273,11 @@ const debugMiddleware = (req, res, next) => {
   }
 };
 
-const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
+const startWebpackDevServer = (hasBackend, builder, options, reporter, logger, vendorDllFiles, compiler) => {
   const webpack = requireModule('webpack');
-  const waitOn = requireModule('wait-on');
 
   const config = builder.config;
   const platform = builder.stack.platform;
-
-  const configOutputPath = config.output.path;
-  config.output.path = '/';
-
-  let vendorHashesJson;
-  let vendorSourceListMap;
-  let vendorSource;
-  let vendorMap;
-
-  if (options.webpackDll && builder.child) {
-    const name = `vendor_${platform}`;
-    const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
-    config.plugins.push(
-      new webpack.DllReferencePlugin({
-        context: process.cwd(),
-        manifest: requireModule('./' + jsonPath)
-      })
-    );
-    vendorHashesJson = JSON.parse(
-      fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString()
-    );
-    vendorSource = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
-    );
-    vendorMap = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.map')).toString()
-    );
-    if (platform !== 'web') {
-      const vendorAssets = JSON.parse(
-        fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
-      );
-      config.plugins.push(new MobileAssetsPlugin(vendorAssets));
-    }
-    vendorSourceListMap = fromStringWithSourceMap(vendorSource.source(), JSON.parse(vendorMap.source()));
-  }
-
-  const compiler = webpack(config);
-
-  compiler.plugin('after-emit', (compilation, callback) => {
-    if (backendFirstStart) {
-      if (hasBackend) {
-        const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
-        const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
-        logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
-        waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
-          if (err) {
-            logger.error(err);
-            callback();
-          } else {
-            logger.debug('Backend has been started, resuming webpack dev server...');
-            backendFirstStart = false;
-            callback();
-          }
-        });
-      } else {
-        callback();
-      }
-    } else {
-      callback();
-    }
-  });
-  if (options.webpackDll && builder.child && platform !== 'web') {
-    compiler.plugin('after-compile', (compilation, callback) => {
-      compilation.chunks.forEach(chunk => {
-        chunk.files.forEach(file => {
-          if (file.endsWith('.bundle')) {
-            const sourceListMap = new SourceListMap();
-            sourceListMap.add(vendorSourceListMap);
-            sourceListMap.add(
-              fromStringWithSourceMap(
-                compilation.assets[file].source(),
-                JSON.parse(compilation.assets[file + '.map'].source())
-              )
-            );
-            const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
-            compilation.assets[file] = new RawSource(sourceAndMap.source);
-            compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
-          }
-        });
-      });
-      callback();
-    });
-  }
-
-  if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
-    compiler.plugin('after-compile', (compilation, callback) => {
-      compilation.assets[vendorHashesJson.name] = vendorSource;
-      compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
-      callback();
-    });
-    compiler.plugin('compilation', compilation => {
-      compilation.plugin('html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
-        htmlPluginData.assets.js.unshift('/' + vendorHashesJson.name);
-        callback(null, htmlPluginData);
-      });
-    });
-  }
-
-  let frontendFirstStart = true;
-
-  compiler.plugin('done', stats => {
-    const dir = configOutputPath;
-    mkdirp.sync(dir);
-    if (stats.compilation.assets['assets.json']) {
-      const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
-      _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
-        const bundleJs = assets.constructor === Array ? assets[0] : assets;
-        assetsMap[`${bundle}.js`] = bundleJs;
-        if (assets.length > 1) {
-          assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
-        }
-      });
-      if (options.webpackDll) {
-        assetsMap['vendor.js'] = vendorHashesJson.name;
-      }
-      fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
-    }
-    if (frontendFirstStart) {
-      frontendFirstStart = false;
-      openFrontend(builder, logger);
-    }
-  });
 
   let serverInstance: any;
 
@@ -862,6 +741,150 @@ const startExp = async (options, logger) => {
   }
 };
 
+const addPluginsToClientWebpackCompiler = (compiler, builder, options, watch, vendorDllFiles, logger, hasBackend) => {
+  const platform = builder.stack.platform;
+  const config = builder.config;
+  let frontendFirstStart = true;
+
+  if (watch) {
+    const waitOn = requireModule('wait-on');
+
+    compiler.plugin('after-emit', (compilation, callback) => {
+      if (backendFirstStart) {
+        if (hasBackend) {
+          const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
+          const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
+          logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
+          waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
+            if (err) {
+              logger.error(err);
+              callback();
+            } else {
+              logger.debug('Backend has been started, resuming webpack dev server...');
+              backendFirstStart = false;
+              callback();
+            }
+          });
+        } else {
+          callback();
+        }
+      } else {
+        callback();
+      }
+    });
+  }
+
+  if (options.webpackDll && builder.child) {
+    if (platform !== 'web') {
+      compiler.plugin('after-compile', (compilation, callback) => {
+        compilation.chunks.forEach(chunk => {
+          chunk.files.forEach(file => {
+            if (file.endsWith('.bundle')) {
+              const sourceListMap = new SourceListMap();
+              sourceListMap.add(vendorDllFiles.vendorSourceListMap);
+              sourceListMap.add('\n');
+              sourceListMap.add(
+                fromStringWithSourceMap(
+                  compilation.assets[file].source(),
+                  JSON.parse(compilation.assets[file + '.map'].source())
+                )
+              );
+
+              const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
+              compilation.assets[file] = new RawSource(sourceAndMap.source);
+              compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
+            }
+          });
+        });
+        callback();
+      });
+    } else {
+      if (!options.ssr) {
+        compiler.plugin('after-compile', (compilation, callback) => {
+          compilation.assets[vendorDllFiles.vendorHashesJson.source.name] = vendorDllFiles.vendorBundle.source;
+          compilation.assets[`${vendorDllFiles.vendorHashesJson.source.name}.map`] =
+            vendorDllFiles.vendorBundle.sourceMap;
+          callback();
+        });
+
+        compiler.plugin('compilation', compilation => {
+          compilation.plugin('html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
+            htmlPluginData.assets.js.unshift(`/${vendorDllFiles.vendorHashesJson.source.name}`);
+            callback(null, htmlPluginData);
+          });
+        });
+      }
+    }
+
+    compiler.plugin('done', stats => {
+      mkdirp.sync(config.output.path);
+      if (stats.compilation.assets['assets.json']) {
+        const originalCompilationAsset = stats.compilation.assets['assets.json'];
+        const assetsMap = JSON.parse(originalCompilationAsset.source());
+
+        assetsMap['vendor.js'] = vendorDllFiles.vendorHashesJson.source.name;
+
+        if (watch) {
+          const updatedCompilationAsset = new RawSource(JSON.stringify(assetsMap));
+          stats.compilation.assets['assets.json'] = {
+            existsAt: originalCompilationAsset.existsAt,
+            emitted: originalCompilationAsset.emitted,
+            source: () => updatedCompilationAsset.source(),
+            size: () => updatedCompilationAsset.size()
+          };
+        } else {
+          fs.writeFileSync(path.join(config.output.path, 'assets.json'), JSON.stringify(assetsMap));
+        }
+      }
+    });
+  }
+
+  if (watch) {
+    compiler.plugin('done', stats => {
+      mkdirp.sync(config.output.path);
+      if (stats.compilation.assets['assets.json']) {
+        const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
+        const sourceMapKeys = Object.keys(assetsMap).filter(assetName => assetName.indexOf('.map') !== -1);
+        sourceMapKeys.forEach(sourceMapKey => delete assetsMap[sourceMapKey]);
+        _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
+          const bundleJs = assets.constructor === Array ? assets[0] : assets;
+          assetsMap[`${bundle}.js`] = bundleJs;
+        });
+
+        fs.writeFileSync(path.join(config.output.path, 'assets.json'), JSON.stringify(assetsMap));
+      }
+      if (frontendFirstStart) {
+        frontendFirstStart = false;
+        openFrontend(builder, logger);
+      }
+    });
+  }
+};
+
+const addPluginsToClientWebpackConfig = (builder, watch, options, webpack, vendorDllFiles) => {
+  const config = builder.config;
+  const platform = builder.stack.platform;
+
+  config.plugins.push(frontendVirtualModules);
+
+  if (options.webpackDll && builder.child) {
+    config.plugins.push(
+      new webpack.DllReferencePlugin({
+        context: process.cwd(),
+        manifest: requireModule(`./${vendorDllFiles.vendorDllJson.path}`)
+      })
+    );
+
+    if (platform !== 'web') {
+      config.plugins.push(new MobileAssetsPlugin(vendorDllFiles.vendorAssets));
+    }
+  }
+
+  if (!watch && platform !== 'web' && !options.webpackDll) {
+    config.plugins.push(new MobileAssetsPlugin());
+  }
+};
+
 const execute = (cmd, argv, builders: object, options) => {
   if (argv.verbose) {
     Object.keys(builders).forEach(name => {
@@ -927,7 +950,7 @@ const execute = (cmd, argv, builders: object, options) => {
           continue;
         }
         const prepareDllPromise: PromiseLike<any> =
-          cmd === 'watch' && options.webpackDll && builder.child
+          options.webpackDll && builder.child
             ? buildDll(stack.platform, builder.child.config, options)
             : Promise.resolve();
         prepareDllPromise.then(() => startWebpack(platforms, watch, builder, options));
