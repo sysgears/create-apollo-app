@@ -39,6 +39,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const reactNativeRule = {
         loader: requireModule.resolve('babel-loader'),
         options: {
+          babelrc: false,
           cacheDirectory: spin.dev,
           compact: !spin.dev,
           presets: [requireModule.resolve('babel-preset-expo')].concat(

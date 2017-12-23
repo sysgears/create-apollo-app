@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.61",
+  "version": "0.4.62",
   "main": "lib/index.js",
   "scripts": {
     "clean": "rm -rf ./lib",

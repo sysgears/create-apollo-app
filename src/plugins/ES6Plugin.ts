@@ -24,6 +24,7 @@ export default class ES6Plugin implements ConfigPlugin {
       jsRule.use = {
         loader: requireModule.resolve('babel-loader'),
         options: {
+          babelrc: false,
           cacheDirectory: spin.dev,
           compact: !spin.dev,
           presets: [
