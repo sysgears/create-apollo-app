@@ -47,6 +47,7 @@ export default class ConfigRc {
     const options: any = this.options;
 
     options.backendBuildDir = options.backendBuildDir || 'build/server';
+    options.enableNodeDebugger = options.enableNodeDebugger || false;
     options.frontendBuildDir = options.frontendBuildDir || 'build/client';
     options.dllBuildDir = options.dllBuildDir || 'build/dll';
     options.webpackDll = options.webpackDll !== undefined ? options.webpackDll : true;

@@ -48,9 +48,9 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (serverPath, debugOpt, logger) => {
-  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2] });
-  logger(`Spawning ${['node', debugOpt, serverPath].join(' ')}`);
+const spawnServer = (nodeOpts: any[], logger) => {
+  server = spawn('node', nodeOpts, { stdio: [0, 1, 2] });
+  logger(`Spawning ${['node', ...nodeOpts].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
       // App requested full reload
@@ -58,11 +58,11 @@ const spawnServer = (serverPath, debugOpt, logger) => {
     }
     logger('Backend has been stopped');
     server = undefined;
-    runServer(serverPath, logger);
+    runServer(nodeOpts[0], logger);
   });
 };
 
-const runServer = (serverPath, logger) => {
+const runServer = (serverPath, logger, enableNodeDebugger: boolean = false) => {
   if (!fs.existsSync(serverPath)) {
     throw new Error(`Backend doesn't exist at ${serverPath}, exiting`);
   }
@@ -71,6 +71,10 @@ const runServer = (serverPath, logger) => {
     logger('Starting backend');
 
     if (!nodeDebugOpt) {
+      if (!enableNodeDebugger) {
+        nodeDebugOpt = '';
+        return spawnServer([serverPath], logger);
+      }
       exec('node -v', (error, stdout, stderr) => {
         if (error) {
           spinLogger.error(error);
@@ -81,11 +85,11 @@ const runServer = (serverPath, logger) => {
         const nodeMinor = parseInt(nodeVersion[2], 10);
         nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
         detectPort(9229).then(debugPort => {
-          spawnServer(serverPath, nodeDebugOpt + '=' + debugPort, logger);
+          spawnServer([serverPath, nodeDebugOpt + '=' + debugPort], logger);
         });
       });
     } else {
-      spawnServer(serverPath, nodeDebugOpt, logger);
+      spawnServer([serverPath, nodeDebugOpt], logger);
     }
   }
 };
@@ -231,7 +235,7 @@ const startServerWebpack = (watch, builder, options) => {
               }
             }
           } else {
-            runServer(path.join(output.path, 'index.js'), logger);
+            runServer(path.join(output.path, 'index.js'), logger, options.enableNodeDebugger);
           }
         }
       });
