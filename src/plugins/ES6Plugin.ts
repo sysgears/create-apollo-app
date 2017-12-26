@@ -31,7 +31,7 @@ export default class ES6Plugin implements ConfigPlugin {
             requireModule.resolve('babel-preset-react'),
             [requireModule.resolve('babel-preset-env'), { modules: false }],
             requireModule.resolve('babel-preset-stage-0')
-          ].concat(spin.dev ? [] : requireModule.resolve('babel-preset-minify')),
+          ].concat(spin.dev ? [] : [[requireModule.resolve('babel-preset-minify'), { mangle: false }]]),
           plugins: [
             requireModule.resolve('babel-plugin-transform-runtime'),
             requireModule.resolve('babel-plugin-transform-decorators-legacy'),
