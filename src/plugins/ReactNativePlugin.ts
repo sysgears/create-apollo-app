@@ -43,7 +43,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
           cacheDirectory: spin.dev,
           compact: !spin.dev,
           presets: [requireModule.resolve('babel-preset-expo')].concat(
-            spin.dev ? [] : requireModule.resolve('babel-preset-minify')
+            spin.dev ? [] : [[requireModule.resolve('babel-preset-minify'), { mangle: false }]]
           ),
           plugins: [requireModule.resolve('haul/src/utils/fixRequireIssues')]
         }
