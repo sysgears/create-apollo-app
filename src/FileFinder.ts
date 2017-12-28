@@ -7,6 +7,13 @@ export interface FFOptions {
   stopIfFound?: boolean;
 }
 
+export interface FFResult {
+  absPath: string;
+  relPath: string;
+  dirAbsPath: string;
+  dirRelPath: string;
+}
+
 export default class {
   private options: FFOptions;
 
@@ -15,7 +22,7 @@ export default class {
   }
 
   public find = (fileName: string) => {
-    const result: string[] = [];
+    const result: FFResult[] = [];
 
     const filterDirsToProcess = (cwd: string, files: string[]) => {
       return files.filter((file: string) => {
@@ -30,7 +37,13 @@ export default class {
       const files = fs.readdirSync(cwd);
 
       if (files.includes(fName)) {
-        result.push(`${cwd}/${fName}`);
+        const r = {
+          absPath: `${cwd}/${fName}`,
+          relPath: `.${cwd.replace(this.options.srcDir, '')}/${fName}`,
+          dirAbsPath: cwd,
+          dirRelPath: `.${cwd.replace(this.options.srcDir, '')}`
+        };
+        result.push(r);
 
         if (this.options.stopIfFound) {
           return;
