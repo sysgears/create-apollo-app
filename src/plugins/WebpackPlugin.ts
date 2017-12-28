@@ -149,6 +149,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
   const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
   const cwd = process.cwd();
 
+  const baseDir = path.join(cwd, 'node_modules');
+  const webpackDir = path.normalize(path.join(requireModule.resolve('webpack/package.json', cwd), '../../'));
+
   const baseConfig: any = {
     name: builder.name,
     devtool: spin.dev ? '#cheap-module-source-map' : '#source-map',
@@ -156,7 +159,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       rules: []
     },
     resolve: {
-      modules: [path.join(cwd, 'node_modules'), 'node_modules']
+      modules: [baseDir].concat(webpackDir !== baseDir ? [webpackDir] : []).concat(['node_modules'])
     },
     watchOptions: {
       ignored: /build/
@@ -233,7 +236,8 @@ const createConfig = (builder: Builder, spin: Spin) => {
         filename: `${name}_[hash]_dll.js`,
         path: path.resolve(spin.options.dllBuildDir),
         library: name
-      }
+      },
+      bail: true
     };
   } else {
     if (spin.dev) {
