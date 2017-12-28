@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
 import { Builder } from './Builder';
+import FileFinder from './FileFinder';
 import requireModule from './requireModule';
 import Stack from './Stack';
 
@@ -14,6 +15,13 @@ export default class ConfigRc {
   public plugins: object[];
 
   constructor(plugins, argv) {
+    const finder = new FileFinder({
+      srcDir: process.cwd(),
+      exclude: ['node_modules', 'flow-typed', 'build'],
+      stopIfFound: true
+    });
+    // console.log(finder.find('.spinrc.json'));
+
     let config = argv.c
       ? JSON.parse(fs.readFileSync(argv.c).toString())
       : pkg.spin ? pkg.spin : JSON.parse(fs.readFileSync(SPIN_CONFIG_NAME).toString());
