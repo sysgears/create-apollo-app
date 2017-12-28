@@ -433,8 +433,8 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     const app = connect();
 
     serverInstance = http.createServer(app);
-    mime.define({ 'application/javascript': ['bundle'] });
-    mime.define({ 'application/json': ['assets'] });
+    mime.define({ 'application/javascript': ['bundle'] }, true);
+    mime.define({ 'application/json': ['assets'] }, true);
 
     messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
     webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
@@ -536,7 +536,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     const devMiddleware = webpackDevMiddleware(
       compiler,
       _.merge({}, config.devServer, {
-        reporter({ state, stats }) {
+        reporter(mwOpts, { state, stats }) {
           if (state) {
             logger('bundle is now VALID.');
           } else {
