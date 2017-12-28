@@ -39,10 +39,11 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const reactNativeRule = {
         loader: requireModule.resolve('babel-loader'),
         options: {
+          babelrc: false,
           cacheDirectory: spin.dev,
           compact: !spin.dev,
           presets: [requireModule.resolve('babel-preset-expo')].concat(
-            spin.dev ? [] : requireModule.resolve('babel-preset-minify')
+            spin.dev ? [] : [[requireModule.resolve('babel-preset-minify'), { mangle: false }]]
           ),
           plugins: [requireModule.resolve('haul/src/utils/fixRequireIssues')]
         }
@@ -51,7 +52,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules\/(?!react-native.*|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/;
-      const origUse = jsRule.use;
+      const origUse = jsRule.use || require.resolve('./shared/identity-loader');
       jsRule.use = req => (req.resource.indexOf('node_modules') >= 0 ? reactNativeRule : origUse);
 
       builder.config.resolve.extensions = [`.${stack.platform}.`, '.native.', '.']

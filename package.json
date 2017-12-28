@@ -1,6 +1,7 @@
 {
   "name": "spinjs",
-  "version": "0.4.53",
+  "version": "0.4.67",
+  "main": "lib/index.js",
   "scripts": {
     "clean": "rm -rf ./lib",
     "build": "tsc",

@@ -433,8 +433,8 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     const app = connect();
 
     serverInstance = http.createServer(app);
-    mime.define({ 'application/javascript': ['bundle'] });
-    mime.define({ 'application/json': ['assets'] });
+    mime.define({ 'application/javascript': ['bundle'] }, true);
+    mime.define({ 'application/json': ['assets'] }, true);
 
     messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
     webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
@@ -479,7 +479,15 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         next();
       })
       .use(compression())
-      .use('/debugger-ui', serveStatic(requireModule.resolve('react-native/local-cli/server/util/debugger-ui')))
+      .use(
+        '/debugger-ui',
+        serveStatic(
+          path.join(
+            path.dirname(requireModule.resolve('react-native/package.json')),
+            '/local-cli/server/util/debugger-ui'
+          )
+        )
+      )
       .use(getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()))
       .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
       .use(liveReloadMiddleware(compiler))
@@ -502,7 +510,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
           for (const filePath of files) {
             if (fs.existsSync(filePath)) {
               assetExists = true;
-              res.writeHead(200, { 'Content-Type': mime.lookup(filePath) });
+              res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
               fs.createReadStream(filePath).pipe(res);
             }
           }
@@ -528,7 +536,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     const devMiddleware = webpackDevMiddleware(
       compiler,
       _.merge({}, config.devServer, {
-        reporter({ state, stats }) {
+        reporter(mwOpts, { state, stats }) {
           if (state) {
             logger('bundle is now VALID.');
           } else {
@@ -801,7 +809,7 @@ const startExpoProdServer = async (options, logger) => {
       if (platform) {
         const filePath = path.join(options.frontendBuildDir, platform, req.path);
         if (fs.existsSync(filePath)) {
-          res.writeHead(200, { 'Content-Type': mime.lookup(filePath) });
+          res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
           fs.createReadStream(filePath).pipe(res);
         } else {
           if (req.url.indexOf('.bundle?') >= 0) {

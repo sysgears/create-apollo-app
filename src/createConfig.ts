@@ -24,7 +24,7 @@ import Stack from './Stack';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
-const createConfig = (cmd, argv) => {
+const createConfig = (cmd, argv, builderName?) => {
   const builders = {};
 
   const plugins = [
@@ -53,11 +53,11 @@ const createConfig = (cmd, argv) => {
     const builder = config.builders[name];
     const stack = builder.stack;
 
-    if (builder.enabled === false || builder.roles.indexOf(cmd) < 0) {
+    if (name !== builderName && (builder.enabled === false || builder.roles.indexOf(cmd) < 0)) {
       continue;
     }
 
-    if (spin.options.webpackDll && !stack.hasAny('server')) {
+    if (spin.options.webpackDll && !stack.hasAny('server') && !builderName) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
       dllBuilder.parent = builder;
