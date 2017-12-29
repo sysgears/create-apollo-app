@@ -21,7 +21,7 @@ export default class {
     this.options = options;
   }
 
-  public find = (fileName: string) => {
+  public find = (fileName: string): FFResult[] => {
     const result: FFResult[] = [];
 
     const filterDirsToProcess = (cwd: string, files: string[]) => {
@@ -37,13 +37,12 @@ export default class {
       const files = fs.readdirSync(cwd);
 
       if (files.includes(fName)) {
-        const r = {
+        result.push({
           absPath: `${cwd}/${fName}`,
           relPath: `.${cwd.replace(this.options.srcDir, '')}/${fName}`,
           dirAbsPath: cwd,
           dirRelPath: `.${cwd.replace(this.options.srcDir, '')}`
-        };
-        result.push(r);
+        });
 
         if (this.options.stopIfFound) {
           return;
