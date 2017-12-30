@@ -4,16 +4,13 @@ import * as url from 'url';
 
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
-
-const pkg = requireModule('./package.json');
 
 const __WINDOWS__ = /^win/.test(process.platform);
 
 const createPlugins = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
-  const webpack = requireModule('webpack');
+  const webpack = spin.require('webpack');
   const buildNodeEnv = process.env.NODE_ENV || (spin.dev ? (spin.test ? 'test' : 'development') : 'production');
 
   let plugins = [];
@@ -30,7 +27,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       // https://github.com/angular/angular/issues/10618
       uglifyOpts.mangle = { keep_fnames: true };
     }
-    const UglifyJsPlugin = requireModule('uglifyjs-webpack-plugin');
+    const UglifyJsPlugin = spin.require('uglifyjs-webpack-plugin');
     plugins.push(new UglifyJsPlugin(uglifyOpts));
     const loaderOpts: any = { minimize: true };
     if (stack.hasAny('angular')) {
@@ -91,7 +88,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       ]);
 
       if (stack.hasAny('web')) {
-        const ManifestPlugin = requireModule('webpack-manifest-plugin');
+        const ManifestPlugin = spin.require('webpack-manifest-plugin');
         plugins.push(
           new ManifestPlugin({
             fileName: 'assets.json'
@@ -99,7 +96,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         );
 
         if (!spin.options.ssr) {
-          const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
+          const HtmlWebpackPlugin = spin.require('html-webpack-plugin');
           plugins.push(
             new HtmlWebpackPlugin({
               template: builder.htmlTemplate || path.join(__dirname, '../../html-plugin-template.ejs'),
@@ -126,7 +123,8 @@ const createPlugins = (builder: Builder, spin: Spin) => {
   return plugins;
 };
 
-const getDepsForNode = (builder, depPlatforms) => {
+const getDepsForNode = (spin: Spin, builder, depPlatforms) => {
+  const pkg = spin.require('./package.json');
   const deps = [];
   for (const key of Object.keys(pkg.dependencies)) {
     const val = depPlatforms[key];
@@ -150,7 +148,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
   const cwd = process.cwd();
 
   const baseDir = path.join(cwd, 'node_modules');
-  const webpackDir = path.normalize(path.join(requireModule.resolve('webpack/package.json', cwd), '../../'));
+  const webpackDir = path.normalize(path.join(spin.require.resolve('webpack/package.json', cwd), '../../'));
 
   const baseConfig: any = {
     name: builder.name,
@@ -199,7 +197,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       },
       externals: (context, request, callback) => {
         if (request.indexOf('webpack') < 0 && !request.startsWith('.')) {
-          const fullPath = requireModule.probe(request, context);
+          const fullPath = spin.require.probe(request, context);
           if (fullPath) {
             const ext = path.extname(fullPath);
             if (fullPath.indexOf('node_modules') >= 0 && ['.js', '.jsx', '.json'].indexOf(ext) >= 0) {
@@ -229,7 +227,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       ...config,
       devtool: '#cheap-module-source-map',
       entry: {
-        vendor: getDepsForNode(builder, spin.depPlatforms)
+        vendor: getDepsForNode(spin, builder, spin.options.depPlatforms)
       },
       output: {
         ...config.output,

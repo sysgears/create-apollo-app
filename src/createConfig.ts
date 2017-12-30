@@ -18,13 +18,12 @@ import TypeScriptPlugin from './plugins/TypeScriptPlugin';
 import VuePlugin from './plugins/VuePlugin';
 import WebAssetsPlugin from './plugins/WebAssetsPlugin';
 import WebpackPlugin from './plugins/WebpackPlugin';
-import requireModule from './requireModule';
 import Spin from './Spin';
 import Stack from './Stack';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
-const createConfig = (cmd, argv, builderName?) => {
+const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string) => {
   const builders = {};
 
   const plugins = [
@@ -44,10 +43,12 @@ const createConfig = (cmd, argv, builderName?) => {
     new AngularPlugin(),
     new VuePlugin()
   ];
-  const config = new ConfigRc(plugins, argv);
+  const spin = new Spin(cwd, cmd);
+  const config = new ConfigRc(spin, plugins, argv);
+  spin.options = config.options;
   const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
-  const overrides = fs.existsSync(overridesConfig) ? requireModule('./' + overridesConfig) : {};
-  const spin = new Spin(cmd, config.builders, config.options, overrides.dependencyPlatforms || {});
+  const overrides = fs.existsSync(overridesConfig) ? spin.require('./' + overridesConfig) : {};
+  config.options.depPlatforms = overrides.dependencyPlatforms || config.options.depPlatforms || {};
 
   for (const name of Object.keys(config.builders)) {
     const builder = config.builders[name];
@@ -83,7 +84,7 @@ const createConfig = (cmd, argv, builderName?) => {
     }
   }
 
-  return { builders, options: spin.options };
+  return { builders, spin };
 };
 
 export default createConfig;

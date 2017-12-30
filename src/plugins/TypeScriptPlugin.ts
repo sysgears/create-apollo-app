@@ -3,7 +3,6 @@ import * as path from 'path';
 
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -17,7 +16,7 @@ export default class TypeScriptPlugin implements ConfigPlugin {
       tsRule.test = /\.ts$/;
       tsRule.use = [
         {
-          loader: requireModule.resolve('awesome-typescript-loader'),
+          loader: spin.require.resolve('awesome-typescript-loader'),
           options: { ...builder.tsLoaderOptions }
         }
       ];

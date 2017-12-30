@@ -1,6 +1,6 @@
 import createConfig from './createConfig';
 
-export default (configPath, builderName) => {
-  const config = createConfig('watch', { c: configPath }, builderName).builders;
+export default (cwd, configPath, builderName) => {
+  const config = createConfig('watch', cwd, { c: configPath }, builderName).builders;
   return config[builderName].config;
 };

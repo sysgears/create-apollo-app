@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 
 export default class VuePlugin implements ConfigPlugin {
@@ -8,14 +7,14 @@ export default class VuePlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['vue', 'webpack'])) {
-      const webpack = requireModule('webpack');
+      const webpack = spin.require('webpack');
 
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
             {
               test: /\.vue$/,
-              use: requireModule.resolve('vue-loader')
+              use: spin.require.resolve('vue-loader')
             }
           ]
         },

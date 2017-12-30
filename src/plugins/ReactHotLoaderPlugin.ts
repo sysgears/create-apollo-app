@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -16,7 +15,7 @@ export default class ReactHotLoaderPlugin implements ConfigPlugin {
         builder.config,
         {
           entry: {
-            index: [requireModule.resolve('react-hot-loader/patch')]
+            index: [spin.require.resolve('react-hot-loader/patch')]
           }
         }
       );
@@ -25,7 +24,7 @@ export default class ReactHotLoaderPlugin implements ConfigPlugin {
       const isBabelUsed = jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0;
       jsRule.use = spin.merge(jsRule.use, {
         options: {
-          plugins: [requireModule.resolve(isBabelUsed ? 'react-hot-loader/babel' : 'react-hot-loader/webpack')]
+          plugins: [spin.require.resolve(isBabelUsed ? 'react-hot-loader/babel' : 'react-hot-loader/webpack')]
         }
       });
     }

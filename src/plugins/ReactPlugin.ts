@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import requireModule from '../requireModule';
 
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
@@ -25,7 +24,7 @@ export default class ReactPlugin implements ConfigPlugin {
         tsRule.test = /\.tsx?$/;
       }
 
-      const majorVer = requireModule('react/package.json').version.split('.')[0];
+      const majorVer = spin.require('react/package.json').version.split('.')[0];
       const reactVer = majorVer >= 16 ? majorVer : 15;
       builder.config.resolve.extensions = (stack.hasAny('web') || stack.hasAny('server') ? ['.web.', '.'] : ['.'])
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))

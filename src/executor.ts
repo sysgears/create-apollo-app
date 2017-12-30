@@ -15,8 +15,9 @@ import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
 import { RawSource } from 'webpack-sources';
 
+import { Builder } from './Builder';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
-import requireModule from './requireModule';
+import Spin from './Spin';
 
 const SPIN_DLL_VERSION = 1;
 
@@ -90,7 +91,7 @@ const runServer = (serverPath, logger) => {
   }
 };
 
-const webpackReporter = (watch, outputPath, log, err?, stats?) => {
+const webpackReporter = (spin: Spin, outputPath, log, err?, stats?) => {
   if (err) {
     log(err.stack);
     throw new Error('Build error');
@@ -115,7 +116,7 @@ const webpackReporter = (watch, outputPath, log, err?, stats?) => {
       })
     );
 
-    if (!watch) {
+    if (!spin.watch) {
       mkdirp.sync(outputPath);
       fs.writeFileSync(path.join(outputPath, 'stats.json'), JSON.stringify(stats.toJson()));
     }
@@ -151,8 +152,8 @@ class MobileAssetsPlugin {
   }
 }
 
-const startClientWebpack = (hasBackend, watch, builder, options) => {
-  const webpack = requireModule('webpack');
+const startClientWebpack = (hasBackend, spin, builder) => {
+  const webpack = spin.require('webpack');
 
   const config = builder.config;
 
@@ -160,10 +161,10 @@ const startClientWebpack = (hasBackend, watch, builder, options) => {
 
   const logger = minilog(`webpack-for-${config.name}`);
   try {
-    const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
 
-    if (watch) {
-      startWebpackDevServer(hasBackend, builder, options, reporter, logger);
+    if (spin.watch) {
+      startWebpackDevServer(hasBackend, spin, builder, reporter, logger);
     } else {
       if (builder.stack.platform !== 'web') {
         config.plugins.push(new MobileAssetsPlugin());
@@ -184,17 +185,17 @@ const increaseBackendReloadCount = () => {
   frontendVirtualModules.writeModule('node_modules/backend_reload.js', `var count = ${backendReloadCount};\n`);
 };
 
-const startServerWebpack = (watch, builder, options) => {
+const startServerWebpack = (spin, builder) => {
   const config = builder.config;
   const logger = minilog(`webpack-for-${config.name}`);
 
   try {
-    const webpack = requireModule('webpack');
-    const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
+    const webpack = spin.require('webpack');
+    const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
 
     const compiler = webpack(config);
 
-    if (watch) {
+    if (spin.watch) {
       compiler.plugin('compilation', compilation => {
         compilation.plugin('after-optimize-assets', assets => {
           // Patch webpack-generated original source files path, by stripping hash after filename
@@ -220,7 +221,7 @@ const startServerWebpack = (watch, builder, options) => {
               server.kill('SIGUSR2');
             }
 
-            if (options.frontendRefreshOnBackendChange) {
+            if (spin.options.frontendRefreshOnBackendChange) {
               for (const module of stats.compilation.modules) {
                 if (module.built && module.resource && module.resource.indexOf(path.resolve('./src/server')) === 0) {
                   // Force front-end refresh on back-end change
@@ -243,8 +244,8 @@ const startServerWebpack = (watch, builder, options) => {
   }
 };
 
-const openFrontend = (builder, logger) => {
-  const openurl = requireModule('openurl');
+const openFrontend = (spin, builder, logger) => {
+  const openurl = spin.require('openurl');
   try {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
@@ -255,7 +256,7 @@ const openFrontend = (builder, logger) => {
         openurl.open(localUrl);
       }
     } else if (builder.stack.hasAny('react-native')) {
-      startExpoProject(builder.config, builder.stack.platform, logger);
+      startExpoProject(spin, builder.config, builder.stack.platform, logger);
     }
   } catch (e) {
     logger.error(e.stack);
@@ -271,9 +272,9 @@ const debugMiddleware = (req, res, next) => {
   }
 };
 
-const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
-  const webpack = requireModule('webpack');
-  const waitOn = requireModule('wait-on');
+const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder, reporter, logger) => {
+  const webpack = spin.require('webpack');
+  const waitOn = spin.require('wait-on');
 
   const config = builder.config;
   const platform = builder.stack.platform;
@@ -286,13 +287,15 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let vendorSource;
   let vendorMap;
 
+  const options = spin.options;
+
   if (options.webpackDll && builder.child) {
     const name = `vendor_${platform}`;
     const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
-        manifest: requireModule('./' + jsonPath)
+        manifest: spin.require('./' + jsonPath)
       })
     );
     vendorHashesJson = JSON.parse(
@@ -396,7 +399,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     }
     if (frontendFirstStart) {
       frontendFirstStart = false;
-      openFrontend(builder, logger);
+      openFrontend(spin, builder, logger);
     }
   });
 
@@ -409,7 +412,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let inspectorProxy;
 
   if (platform === 'web') {
-    const WebpackDevServer = requireModule('webpack-dev-server');
+    const WebpackDevServer = spin.require('webpack-dev-server');
 
     serverInstance = new WebpackDevServer(compiler, {
       ...config.devServer,
@@ -423,12 +426,12 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
       }
     });
   } else {
-    const connect = requireModule('connect');
-    const compression = requireModule('compression');
-    const httpProxyMiddleware = requireModule('http-proxy-middleware');
-    const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
-    const webpackDevMiddleware = requireModule('webpack-dev-middleware');
-    const webpackHotMiddleware = requireModule('webpack-hot-middleware');
+    const connect = spin.require('connect');
+    const compression = spin.require('compression');
+    const httpProxyMiddleware = spin.require('http-proxy-middleware');
+    const mime = spin.require('mime', spin.require.resolve('webpack-dev-middleware'));
+    const webpackDevMiddleware = spin.require('webpack-dev-middleware');
+    const webpackHotMiddleware = spin.require('webpack-hot-middleware');
 
     const app = connect();
 
@@ -436,36 +439,36 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     mime.define({ 'application/javascript': ['bundle'] }, true);
     mime.define({ 'application/json': ['assets'] }, true);
 
-    messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
-    webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
+    messageSocket = spin.require('react-native/local-cli/server/util/messageSocket.js');
+    webSocketProxy = spin.require('react-native/local-cli/server/util/webSocketProxy.js');
 
     try {
-      const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
+      const InspectorProxy = spin.require('react-native/local-cli/server/util/inspectorProxy.js');
       inspectorProxy = new InspectorProxy();
     } catch (ignored) {}
-    const copyToClipBoardMiddleware = requireModule(
+    const copyToClipBoardMiddleware = spin.require(
       'react-native/local-cli/server/middleware/copyToClipBoardMiddleware'
     );
     let cpuProfilerMiddleware;
     try {
-      cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
+      cpuProfilerMiddleware = spin.require('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
     } catch (ignored) {}
-    const getDevToolsMiddleware = requireModule('react-native/local-cli/server/middleware/getDevToolsMiddleware');
+    const getDevToolsMiddleware = spin.require('react-native/local-cli/server/middleware/getDevToolsMiddleware');
     let heapCaptureMiddleware;
     try {
-      heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
+      heapCaptureMiddleware = spin.require('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
     } catch (ignored) {}
-    const indexPageMiddleware = requireModule('react-native/local-cli/server/middleware/indexPage');
-    const loadRawBodyMiddleware = requireModule('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
-    const openStackFrameInEditorMiddleware = requireModule(
+    const indexPageMiddleware = spin.require('react-native/local-cli/server/middleware/indexPage');
+    const loadRawBodyMiddleware = spin.require('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
+    const openStackFrameInEditorMiddleware = spin.require(
       'react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware'
     );
-    const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-    const systraceProfileMiddleware = requireModule(
+    const statusPageMiddleware = spin.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+    const systraceProfileMiddleware = spin.require(
       'react-native/local-cli/server/middleware/systraceProfileMiddleware.js'
     );
-    const unless = requireModule('react-native/local-cli/server/middleware/unless');
-    const symbolicateMiddleware = requireModule('haul/src/server/middleware/symbolicateMiddleware');
+    const unless = spin.require('react-native/local-cli/server/middleware/unless');
+    const symbolicateMiddleware = spin.require('haul/src/server/middleware/symbolicateMiddleware');
 
     const args = {
       port: config.devServer.port,
@@ -483,7 +486,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
         '/debugger-ui',
         serveStatic(
           path.join(
-            path.dirname(requireModule.resolve('react-native/package.json')),
+            path.dirname(spin.require.resolve('react-native/package.json')),
             '/local-cli/server/util/debugger-ui'
           )
         )
@@ -631,13 +634,14 @@ const isDllValid = (platform, config, options, logger): boolean => {
   }
 };
 
-const buildDll = (platform, config, options) => {
-  const webpack = requireModule('webpack');
+const buildDll = (platform, config, spin: Spin) => {
+  const webpack = spin.require('webpack');
   return new Promise(done => {
     const name = `vendor_${platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
-    const reporter = (...args) => webpackReporter(true, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
 
+    const options = spin.options;
     if (!isDllValid(platform, config, options, logger)) {
       logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
 
@@ -683,12 +687,12 @@ const buildDll = (platform, config, options) => {
   });
 };
 
-const setupExpoDir = (dir, platform) => {
+const setupExpoDir = (spin: Spin, dir, platform) => {
   const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
   mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
   fs.writeFileSync(
     path.join(reactNativeDir, 'package.json'),
-    fs.readFileSync(requireModule.resolve('react-native/package.json'))
+    fs.readFileSync(spin.require.resolve('react-native/package.json'))
   );
   fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
   const pkg = JSON.parse(fs.readFileSync('package.json').toString());
@@ -709,8 +713,8 @@ const setupExpoDir = (dir, platform) => {
   }
 };
 
-const startExpoServer = async (projectRoot, packagerPort) => {
-  const { Config, Project, ProjectSettings } = requireModule('xdl');
+const startExpoServer = async (spin: Spin, projectRoot: string, packagerPort) => {
+  const { Config, Project, ProjectSettings } = spin.require('xdl');
 
   Config.validation.reactNativeVersionWarnings = false;
   Config.developerTool = 'crna';
@@ -722,14 +726,14 @@ const startExpoServer = async (projectRoot, packagerPort) => {
   });
 };
 
-const startExpoProject = async (config, platform, logger) => {
-  const { UrlUtils, Android, Simulator } = requireModule('xdl');
-  const qr = requireModule('qrcode-terminal');
+const startExpoProject = async (spin, config, platform, logger) => {
+  const { UrlUtils, Android, Simulator } = spin.require('xdl');
+  const qr = spin.require('qrcode-terminal');
 
   try {
     const projectRoot = path.join(path.resolve('.'), '.expo', platform);
-    setupExpoDir(projectRoot, platform);
-    await startExpoServer(projectRoot, config.devServer.port);
+    setupExpoDir(spin, projectRoot, platform);
+    await startExpoServer(spin, projectRoot, config.devServer.port);
 
     const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
     const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
@@ -762,16 +766,16 @@ const startExpoProject = async (config, platform, logger) => {
   }
 };
 
-const startWebpack = async (platforms, watch, builder, options) => {
-  const VirtualModules = requireModule('webpack-virtual-modules');
+const startWebpack = async (spin: Spin, platforms: any, builder: Builder) => {
+  const VirtualModules = spin.require('webpack-virtual-modules');
   if (!frontendVirtualModules) {
     frontendVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
   }
 
   if (builder.stack.platform === 'server') {
-    startServerWebpack(watch, builder, options);
+    startServerWebpack(spin, builder);
   } else {
-    startClientWebpack(!!platforms.server, watch, builder, options);
+    startClientWebpack(!!platforms.server, spin, builder);
   }
 };
 
@@ -784,12 +788,12 @@ const allocateExpoPorts = async expoPlatforms => {
   }
 };
 
-const startExpoProdServer = async (options, logger) => {
-  const connect = requireModule('connect');
-  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
-  const compression = requireModule('compression');
-  const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-  const { UrlUtils } = requireModule('xdl');
+const startExpoProdServer = async (spin, logger) => {
+  const connect = spin.require('connect');
+  const mime = spin.require('mime', spin.require.resolve('webpack-dev-middleware'));
+  const compression = spin.require('compression');
+  const statusPageMiddleware = spin.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+  const { UrlUtils } = spin.require('xdl');
 
   logger.info(`Starting Expo prod server`);
   const packagerPort = 3030;
@@ -807,7 +811,7 @@ const startExpoProdServer = async (options, logger) => {
     .use((req, res, next) => {
       const platform = url.parse(req.url, true).query.platform;
       if (platform) {
-        const filePath = path.join(options.frontendBuildDir, platform, req.path);
+        const filePath = path.join(spin.options.frontendBuildDir, platform, req.path);
         if (fs.existsSync(filePath)) {
           res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
           fs.createReadStream(filePath).pipe(res);
@@ -838,18 +842,18 @@ const startExpoProdServer = async (options, logger) => {
   serverInstance.keepAliveTimeout = 0;
 
   const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
-  await startExpoServer(projectRoot, packagerPort);
+  await startExpoServer(spin, projectRoot, packagerPort);
   const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
     hostType: 'localhost'
   });
   logger.info(`Expo server running on address: ${localAddress}`);
 };
 
-const startExp = async (options, logger) => {
+const startExp = async (spin, logger) => {
   const projectRoot = path.join(process.cwd(), '.expo', 'all');
-  setupExpoDir(projectRoot, 'all');
+  setupExpoDir(spin, projectRoot, 'all');
   if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[3]) >= 0) {
-    await startExpoProdServer(options, logger);
+    await startExpoProdServer(spin, logger);
   }
   if (process.argv[3] !== 'server') {
     const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
@@ -862,7 +866,7 @@ const startExp = async (options, logger) => {
   }
 };
 
-const execute = (cmd, argv, builders: object, options) => {
+const execute = (cmd: string, argv: any, builders: { [name: string]: Builder }, spin: Spin) => {
   if (argv.verbose) {
     Object.keys(builders).forEach(name => {
       const builder = builders[name];
@@ -871,7 +875,7 @@ const execute = (cmd, argv, builders: object, options) => {
   }
 
   if (cmd === 'exp') {
-    startExp(options, spinLogger);
+    startExp(spin, spinLogger);
   } else if (cmd === 'test') {
     let builder;
     for (const name of Object.keys(builders)) {
@@ -884,10 +888,10 @@ const execute = (cmd, argv, builders: object, options) => {
       '--include',
       'babel-polyfill',
       '--webpack-config',
-      requireModule.resolve('spinjs/webpack.config.js')
+      spin.require.resolve('spinjs/webpack.config.js')
     ];
     if (builder.stack.hasAny('react')) {
-      const majorVer = requireModule('react/package.json').version.split('.')[0];
+      const majorVer = spin.require('react/package.json').version.split('.')[0];
       const reactVer = majorVer >= 16 ? majorVer : 15;
       if (reactVer >= 16) {
         testArgs.push('--include', 'raf/polyfill');
@@ -906,7 +910,6 @@ const execute = (cmd, argv, builders: object, options) => {
     });
   } else {
     const expoPlatforms = [];
-    const watch = cmd === 'watch';
     const platforms = {};
     Object.keys(builders).forEach(name => {
       const builder = builders[name];
@@ -918,7 +921,8 @@ const execute = (cmd, argv, builders: object, options) => {
         expoPlatforms.push('android');
       }
     });
-    const prepareExpoPromise = watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
+    const prepareExpoPromise =
+      spin.watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
     prepareExpoPromise.then(() => {
       for (const name of Object.keys(builders)) {
         const builder = builders[name];
@@ -927,10 +931,10 @@ const execute = (cmd, argv, builders: object, options) => {
           continue;
         }
         const prepareDllPromise: PromiseLike<any> =
-          cmd === 'watch' && options.webpackDll && builder.child
-            ? buildDll(stack.platform, builder.child.config, options)
+          spin.watch && spin.options.webpackDll && builder.child
+            ? buildDll(stack.platform, builder.child.config, spin)
             : Promise.resolve();
-        prepareDllPromise.then(() => startWebpack(platforms, watch, builder, options));
+        prepareDllPromise.then(() => startWebpack(spin, platforms, builder));
       }
     });
   }

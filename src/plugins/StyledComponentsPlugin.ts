@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -17,7 +16,7 @@ export default class StyledComponentsPlugin implements ConfigPlugin {
       if (jsRule) {
         jsRule.use = spin.merge(jsRule.use, {
           options: {
-            plugins: [[requireModule.resolve('babel-plugin-styled-components'), { ssr: spin.options.ssr }]]
+            plugins: [[spin.require.resolve('babel-plugin-styled-components'), { ssr: spin.options.ssr }]]
           }
         });
       }

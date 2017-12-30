@@ -2,7 +2,6 @@ import * as path from 'path';
 
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -14,7 +13,7 @@ export default class ApolloPlugin implements ConfigPlugin {
       const persistGraphQL = spin.options.persistGraphQL && !spin.test;
       if (builder.stack.hasAny(['server', 'web'])) {
         if (!persistPlugins) {
-          const PersistGraphQLPlugin = requireModule('persistgraphql-webpack-plugin');
+          const PersistGraphQLPlugin = spin.require('persistgraphql-webpack-plugin');
           const moduleName = path.resolve('node_modules/persisted_queries.json');
           if (persistGraphQL) {
             const clientPersistPlugin = new PersistGraphQLPlugin({
@@ -41,13 +40,13 @@ export default class ApolloPlugin implements ConfigPlugin {
           rules: [
             {
               test: /\.graphqls/,
-              use: requireModule.resolve('raw-loader')
+              use: spin.require.resolve('raw-loader')
             },
             {
               test: /\.(graphql|gql)$/,
               exclude: /node_modules/,
-              use: [requireModule.resolve('graphql-tag/loader')].concat(
-                persistGraphQL ? [requireModule.resolve('persistgraphql-webpack-plugin/graphql-loader')] : []
+              use: [spin.require.resolve('graphql-tag/loader')].concat(
+                persistGraphQL ? [spin.require.resolve('persistgraphql-webpack-plugin/graphql-loader')] : []
               )
             }
           ]
@@ -55,12 +54,12 @@ export default class ApolloPlugin implements ConfigPlugin {
       });
 
       if (builder.stack.hasAny(['server', 'web'])) {
-        const webpack = requireModule('webpack');
+        const webpack = spin.require('webpack');
 
         if (persistGraphQL) {
           const jsRuleFinder = new JSRuleFinder(builder);
           const jsRule = jsRuleFinder.findAndCreateJSRule();
-          jsRule.use = spin.merge(jsRule.use, [requireModule.resolve('persistgraphql-webpack-plugin/js-loader')]);
+          jsRule.use = spin.merge(jsRule.use, [spin.require.resolve('persistgraphql-webpack-plugin/js-loader')]);
         }
 
         builder.config = spin.merge(builder.config, {

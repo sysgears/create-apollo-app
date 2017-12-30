@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -14,7 +13,7 @@ export default class TCombPlugin implements ConfigPlugin {
       if (jsRule) {
         jsRule.use = spin.merge(jsRule.use, {
           options: {
-            plugins: [[requireModule.resolve('babel-plugin-tcomb')]]
+            plugins: [[spin.require.resolve('babel-plugin-tcomb')]]
           }
         });
       }

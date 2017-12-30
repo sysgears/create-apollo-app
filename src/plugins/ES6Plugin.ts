@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -22,20 +21,20 @@ export default class ES6Plugin implements ConfigPlugin {
       const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules/;
       jsRule.use = {
-        loader: requireModule.resolve('babel-loader'),
+        loader: spin.require.resolve('babel-loader'),
         options: {
           babelrc: false,
           cacheDirectory: spin.dev,
           compact: !spin.dev,
-          presets: [
-            requireModule.resolve('babel-preset-react'),
-            [requireModule.resolve('babel-preset-env'), { modules: false }],
-            requireModule.resolve('babel-preset-stage-0')
-          ].concat(spin.dev ? [] : [[requireModule.resolve('babel-preset-minify'), { mangle: false }]]),
+          presets: ([
+            spin.require.resolve('babel-preset-react'),
+            [spin.require.resolve('babel-preset-env'), { modules: false }],
+            spin.require.resolve('babel-preset-stage-0')
+          ] as any[]).concat(spin.dev ? [] : [[spin.require.resolve('babel-preset-minify'), { mangle: false }]]),
           plugins: [
-            requireModule.resolve('babel-plugin-transform-runtime'),
-            requireModule.resolve('babel-plugin-transform-decorators-legacy'),
-            requireModule.resolve('babel-plugin-transform-class-properties')
+            spin.require.resolve('babel-plugin-transform-runtime'),
+            spin.require.resolve('babel-plugin-transform-decorators-legacy'),
+            spin.require.resolve('babel-plugin-transform-class-properties')
           ],
           only: jsRuleFinder.extensions.map(ext => '*.' + ext)
         }

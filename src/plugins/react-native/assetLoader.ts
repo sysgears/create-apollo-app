@@ -29,14 +29,7 @@
 
 import * as path from 'path';
 import * as util from 'util';
-
 import requireModule from '../../requireModule';
-
-const utils = requireModule('loader-utils');
-const size = requireModule('image-size');
-const hasha = requireModule('hasha');
-const hashAssetFiles = requireModule('expo/tools/hashAssetFiles');
-const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
 
 interface Config {
   platform: string;
@@ -56,9 +49,13 @@ module.exports = async function assetLoader() {
   this.cacheable();
 
   const callback = this.async();
-
-  const query = utils.getOptions(this) || {};
+  const query = this.query;
   const options = this.options[query.config] || {};
+  const size = requireModule('image-size', query.cwd);
+  const hasha = requireModule('hasha', query.cwd);
+  const hashAssetFiles = requireModule('expo/tools/hashAssetFiles', query.cwd);
+  const AssetResolver = requireModule('haul/src/resolvers/AssetResolver', query.cwd);
+
   const config: Config = { ...options, ...query };
 
   let info: Info;

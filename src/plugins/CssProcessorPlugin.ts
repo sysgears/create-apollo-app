@@ -1,12 +1,11 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 
-const postCssDefaultConfig = () => {
+const postCssDefaultConfig = (spin: Spin) => {
   return {
     plugins: () => [
-      requireModule('autoprefixer')({
+      spin.require('autoprefixer')({
         browsers: ['last 2 versions', 'ie >= 9']
       })
     ]
@@ -21,20 +20,22 @@ export default class CssProcessorPlugin implements ConfigPlugin {
     if (stack.hasAll('webpack') && !stack.hasAny('dll')) {
       let createRule;
       const rules = [];
-      const postCssLoader = requireModule.probe('postcss-loader');
+      const postCssLoader = spin.require.probe('postcss-loader');
       const useDefaultPostCss: boolean = spin.options.useDefaultPostCss || false;
       if (stack.hasAny('server')) {
         createRule = (ext, ruleList) => ({
           test: new RegExp(`\\.${ext}$`),
           use: [
-            { loader: requireModule.resolve('isomorphic-style-loader') },
-            { loader: requireModule.resolve('css-loader'), options: { sourceMap: true } }
+            { loader: spin.require.resolve('isomorphic-style-loader') },
+            { loader: spin.require.resolve('css-loader'), options: { sourceMap: true } }
           ]
             .concat(
               postCssLoader
                 ? {
                     loader: postCssLoader,
-                    options: useDefaultPostCss ? { ...postCssDefaultConfig(), sourceMap: true } : { sourceMap: true }
+                    options: useDefaultPostCss
+                      ? { ...postCssDefaultConfig(spin), sourceMap: true }
+                      : { sourceMap: true }
                   }
                 : []
             )
@@ -43,7 +44,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       } else if (stack.hasAny('web')) {
         let ExtractTextPlugin;
         if (!dev) {
-          ExtractTextPlugin = requireModule('extract-text-webpack-plugin');
+          ExtractTextPlugin = spin.require('extract-text-webpack-plugin');
         }
         createRule = (ext, ruleList) => {
           let plugin;
@@ -55,25 +56,25 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             test: new RegExp(`\\.${ext}$`),
             use: dev
               ? [
-                  { loader: requireModule.resolve('style-loader') },
-                  { loader: requireModule.resolve('css-loader'), options: { sourceMap: true, importLoaders: 1 } }
+                  { loader: spin.require.resolve('style-loader') },
+                  { loader: spin.require.resolve('css-loader'), options: { sourceMap: true, importLoaders: 1 } }
                 ]
                   .concat(
                     postCssLoader
                       ? {
                           loader: postCssLoader,
                           options: useDefaultPostCss
-                            ? { ...postCssDefaultConfig(), sourceMap: true }
+                            ? { ...postCssDefaultConfig(spin), sourceMap: true }
                             : { sourceMap: true }
                         }
                       : []
                   )
                   .concat(ruleList)
               : plugin.extract({
-                  fallback: requireModule.resolve('style-loader'),
+                  fallback: spin.require.resolve('style-loader'),
                   use: [
                     {
-                      loader: requireModule.resolve('css-loader'),
+                      loader: spin.require.resolve('css-loader'),
                       options: { importLoaders: postCssLoader ? 1 : 0 }
                     }
                   ]
@@ -81,7 +82,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                       postCssLoader
                         ? {
                             loader: postCssLoader,
-                            options: useDefaultPostCss ? postCssDefaultConfig() : {}
+                            options: useDefaultPostCss ? postCssDefaultConfig(spin) : {}
                           } as any
                         : []
                     )
@@ -96,15 +97,11 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       }
 
       if (createRule && stack.hasAny('sass')) {
-        rules.push(
-          createRule('scss', [{ loader: requireModule.resolve(`sass-loader`), options: { sourceMap: true } }])
-        );
+        rules.push(createRule('scss', [{ loader: spin.require.resolve(`sass-loader`), options: { sourceMap: true } }]));
       }
 
       if (createRule && stack.hasAny('less')) {
-        rules.push(
-          createRule('less', [{ loader: requireModule.resolve(`less-loader`), options: { sourceMap: true } }])
-        );
+        rules.push(createRule('less', [{ loader: spin.require.resolve(`less-loader`), options: { sourceMap: true } }]));
       }
 
       builder.config = spin.merge(builder.config, {

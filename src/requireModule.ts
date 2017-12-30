@@ -1,23 +1,21 @@
 import * as path from 'path';
 import * as requireRelative from 'require-relative';
 
-const requireModule: any = (name, relativeTo) => {
-  return name.indexOf('.') !== 0
-    ? requireRelative(name, relativeTo)
-    : require(path.join(relativeTo || process.cwd(), name));
+const requireModule: any = (name, relativeTo): any => {
+  return name.indexOf('.') !== 0 ? requireRelative(name, relativeTo) : require(path.join(relativeTo, name));
 };
 
-requireModule.resolve = (name, relativeTo) => {
+requireModule.resolve = (name, relativeTo): string => {
   return name.indexOf('.') !== 0
     ? requireRelative.resolve(name, relativeTo)
-    : require.resolve(path.join(relativeTo || process.cwd(), name));
+    : require.resolve(path.join(relativeTo, name));
 };
 
-requireModule.probe = (name, relativeTo) => {
+requireModule.probe = (name, relativeTo): string => {
   try {
     return requireModule.resolve(name, relativeTo);
   } catch (e) {
-    return false;
+    return null;
   }
 };
 

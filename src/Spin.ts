@@ -1,22 +1,36 @@
 import { Configuration } from 'webpack';
 import * as merge from 'webpack-merge';
+
 import { Builder } from './Builder';
+import requireModule from './requireModule';
+
+export interface RequireFunction {
+  (name, relativeTo?): any;
+  resolve(name, relativeTo?): string;
+  probe(name, relativeTo?): string;
+}
 
 export default class Spin {
   public dev: boolean;
   public test: boolean;
+  public watch: boolean;
   public cmd: string;
-  public builders: { [x: string]: Builder };
+  public cwd: string;
   public options: any;
-  public depPlatforms: any;
+  public require: RequireFunction;
 
-  constructor(cmd, builders, options, depPlatforms) {
+  constructor(cwd, cmd) {
     this.cmd = cmd;
+    this.cwd = cwd;
     this.dev = this.cmd === 'watch' || this.cmd === 'test';
     this.test = this.cmd === 'test';
-    this.builders = builders;
-    this.options = options;
-    this.depPlatforms = depPlatforms;
+    this.watch = this.cmd === 'watch';
+    this.require = (() => {
+      const require: any = (name, relativeTo?): any => requireModule(name, relativeTo || cwd);
+      require.resolve = (name, relativeTo?): string => requireModule.resolve(name, relativeTo || cwd);
+      require.probe = (name, relativeTo?): string => requireModule.probe(name, relativeTo || cwd);
+      return require;
+    })();
   }
 
   public merge(config: Configuration, overrides: any): Configuration {
