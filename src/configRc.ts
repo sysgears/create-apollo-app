@@ -13,8 +13,8 @@ export default class ConfigRc {
   constructor(spin, plugins, argv) {
     const pkg = spin.require('./package.json');
     let config = argv.c
-      ? JSON.parse(fs.readFileSync(argv.c).toString())
-      : pkg.spin ? pkg.spin : JSON.parse(fs.readFileSync(spin.require.resolve('./' + SPIN_CONFIG_NAME)).toString());
+      ? JSON.parse(fs.readFileSync(spin.require.resolve(argv.c)).toString())
+      : pkg.spin ? pkg.spin : JSON.parse(fs.readFileSync(spin.require.resolve(SPIN_CONFIG_NAME)).toString());
 
     if (typeof config === 'string' || (typeof config === 'object' && config.constructor === Array)) {
       config = {
