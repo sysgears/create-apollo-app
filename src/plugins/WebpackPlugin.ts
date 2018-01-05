@@ -196,7 +196,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           : info => path.relative(cwd, info.absoluteResourcePath)
       },
       externals: (context, request, callback) => {
-        if (request.indexOf('webpack') < 0 && !request.startsWith('.')) {
+        if (request.indexOf('webpack') < 0 && request.indexOf('babel-polyfill') < 0 && !request.startsWith('.')) {
           const fullPath = spin.require.probe(request, context);
           if (fullPath) {
             const ext = path.extname(fullPath);
