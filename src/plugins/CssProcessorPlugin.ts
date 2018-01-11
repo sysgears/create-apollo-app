@@ -22,6 +22,9 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       const rules = [];
       const postCssLoader = spin.require.probe('postcss-loader');
       const useDefaultPostCss: boolean = spin.options.useDefaultPostCss || false;
+
+      let plugin;
+
       if (stack.hasAny('server')) {
         createRule = (ext, ruleList) => ({
           test: new RegExp(`\\.${ext}$`),
@@ -47,10 +50,8 @@ export default class CssProcessorPlugin implements ConfigPlugin {
           ExtractTextPlugin = spin.require('extract-text-webpack-plugin');
         }
         createRule = (ext, ruleList) => {
-          let plugin;
-          if (!dev) {
-            plugin = new ExtractTextPlugin({ filename: `[name].[contenthash]_${ext}.css` });
-            builder.config.plugins.push(plugin);
+          if (!dev && !plugin) {
+            plugin = new ExtractTextPlugin({ filename: `[name].[contenthash].css` });
           }
           return {
             test: new RegExp(`\\.${ext}$`),
@@ -109,6 +110,10 @@ export default class CssProcessorPlugin implements ConfigPlugin {
           rules
         }
       });
+
+      if (plugin) {
+        builder.config.plugins.push(plugin);
+      }
     }
   }
 }
