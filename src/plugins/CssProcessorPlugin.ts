@@ -21,7 +21,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       let createRule;
       const rules = [];
       const postCssLoader = spin.require.probe('postcss-loader');
-      const useDefaultPostCss: boolean = spin.options.useDefaultPostCss || false;
+      const useDefaultPostCss: boolean = builder.useDefaultPostCss || false;
 
       let plugin;
 

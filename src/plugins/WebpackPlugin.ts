@@ -39,7 +39,11 @@ const createPlugins = (builder: Builder, spin: Spin) => {
     plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
   }
 
-  const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
+  const backendOption = builder.backendUrl;
+  const defines: any = {};
+  if (backendOption) {
+    defines.__BACKEND_URL__ = `'${backendOption.replace('{ip}', ip.address())}'`;
+  }
 
   if (stack.hasAny('dll')) {
     const name = `vendor_${builder.parent.name}`;
@@ -51,7 +55,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       }),
       new webpack.DllPlugin({
         name,
-        path: path.join(spin.options.dllBuildDir, `${name}_dll.json`)
+        path: path.join(builder.dllBuildDir, `${name}_dll.json`)
       })
     ];
   } else {
@@ -65,12 +69,12 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         new webpack.DefinePlugin({
           __CLIENT__: false,
           __SERVER__: true,
-          __SSR__: spin.options.ssr && !spin.test,
+          __SSR__: builder.ssr && !spin.test,
           __DEV__: spin.dev,
           __TEST__: spin.test,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-          __BACKEND_URL__: `"${backendUrl}"`,
-          ...spin.options.defines
+          ...defines,
+          ...builder.defines
         })
       ]);
     } else {
@@ -78,12 +82,12 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         new webpack.DefinePlugin({
           __CLIENT__: true,
           __SERVER__: false,
-          __SSR__: spin.options.ssr && !spin.test,
+          __SSR__: builder.ssr && !spin.test,
           __DEV__: spin.dev,
           __TEST__: spin.test,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-          __BACKEND_URL__: `"${backendUrl}"`,
-          ...spin.options.defines
+          ...defines,
+          ...builder.defines
         })
       ]);
 
@@ -95,7 +99,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           })
         );
 
-        if (!spin.options.ssr) {
+        if (!builder.ssr) {
           const HtmlWebpackPlugin = spin.require('html-webpack-plugin');
           plugins.push(
             new HtmlWebpackPlugin({
@@ -123,11 +127,11 @@ const createPlugins = (builder: Builder, spin: Spin) => {
   return plugins;
 };
 
-const getDepsForNode = (spin: Spin, builder, depPlatforms) => {
+const getDepsForNode = (spin: Spin, builder) => {
   const pkg = spin.require('./package.json');
   const deps = [];
   for (const key of Object.keys(pkg.dependencies)) {
-    const val = depPlatforms[key];
+    const val = builder.depPlatforms[key];
     if (
       key.indexOf('@types') !== 0 &&
       (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0) || val === builder.parent.name)
@@ -144,7 +148,6 @@ const webpackPortMap = {};
 const createConfig = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
 
-  const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
   const cwd = process.cwd();
 
   const baseDir = path.join(cwd, 'node_modules');
@@ -227,12 +230,12 @@ const createConfig = (builder: Builder, spin: Spin) => {
       ...config,
       devtool: '#cheap-module-source-map',
       entry: {
-        vendor: getDepsForNode(spin, builder, spin.options.depPlatforms)
+        vendor: getDepsForNode(spin, builder)
       },
       output: {
         ...config.output,
         filename: `${name}_[hash]_dll.js`,
-        path: path.resolve(spin.options.dllBuildDir),
+        path: path.resolve(builder.dllBuildDir),
         library: name
       },
       bail: true
@@ -262,13 +265,11 @@ const createConfig = (builder: Builder, spin: Spin) => {
           ...config.output,
           filename: '[name].js',
           sourceMapFilename: '[name].[chunkhash].js.map',
-          path: path.resolve(spin.options.backendBuildDir),
+          path: path.resolve(builder.buildDir || builder.backendBuildDir || 'build/server'),
           publicPath: '/'
         }
       };
     } else if (stack.hasAny('web')) {
-      const { protocol, host } = url.parse(backendUrl);
-      const backendBaseUrl = protocol + '//' + host;
       let webpackDevPort;
       if (!builder.webpackDevPort) {
         if (!webpackPortMap[builder.name]) {
@@ -290,7 +291,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
         output: {
           ...config.output,
           filename: '[name].[hash].js',
-          path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
+          path: builder.buildDir
+            ? path.resolve(builder.buildDir)
+            : path.resolve(path.join(builder.frontendBuildDir || 'build/client', 'web')),
           publicPath: '/'
         },
         devServer: {
@@ -298,10 +301,14 @@ const createConfig = (builder: Builder, spin: Spin) => {
           port: webpackDevPort
         }
       };
-      if (spin.options.devProxy || builder.devProxy) {
+      if (builder.devProxy) {
+        const proxyUrl =
+          typeof builder.devProxy === 'string'
+            ? builder.devProxy
+            : builder.backendUrl ? `http://localhost:${url.parse(builder.backendUrl).port}` : `http://localhost:8080`;
         config.devServer.proxy = {
           '!/*.hot-update.{json,js}': {
-            target: backendBaseUrl,
+            target: proxyUrl,
             logLevel: 'info'
           }
         };
@@ -316,7 +323,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
           ...config.output,
           filename: `index.mobile.bundle`,
           publicPath: '/',
-          path: path.resolve(path.join(spin.options.frontendBuildDir, builder.name))
+          path: builder.buildDir
+            ? path.resolve(builder.buildDir)
+            : path.resolve(path.join(builder.frontendBuildDir || 'build/client', builder.name))
         },
         devServer: {
           ...baseDevServerConfig,

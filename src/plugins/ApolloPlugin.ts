@@ -10,7 +10,7 @@ let persistPlugins;
 export default class ApolloPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
     if (!builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack'])) {
-      const persistGraphQL = spin.options.persistGraphQL && !spin.test;
+      const persistGraphQL = builder.persistGraphQL && !spin.test;
       if (builder.stack.hasAny(['server', 'web'])) {
         if (!persistPlugins) {
           const PersistGraphQLPlugin = spin.require('persistgraphql-webpack-plugin');

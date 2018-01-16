@@ -9,14 +9,14 @@ export default class StyledComponentsPlugin implements ConfigPlugin {
 
     if (
       stack.hasAll(['styled-components', 'webpack']) &&
-      (stack.hasAny('web') || (stack.hasAny('server') && spin.options.ssr))
+      (stack.hasAny('web') || (stack.hasAny('server') && builder.ssr))
     ) {
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findJSRule();
       if (jsRule) {
         jsRule.use = spin.merge(jsRule.use, {
           options: {
-            plugins: [[spin.require.resolve('babel-plugin-styled-components'), { ssr: spin.options.ssr }]]
+            plugins: [[spin.require.resolve('babel-plugin-styled-components'), { ssr: builder.ssr }]]
           }
         });
       }

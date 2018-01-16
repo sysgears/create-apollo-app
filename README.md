@@ -14,9 +14,9 @@ npm install -g spinjs
 ## Motivation
 
 > `spinjs` was created to free the developer from build rules writing for JavaScript projects as much as possible.
-> Its difference from many other build tools with similair goals is that `spinjs` is not tied to specific framework 
+> Its difference from many other build tools with similair goals is that `spinjs` is not tied to specific framework
 > and does not attempt to lock you out from generated config. `spinjs` does its best to provide you with very mature
-> build setup from the minimal information provided by you about your tech stack and lets you further customize 
+> build setup from the minimal information provided by you about your tech stack and lets you further customize
 > every aspect of build setup when needed.
 
 ## Basic Usage
@@ -27,14 +27,14 @@ The basic `spinjs` usage is simple: you describe the stack used in your applicat
   "spin": "webpack:es6:apollo:react-native:ios"
 }
 ```
-and you are all set. 
+and you are all set.
 
 You can then execute
 ```bash
 spin watch
 ```
-to launch your project in `webpack watch` mode for development. After making changes to your code, they will be 
-automatically reloaded from disk using Webpack Hot Module Replacement. 
+to launch your project in `webpack watch` mode for development. After making changes to your code, they will be
+automatically reloaded from disk using Webpack Hot Module Replacement.
 
 ```bash
 spin build
@@ -79,7 +79,7 @@ At the moment `spinjs` supports the following technologies, that can be specifie
 ## Concepts
 
 `spinjs` configures and launches multiple builders in parallel to build the project. If stack for the project is specified
-in `spin` property of `package.json`, then only one builder is launched. To specify multiple builders the following 
+in `spin` property of `package.json`, then only one builder is launched. To specify multiple builders the following
 configuration should be used:
 ```json
 {
@@ -89,17 +89,17 @@ configuration should be used:
                 "stack": "webpack:es6:apollo:react:styled-components:sass:server"
             },
             "frontend": {
-                "stack": "webpack:es6:apollo:react:styled-components:sass:web"    
+                "stack": "webpack:es6:apollo:react:styled-components:sass:web"
             },
             "mobile": {
-                "stack": "webpack:es6:apollo:react-native:styled-components:sass:ios"        
+                "stack": "webpack:es6:apollo:react-native:styled-components:sass:ios"
             }
         }
     }
 }
 ```
 
-The 'spinjs' configuration can be specified in `.spinrc.json` instead of `package.json`, it should contain the value of 
+The 'spinjs' configuration can be specified in `.spinrc.json` instead of `package.json`, it should contain the value of
 `spin` property in this case.
 
 Each builder has a name and a `stack` property at minimum. Builder properties recognized by `spinjs`:
@@ -107,34 +107,32 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |Builder Option            |Description|
 |--------------------------|-----------|
 |stack|an array or semicolon separated string with list of stack features for the builder|
+|plugins|Additional `spinjs` plugins module names|
 |entry|path to entry source file for this builder (`src/{platform}/index.{js,jsx,ts,tsx}` by default)|
 |enabled|whether this builder is enabled, `true` by default|
-|roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default| 
-|backendUrl|URL to a REST/GraphQL API of the application endpoint(http://localhost:8080 by default)|
+|roles|what are the roles of the builder, allowed values: `build`, `watch`, `test`, `["build", "watch"]` by default|
+|defines|assignments that will be available at compile time to all generated code|
+|backendUrl|URL to a REST/GraphQL API of the application endpoint(http://localhost:8080 by default) - deprecated use `defines` and `waitOn` instead|
+|waitOn|URL in `wait-on` npm package format to await for before emitting compiled code. This is useful for example to force front-end wait until back-end will be compiled and started first in dev mode|
 |webpackDevPort|the local port used for Webpack Dev Server process to host web frontend files|
-
-Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.
-
-Options that are non-specific to each builder but rather to application as a whole can be specified in 
-`options` property on the same level as `builders` property. Supported options:
-
-|General Option            |Description|
-|--------------------------|-----------|
-|plugins|Additional `spinjs` plugins module names|
-|backendBuildDir|Output directory for code targeted to run under Node.js|
-|frontendBuildDir|Output directory for code targeted to run in Web Browser and on mobile devices| 
+|buildDir|Output directory for built code|
+|backendBuildDir|Output directory for code targeted to run under Node.js (deprecated, use buildDir instead)|
+|frontendBuildDir|Output directory for code targeted to run in Web Browser and on mobile devices (deprecated, use buildDir instead)|
 |dllBuildDir|Output directory for Webpack DLL files used to speed up incremental builds|
 |backendUrl|Same as corresponding builder option|
 |stack|Same as corresponding builder option, but prepended to each builder stack|
-|ssr|Use server side rendering for the application (makes requiring web assets inside server code possible)| 
+|ssr|Use server side rendering for the application (makes requiring web assets inside server code possible)|
 |webpackDll|Utilize Webpack DLLs to speed up incremental builds|
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
 |devProxy|Proxy all unknown requests from front-end running on Webpack during development to back-end|
 
-Each `spinjs` plugin tries to handle subset of technologies in the builder stack to configure build tools 
+Common builder options can be put into `options` property, from there they will be copied into each builder. `stack` property inside `options` will be prepended to each builder stack.
+Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.
+
+Each `spinjs` plugin tries to handle subset of technologies in the builder stack to configure build tools
 usually used for this stack the best way. After configuration of the builder it gets executed in the mode
-that specified in `spin` command line, i.e. `watch`, `build`, `test`, etc. 
+that specified in `spin` command line, i.e. `watch`, `build`, `test`, etc.
 
 There are several built-in plugins supplied with `spinjs`. External plugins can be specified inside
 `options -> plugins` property.

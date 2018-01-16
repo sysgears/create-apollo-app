@@ -40,7 +40,6 @@ const __WINDOWS__ = /^win/.test(process.platform);
 
 let server;
 let startBackend = false;
-let backendFirstStart = true;
 let nodeDebugOpt;
 
 process.on('exit', () => {
@@ -221,7 +220,7 @@ const startServerWebpack = (spin, builder) => {
               server.kill('SIGUSR2');
             }
 
-            if (spin.options.frontendRefreshOnBackendChange) {
+            if (builder.frontendRefreshOnBackendChange) {
               for (const module of stats.compilation.modules) {
                 if (module.built && module.resource && module.resource.indexOf(path.resolve('./src/server')) === 0) {
                   // Force front-end refresh on back-end change
@@ -287,11 +286,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   let vendorSource;
   let vendorMap;
 
-  const options = spin.options;
-
-  if (options.webpackDll && builder.child) {
+  if (builder.webpackDll && builder.child) {
     const name = `vendor_${platform}`;
-    const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
+    const jsonPath = path.join(builder.dllBuildDir, `${name}_dll.json`);
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
@@ -299,17 +296,17 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       })
     );
     vendorHashesJson = JSON.parse(
-      fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString()
+      fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll_hashes.json`)).toString()
     );
     vendorSource = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
+      fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
     );
     vendorMap = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.map')).toString()
+      fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.map')).toString()
     );
     if (platform !== 'web') {
       const vendorAssets = JSON.parse(
-        fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
+        fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
       );
       config.plugins.push(new MobileAssetsPlugin(vendorAssets));
     }
@@ -317,23 +314,39 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   }
 
   const compiler = webpack(config);
+  let awaitedAlready = false;
 
   compiler.plugin('after-emit', (compilation, callback) => {
-    if (backendFirstStart) {
-      if (hasBackend) {
-        const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
-        const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
-        logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
-        waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
-          if (err) {
-            logger.error(err);
+    if (!awaitedAlready) {
+      if (hasBackend || builder.waitOn) {
+        let waitOnUrls;
+        const backendOption = builder.backendUrl || builder.backendUrl;
+        if (backendOption) {
+          const { protocol, hostname, port } = url.parse(backendOption.replace('{ip}', ip.address()));
+          waitOnUrls = [`tcp:${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`];
+        } else {
+          waitOnUrls = builder.waitOn ? [].concat(builder.waitOn) : undefined;
+        }
+        if (waitOnUrls && waitOnUrls.length) {
+          logger.debug(`waiting for ${waitOnUrls}`);
+          const waitStart = Date.now();
+          const waitNotifier = setInterval(() => {
+            logger.debug(`still waiting for ${waitOnUrls} after ${Date.now() - waitStart}ms...`);
+          }, 10000);
+          waitOn({ resources: waitOnUrls }, err => {
+            clearInterval(waitNotifier);
+            awaitedAlready = true;
+            if (err) {
+              logger.error(err);
+            } else {
+              logger.debug('Backend has been started, resuming webpack dev server...');
+            }
             callback();
-          } else {
-            logger.debug('Backend has been started, resuming webpack dev server...');
-            backendFirstStart = false;
-            callback();
-          }
-        });
+          });
+        } else {
+          awaitedAlready = true;
+          callback();
+        }
       } else {
         callback();
       }
@@ -341,7 +354,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       callback();
     }
   });
-  if (options.webpackDll && builder.child && platform !== 'web') {
+  if (builder.webpackDll && builder.child && platform !== 'web') {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
@@ -364,7 +377,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     });
   }
 
-  if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
+  if (builder.webpackDll && builder.child && platform === 'web' && !builder.ssr) {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.assets[vendorHashesJson.name] = vendorSource;
       compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
@@ -392,7 +405,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
           assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
         }
       });
-      if (options.webpackDll) {
+      if (builder.webpackDll) {
         assetsMap['vendor.js'] = vendorHashesJson.name;
       }
       fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
@@ -589,10 +602,10 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   serverInstance.keepAliveTimeout = 0;
 };
 
-const isDllValid = (platform, config, options, logger): boolean => {
+const isDllValid = (platform, config, builder, logger): boolean => {
   const name = `vendor_${platform}`;
   try {
-    const hashesPath = path.join(options.dllBuildDir, `${name}_dll_hashes.json`);
+    const hashesPath = path.join(builder.dllBuildDir, `${name}_dll_hashes.json`);
     if (!fs.existsSync(hashesPath)) {
       return false;
     }
@@ -600,14 +613,14 @@ const isDllValid = (platform, config, options, logger): boolean => {
     if (SPIN_DLL_VERSION !== meta.version) {
       return false;
     }
-    if (!fs.existsSync(path.join(options.dllBuildDir, meta.name))) {
+    if (!fs.existsSync(path.join(builder.dllBuildDir, meta.name))) {
       return false;
     }
     if (!_.isEqual(meta.modules, config.entry.vendor)) {
       return false;
     }
 
-    const json = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll.json`)).toString());
+    const json = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
 
     for (const filename of Object.keys(json.content)) {
       if (filename.indexOf(' ') < 0) {
@@ -634,23 +647,22 @@ const isDllValid = (platform, config, options, logger): boolean => {
   }
 };
 
-const buildDll = (platform, config, spin: Spin) => {
+const buildDll = (platform, config, builder: Builder, spin: Spin) => {
   const webpack = spin.require('webpack');
   return new Promise(done => {
     const name = `vendor_${platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
     const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
 
-    const options = spin.options;
-    if (!isDllValid(platform, config, options, logger)) {
+    if (!isDllValid(platform, config, builder, logger)) {
       logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
 
-      mkdirp.sync(options.dllBuildDir);
+      mkdirp.sync(builder.dllBuildDir);
       const compiler = webpack(config);
 
       compiler.plugin('done', stats => {
         try {
-          const json = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll.json`)).toString());
+          const json = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
           const vendorKey = _.findKey(
             stats.compilation.assets,
             (v, key) => key.startsWith('vendor') && key.endsWith('_dll.js')
@@ -661,7 +673,7 @@ const buildDll = (platform, config, spin: Spin) => {
               assets.push(module._asset);
             }
           });
-          fs.writeFileSync(path.join(options.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
+          fs.writeFileSync(path.join(builder.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
 
           const meta = { name: vendorKey, hashes: {}, modules: config.entry.vendor, version: SPIN_DLL_VERSION };
           for (const filename of Object.keys(json.content)) {
@@ -670,7 +682,7 @@ const buildDll = (platform, config, spin: Spin) => {
                 .createHash('md5')
                 .update(fs.readFileSync(filename))
                 .digest('hex');
-              fs.writeFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
+              fs.writeFileSync(path.join(builder.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
             }
           }
         } catch (e) {
@@ -788,7 +800,7 @@ const allocateExpoPorts = async expoPlatforms => {
   }
 };
 
-const startExpoProdServer = async (spin, logger) => {
+const startExpoProdServer = async (spin: Spin, builders: { [name: string]: Builder }, logger) => {
   const connect = spin.require('connect');
   const mime = spin.require('mime', spin.require.resolve('webpack-dev-middleware'));
   const compression = spin.require('compression');
@@ -811,18 +823,29 @@ const startExpoProdServer = async (spin, logger) => {
     .use((req, res, next) => {
       const platform = url.parse(req.url, true).query.platform;
       if (platform) {
-        const filePath = path.join(spin.options.frontendBuildDir, platform, req.path);
-        if (fs.existsSync(filePath)) {
-          res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
-          fs.createReadStream(filePath).pipe(res);
-        } else {
-          if (req.url.indexOf('.bundle?') >= 0) {
-            logger.error(
-              `Bundle for '${platform}' platform is missing! You need to build bundles both for Android and iOS.`
-            );
+        let platformFound: boolean = false;
+        for (const name of Object.keys(builders)) {
+          const builder = builders[name];
+          if (builder.stack.hasAny(platform)) {
+            platformFound = true;
+            const filePath = builder.buildDir
+              ? path.join(builder.buildDir, req.path)
+              : path.join(builder.frontendBuildDir || `build/client`, platform, req.path);
+            if (fs.existsSync(filePath)) {
+              res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
+              fs.createReadStream(filePath).pipe(res);
+              return;
+            }
           }
+        }
+
+        if (!platformFound) {
+          logger.error(
+            `Bundle for '${platform}' platform is missing! You need to build bundles both for Android and iOS.`
+          );
+        } else {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(`{'message': 'File not found: ${filePath}'}`);
+          res.end(`{'message': 'File not found for request: ${req.path}'}`);
         }
       } else {
         next();
@@ -849,14 +872,27 @@ const startExpoProdServer = async (spin, logger) => {
   logger.info(`Expo server running on address: ${localAddress}`);
 };
 
-const startExp = async (spin, logger) => {
+const startExp = async (spin: Spin, builders: Builders, logger) => {
+  let hasMobileBuilders: boolean = false;
+  for (const name of Object.keys(builders)) {
+    const builder = builders[name];
+    if (builder.stack.hasAny(['ios', 'android'])) {
+      hasMobileBuilders = true;
+      break;
+    }
+  }
+  if (!hasMobileBuilders) {
+    throw new Error('Builders for `ios` or `android` not found');
+  }
+
   const projectRoot = path.join(process.cwd(), '.expo', 'all');
   setupExpoDir(spin, projectRoot, 'all');
-  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[3]) >= 0) {
-    await startExpoProdServer(spin, logger);
+  const expIdx = process.argv.indexOf('exp');
+  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[expIdx + 1]) >= 0) {
+    await startExpoProdServer(spin, builders, logger);
   }
-  if (process.argv[3] !== 'server') {
-    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
+  if (process.argv[expIdx + 1] !== 'server') {
+    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(expIdx + 1), {
       cwd: projectRoot,
       stdio: [0, 1, 2]
     });
@@ -866,7 +902,11 @@ const startExp = async (spin, logger) => {
   }
 };
 
-const execute = (cmd: string, argv: any, builders: { [name: string]: Builder }, spin: Spin) => {
+export interface Builders {
+  [name: string]: Builder;
+}
+
+const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
   if (argv.verbose) {
     Object.keys(builders).forEach(name => {
       const builder = builders[name];
@@ -875,8 +915,9 @@ const execute = (cmd: string, argv: any, builders: { [name: string]: Builder }, 
   }
 
   if (cmd === 'exp') {
-    startExp(spin, spinLogger);
+    startExp(spin, builders, spinLogger);
   } else if (cmd === 'test') {
+    // TODO: Remove this in 0.5.x
     let builder;
     for (const name of Object.keys(builders)) {
       builder = builders[name];
@@ -902,8 +943,14 @@ const execute = (cmd: string, argv: any, builders: { [name: string]: Builder }, 
     testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
     spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
 
+    const env: any = Object.create(process.env);
+    if (argv.c) {
+      (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
+    }
+
     const mochaWebpack = spawn(testCmd, testArgs, {
-      stdio: [0, 1, 2]
+      stdio: [0, 1, 2],
+      env
     });
     mochaWebpack.on('close', code => {
       process.exit(code);
@@ -931,8 +978,8 @@ const execute = (cmd: string, argv: any, builders: { [name: string]: Builder }, 
           continue;
         }
         const prepareDllPromise: PromiseLike<any> =
-          spin.watch && spin.options.webpackDll && builder.child
-            ? buildDll(stack.platform, builder.child.config, spin)
+          spin.watch && builder.webpackDll && builder.child
+            ? buildDll(stack.platform, builder.child.config, builder, spin)
             : Promise.resolve();
         prepareDllPromise.then(() => startWebpack(spin, platforms, builder));
       }

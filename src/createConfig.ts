@@ -45,20 +45,17 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
   ];
   const spin = new Spin(cwd, cmd);
   const config = new ConfigRc(spin, plugins, argv);
-  spin.options = config.options;
-  const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
-  const overrides = fs.existsSync(overridesConfig) ? spin.require('./' + overridesConfig) : {};
-  config.options.depPlatforms = overrides.dependencyPlatforms || config.options.depPlatforms || {};
+  const role = cmd === 'exp' ? 'build' : cmd;
 
   for (const name of Object.keys(config.builders)) {
     const builder = config.builders[name];
     const stack = builder.stack;
 
-    if (name !== builderName && (builder.enabled === false || builder.roles.indexOf(cmd) < 0)) {
+    if (name !== builderName && (builder.enabled === false || builder.roles.indexOf(role) < 0)) {
       continue;
     }
 
-    if (spin.options.webpackDll && !stack.hasAny('server') && !builderName) {
+    if (builder.webpackDll && !stack.hasAny('server') && !builderName) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
       dllBuilder.parent = builder;
@@ -71,6 +68,10 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
 
   for (const name of Object.keys(builders)) {
     const builder = builders[name];
+    const overridesConfig = builder.overridesConfig || WEBPACK_OVERRIDES_NAME;
+    const overrides = fs.existsSync(overridesConfig) ? spin.require('./' + overridesConfig) : {};
+
+    builder.depPlatforms = overrides.dependencyPlatforms || builder.depPlatforms || {};
     config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
 
     const strategy = {
