@@ -1,8 +1,9 @@
 import * as fs from 'fs';
+import * as minilog from 'minilog';
 
 import { Builder } from './Builder';
+import BuilderDiscoverer from './BuilderDiscoverer';
 import { ConfigPlugin } from './ConfigPlugin';
-import ConfigRc from './configRc';
 import AngularPlugin from './plugins/AngularPlugin';
 import ApolloPlugin from './plugins/ApolloPlugin';
 import CssProcessorPlugin from './plugins/CssProcessorPlugin';
@@ -22,6 +23,8 @@ import Spin from './Spin';
 import Stack from './Stack';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
+
+const spinLogger = minilog('spin');
 
 const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string) => {
   const builders = {};
@@ -44,14 +47,22 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     new VuePlugin()
   ];
   const spin = new Spin(cwd, cmd);
-  const config = new ConfigRc(spin, plugins, argv);
+  const builderDiscoverer = new BuilderDiscoverer(spin, plugins, argv);
   const role = cmd === 'exp' ? 'build' : cmd;
 
-  for (const name of Object.keys(config.builders)) {
-    const builder = config.builders[name];
+  const discoveredBuilders = builderDiscoverer.discover() || {};
+  if (!discoveredBuilders) {
+    throw new Error('Cannot find spinjs config');
+  }
+  if (argv.verbose) {
+    spinLogger.log('SpinJS Config:\n', require('util').inspect(builders, false, null));
+  }
+
+  for (const builderId of Object.keys(discoveredBuilders)) {
+    const builder = discoveredBuilders[builderId];
     const stack = builder.stack;
 
-    if (name !== builderName && (builder.enabled === false || builder.roles.indexOf(role) < 0)) {
+    if (builder.name !== builderName && (builder.enabled === false || builder.roles.indexOf(role) < 0)) {
       continue;
     }
 
@@ -60,25 +71,25 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
       dllBuilder.name = builder.name + 'Dll';
       dllBuilder.parent = builder;
       dllBuilder.stack = new Stack(dllBuilder.stack.technologies, 'dll');
-      builders[dllBuilder.name] = dllBuilder;
+      builders[`${builderId.split('[')[0]}[${builder.name}Dll]`] = dllBuilder;
       builder.child = dllBuilder;
     }
-    builders[name] = builder;
+    builders[builderId] = builder;
   }
 
-  for (const name of Object.keys(builders)) {
-    const builder = builders[name];
+  for (const builderId of Object.keys(builders)) {
+    const builder = builders[builderId];
     const overridesConfig = builder.overridesConfig || WEBPACK_OVERRIDES_NAME;
     const overrides = fs.existsSync(overridesConfig) ? spin.require('./' + overridesConfig) : {};
 
     builder.depPlatforms = overrides.dependencyPlatforms || builder.depPlatforms || {};
-    config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
+    builder.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
 
     const strategy = {
       entry: 'replace'
     };
-    if (overrides[name]) {
-      builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[name]);
+    if (overrides[builder.name]) {
+      builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[builder.name]);
     }
     if (builder.webpackConfig) {
       builder.config = spin.mergeWithStrategy(strategy, builder.config, builder.webpackConfig);

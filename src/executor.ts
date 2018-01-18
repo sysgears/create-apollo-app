@@ -15,7 +15,7 @@ import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
 import { RawSource } from 'webpack-sources';
 
-import { Builder } from './Builder';
+import { Builder, Builders } from './Builder';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import Spin from './Spin';
 
@@ -23,8 +23,6 @@ const SPIN_DLL_VERSION = 1;
 
 const debug = Debug('spinjs');
 const expoPorts = {};
-
-minilog.enable();
 
 const spinLogger = minilog('spin');
 
@@ -800,7 +798,7 @@ const allocateExpoPorts = async expoPlatforms => {
   }
 };
 
-const startExpoProdServer = async (spin: Spin, builders: { [name: string]: Builder }, logger) => {
+const startExpoProdServer = async (spin: Spin, builders: Builders, logger) => {
   const connect = spin.require('connect');
   const mime = spin.require('mime', spin.require.resolve('webpack-dev-middleware'));
   const compression = spin.require('compression');
@@ -901,10 +899,6 @@ const startExp = async (spin: Spin, builders: Builders, logger) => {
     });
   }
 };
-
-export interface Builders {
-  [name: string]: Builder;
-}
 
 const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
   if (argv.verbose) {

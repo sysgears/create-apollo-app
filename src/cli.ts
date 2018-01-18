@@ -27,7 +27,7 @@ try {
     .version(require('../package.json').version) // tslint:disable-line
     .argv;
 
-const cmd = argv._[0];
+  const cmd = argv._[0];
   let config;
   if (argv.help && cmd !== 'exp') {
     yargs.showHelp();
@@ -44,5 +44,5 @@ const cmd = argv._[0];
     }
   }
 } catch (e) {
-  logger.error(e.stack);
+  logger.error(e);
 }

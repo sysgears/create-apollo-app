@@ -100,7 +100,7 @@ configuration should be used:
 ```
 
 The 'spinjs' configuration can be specified in `.spinrc.json` instead of `package.json`, it should contain the value of
-`spin` property in this case.
+`spin` property in this case. The object with config can be also exported from `.spinrc.js`
 
 Each builder has a name and a `stack` property at minimum. Builder properties recognized by `spinjs`:
 

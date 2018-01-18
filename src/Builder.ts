@@ -10,3 +10,7 @@ export interface Builder {
   config?: any;
   [x: string]: any;
 }
+
+export interface Builders {
+  [id: string]: Builder;
+}
