@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as merge from 'webpack-merge';
 
 import { Builder, Builders } from './Builder';
 import { ConfigPlugin } from './ConfigPlugin';
@@ -59,8 +60,9 @@ export default class ConfigReader {
       builder.stack = new Stack(config.options.stack || [], typeof builder === 'object' ? builder.stack : builder);
       builder.plugins = (config.plugins || []).concat(builder.plugins || []);
       builder.roles = builder.roles || ['build', 'watch'];
-      for (const key of Object.keys(options)) {
-        builder[key] = options[key];
+      const merged = merge(builder, options);
+      for (const key of Object.keys(merged)) {
+        builder[key] = merged[key];
       }
       const builderId = `${relativePath}[${builder.name}]`;
       builders[builderId] = builder;

@@ -55,7 +55,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     throw new Error('Cannot find spinjs config');
   }
   if (argv.verbose) {
-    spinLogger.log('SpinJS Config:\n', require('util').inspect(builders, false, null));
+    spinLogger.log('SpinJS Config:\n', require('util').inspect(discoveredBuilders, false, null));
   }
 
   for (const builderId of Object.keys(discoveredBuilders)) {
