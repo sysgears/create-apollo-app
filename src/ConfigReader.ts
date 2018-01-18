@@ -60,7 +60,7 @@ export default class ConfigReader {
       builder.stack = new Stack(config.options.stack || [], typeof builder === 'object' ? builder.stack : builder);
       builder.plugins = (config.plugins || []).concat(builder.plugins || []);
       builder.roles = builder.roles || ['build', 'watch'];
-      const merged = merge(builder, options);
+      const merged = merge(options, builder);
       for (const key of Object.keys(merged)) {
         builder[key] = merged[key];
       }
