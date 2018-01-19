@@ -166,7 +166,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
   };
 
   if (builder.sourceMap) {
-    baseConfig.devtool = spin.dev ? '#cheap-module-source-map' : '#source-map';
+    baseConfig.devtool = spin.dev ? '#cheap-module-source-map' : '#nosources-source-map';
     baseConfig.output = {
       devtoolModuleFilenameTemplate: spin.dev
         ? info => 'webpack:///./' + path.relative(cwd, info.absoluteResourcePath.split('?')[0]).replace(/\\/g, '/')
@@ -243,7 +243,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       bail: true
     };
     if (builder.sourceMap) {
-      config.devtool = spin.dev ? '#cheap-module-source-map' : '#source-map';
+      config.devtool = spin.dev ? '#cheap-module-source-map' : '#nosources-source-map';
     }
   } else {
     if (spin.dev) {
