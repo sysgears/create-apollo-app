@@ -27,7 +27,7 @@ export default class ES6Plugin implements ConfigPlugin {
         loader: spin.require.resolve('babel-loader'),
         options: {
           babelrc: false,
-          cacheDirectory: spin.dev,
+          cacheDirectory: builder.cache === 'auto' ? spin.dev : builder.cache,
           compact: !spin.dev,
           presets: ([
             spin.require.resolve('babel-preset-react'),

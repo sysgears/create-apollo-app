@@ -71,6 +71,7 @@ export default class ConfigReader {
       builder.dllBuildDir = builder.dllBuildDir || 'build/dll';
       builder.webpackDll = typeof builder.webpackDll !== 'undefined' ? builder.webpackDll : true;
       builder.sourceMap = typeof builder.sourceMap !== 'undefined' ? builder.sourceMap : true;
+      builder.cache = typeof builder.cache !== 'undefined' ? builder.cache : 'auto';
       builder.plugins = this.plugins.concat((builder.plugins || []).map(pluginName => new (require(pluginName))()));
     }
     return builders;
