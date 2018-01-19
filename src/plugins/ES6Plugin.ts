@@ -5,7 +5,10 @@ import JSRuleFinder from './shared/JSRuleFinder';
 
 export default class ES6Plugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
-    if (builder.stack.hasAll(['es6', 'webpack'])) {
+    if (
+      builder.stack.hasAll(['es6', 'webpack']) &&
+      (!builder.stack.hasAny('dll') || builder.stack.hasAny(['android', 'ios']))
+    ) {
       if (builder.stack.hasAny('es6') && !builder.stack.hasAny('dll')) {
         builder.config = spin.merge(
           {

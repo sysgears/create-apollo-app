@@ -105,12 +105,14 @@ export default class ReactNativePlugin implements ConfigPlugin {
         }
         builder.config = spin.merge(
           {
-            plugins: [
-              new webpack.SourceMapDevToolPlugin({
-                test: new RegExp(`\\.bundle$`),
-                filename: '[file].map'
-              })
-            ],
+            plugins: builder.sourceMap
+              ? [
+                  new webpack.SourceMapDevToolPlugin({
+                    test: new RegExp(`\\.bundle$`),
+                    filename: '[file].map'
+                  })
+                ]
+              : [],
             entry: {
               index: [spin.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
             }

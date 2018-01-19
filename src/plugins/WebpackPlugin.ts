@@ -22,7 +22,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       plugins.push(new webpack.NoEmitOnErrorsPlugin());
     }
   } else {
-    const uglifyOpts: any = {};
+    const uglifyOpts: any = builder.sourceMap ? { sourceMap: true } : {};
     if (stack.hasAny('angular')) {
       // https://github.com/angular/angular/issues/10618
       uglifyOpts.mangle = { keep_fnames: true };
@@ -49,8 +49,6 @@ const createPlugins = (builder: Builder, spin: Spin) => {
     const name = `vendor_${builder.parent.name}`;
     plugins = [
       new webpack.DefinePlugin({
-        __DEV__: spin.dev,
-        __TEST__: spin.test,
         'process.env.NODE_ENV': `"${buildNodeEnv}"`
       }),
       new webpack.DllPlugin({
@@ -155,7 +153,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
 
   const baseConfig: any = {
     name: builder.name,
-    devtool: spin.dev ? '#cheap-module-source-map' : '#source-map',
     module: {
       rules: []
     },
@@ -165,13 +162,17 @@ const createConfig = (builder: Builder, spin: Spin) => {
     watchOptions: {
       ignored: /build/
     },
-    output: {
+    bail: !spin.dev
+  };
+
+  if (builder.sourceMap) {
+    baseConfig.devtool = spin.dev ? '#cheap-module-source-map' : '#source-map';
+    baseConfig.output = {
       devtoolModuleFilenameTemplate: spin.dev
         ? info => 'webpack:///./' + path.relative(cwd, info.absoluteResourcePath.split('?')[0]).replace(/\\/g, '/')
         : info => path.relative(cwd, info.absoluteResourcePath)
-    },
-    bail: !spin.dev
-  };
+    };
+  }
 
   const baseDevServerConfig = {
     hot: true,
@@ -193,11 +194,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       target: 'node',
-      output: {
-        devtoolModuleFilenameTemplate: spin.dev
-          ? ({ resourcePath }) => path.resolve(resourcePath)
-          : info => path.relative(cwd, info.absoluteResourcePath)
-      },
       externals: (context, request, callback) => {
         if (request.indexOf('webpack') < 0 && request.indexOf('babel-polyfill') < 0 && !request.startsWith('.')) {
           const fullPath = spin.require.probe(request, context);
@@ -211,6 +207,13 @@ const createConfig = (builder: Builder, spin: Spin) => {
         return callback();
       }
     };
+    if (builder.sourceMap) {
+      config.output = {
+        devtoolModuleFilenameTemplate: spin.dev
+          ? ({ resourcePath }) => path.resolve(resourcePath)
+          : info => path.relative(cwd, info.absoluteResourcePath)
+      };
+    }
   } else {
     config = {
       ...config,
@@ -228,7 +231,6 @@ const createConfig = (builder: Builder, spin: Spin) => {
     const name = `vendor_${builder.parent.name}`;
     config = {
       ...config,
-      devtool: '#cheap-module-source-map',
       entry: {
         vendor: getDepsForNode(spin, builder)
       },
@@ -240,6 +242,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
       },
       bail: true
     };
+    if (builder.sourceMap) {
+      config.devtool = spin.dev ? '#cheap-module-source-map' : '#source-map';
+    }
   } else {
     if (spin.dev) {
       config.module.unsafeCache = false;
@@ -264,11 +269,15 @@ const createConfig = (builder: Builder, spin: Spin) => {
         output: {
           ...config.output,
           filename: '[name].js',
-          sourceMapFilename: '[name].[chunkhash].js.map',
           path: path.resolve(builder.buildDir || builder.backendBuildDir || 'build/server'),
           publicPath: '/'
         }
       };
+      if (builder.sourceMap && spin.dev) {
+        // TODO: rollout proper source map handling during Webpack HMR on a server code
+        // Use that to improve situation with source maps of hot reloaded server code
+        config.output.sourceMapFilename = '[name].[chunkhash].js.map';
+      }
     } else if (stack.hasAny('web')) {
       let webpackDevPort;
       if (!builder.webpackDevPort) {

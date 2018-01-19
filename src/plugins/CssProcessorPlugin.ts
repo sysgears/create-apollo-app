@@ -16,6 +16,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
     const stack = builder.stack;
     const dev = spin.dev;
+    const loaderOptions = builder.sourceMap ? { sourceMap: true } : {};
 
     if (stack.hasAll('webpack') && !stack.hasAny('dll')) {
       let createRule;
@@ -30,15 +31,15 @@ export default class CssProcessorPlugin implements ConfigPlugin {
           test: new RegExp(`\\.${ext}$`),
           use: [
             { loader: spin.require.resolve('isomorphic-style-loader') },
-            { loader: spin.require.resolve('css-loader'), options: { sourceMap: true } }
+            { loader: spin.require.resolve('css-loader'), options: { ...loaderOptions } }
           ]
             .concat(
               postCssLoader
                 ? {
                     loader: postCssLoader,
                     options: useDefaultPostCss
-                      ? { ...postCssDefaultConfig(spin), sourceMap: true }
-                      : { sourceMap: true }
+                      ? { ...postCssDefaultConfig(spin), ...loaderOptions }
+                      : { ...loaderOptions }
                   }
                 : []
             )
@@ -58,15 +59,15 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             use: dev
               ? [
                   { loader: spin.require.resolve('style-loader') },
-                  { loader: spin.require.resolve('css-loader'), options: { sourceMap: true, importLoaders: 1 } }
+                  { loader: spin.require.resolve('css-loader'), options: { ...loaderOptions, importLoaders: 1 } }
                 ]
                   .concat(
                     postCssLoader
                       ? {
                           loader: postCssLoader,
                           options: useDefaultPostCss
-                            ? { ...postCssDefaultConfig(spin), sourceMap: true }
-                            : { sourceMap: true }
+                            ? { ...postCssDefaultConfig(spin), ...loaderOptions }
+                            : { ...loaderOptions }
                         }
                       : []
                   )
@@ -98,11 +99,15 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       }
 
       if (createRule && stack.hasAny('sass')) {
-        rules.push(createRule('scss', [{ loader: spin.require.resolve(`sass-loader`), options: { sourceMap: true } }]));
+        rules.push(
+          createRule('scss', [{ loader: spin.require.resolve(`sass-loader`), options: { ...loaderOptions } }])
+        );
       }
 
       if (createRule && stack.hasAny('less')) {
-        rules.push(createRule('less', [{ loader: spin.require.resolve(`less-loader`), options: { sourceMap: true } }]));
+        rules.push(
+          createRule('less', [{ loader: spin.require.resolve(`less-loader`), options: { ...loaderOptions } }])
+        );
       }
 
       builder.config = spin.merge(builder.config, {

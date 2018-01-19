@@ -66,7 +66,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
       continue;
     }
 
-    if (builder.webpackDll && !stack.hasAny('server') && !builderName) {
+    if (spin.dev && builder.webpackDll && !stack.hasAny('server') && !builderName) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
       dllBuilder.parent = builder;

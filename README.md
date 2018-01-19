@@ -122,7 +122,8 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |backendUrl|Same as corresponding builder option|
 |stack|Same as corresponding builder option, but prepended to each builder stack|
 |ssr|Use server side rendering for the application (makes requiring web assets inside server code possible)|
-|webpackDll|Utilize Webpack DLLs to speed up incremental builds|
+|webpackDll|Utilize Webpack DLLs to speed up incremental builds (default `true`)|
+|sourceMap|Generate source maps for output code (default `true`)|
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
 |devProxy|Proxy all unknown requests from front-end running on Webpack during development to back-end|

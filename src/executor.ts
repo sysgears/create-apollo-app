@@ -299,16 +299,18 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     vendorSource = new RawSource(
       fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
     );
-    vendorMap = new RawSource(
-      fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.map')).toString()
-    );
     if (platform !== 'web') {
       const vendorAssets = JSON.parse(
         fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
       );
       config.plugins.push(new MobileAssetsPlugin(vendorAssets));
     }
-    vendorSourceListMap = fromStringWithSourceMap(vendorSource.source(), JSON.parse(vendorMap.source()));
+    if (builder.sourceMap) {
+      vendorMap = new RawSource(
+        fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.map')).toString()
+      );
+      vendorSourceListMap = fromStringWithSourceMap(vendorSource.source(), JSON.parse(vendorMap.source()));
+    }
   }
 
   const compiler = webpack(config);
@@ -352,7 +354,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       callback();
     }
   });
-  if (builder.webpackDll && builder.child && platform !== 'web') {
+  if (builder.sourceMap && builder.webpackDll && builder.child && platform !== 'web') {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
@@ -378,7 +380,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   if (builder.webpackDll && builder.child && platform === 'web' && !builder.ssr) {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.assets[vendorHashesJson.name] = vendorSource;
-      compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
+      if (builder.sourceMap) {
+        compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
+      }
       callback();
     });
     compiler.plugin('compilation', compilation => {
@@ -612,6 +616,9 @@ const isDllValid = (platform, config, builder, logger): boolean => {
       return false;
     }
     if (!fs.existsSync(path.join(builder.dllBuildDir, meta.name))) {
+      return false;
+    }
+    if (builder.sourceMap && !fs.existsSync(path.join(builder.dllBuildDir, meta.name + '.map'))) {
       return false;
     }
     if (!_.isEqual(meta.modules, config.entry.vendor)) {
