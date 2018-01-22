@@ -49,7 +49,9 @@ const createPlugins = (builder: Builder, spin: Spin) => {
     const name = `vendor_${builder.parent.name}`;
     plugins = [
       new webpack.DefinePlugin({
-        'process.env.NODE_ENV': `"${buildNodeEnv}"`
+        'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+        ...defines,
+        ...builder.defines
       }),
       new webpack.DllPlugin({
         name,
