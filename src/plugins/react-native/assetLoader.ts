@@ -29,7 +29,7 @@
 
 import * as path from 'path';
 import * as util from 'util';
-import requireModule from '../../requireModule';
+import createRequire from '../../createRequire';
 
 interface Config {
   platform: string;
@@ -51,10 +51,11 @@ module.exports = async function assetLoader() {
   const callback = this.async();
   const query = this.query;
   const options = this.options[query.config] || {};
-  const size = requireModule('image-size', query.cwd);
-  const hasha = requireModule('hasha', query.cwd);
-  const hashAssetFiles = requireModule('expo/tools/hashAssetFiles', query.cwd);
-  const AssetResolver = requireModule('haul/src/resolvers/AssetResolver', query.cwd);
+  const requireRelative = createRequire(query.cwd);
+  const size = requireRelative('image-size');
+  const hasha = requireRelative('hasha');
+  const hashAssetFiles = requireRelative('expo/tools/hashAssetFiles');
+  const AssetResolver = requireRelative('haul/src/resolvers/AssetResolver');
 
   const config: Config = { ...options, ...query };
 

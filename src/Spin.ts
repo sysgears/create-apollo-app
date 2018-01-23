@@ -2,13 +2,7 @@ import { Configuration } from 'webpack';
 import * as merge from 'webpack-merge';
 
 import { Builder } from './Builder';
-import requireModule from './requireModule';
-
-export interface RequireFunction {
-  (name, relativeTo?): any;
-  resolve(name, relativeTo?): string;
-  probe(name, relativeTo?): string;
-}
+import createRequire, { RequireFunction } from './createRequire';
 
 export default class Spin {
   public dev: boolean;
@@ -25,12 +19,7 @@ export default class Spin {
     this.dev = this.cmd === 'watch' || this.cmd === 'test';
     this.test = this.cmd === 'test';
     this.watch = this.cmd === 'watch';
-    this.require = (() => {
-      const require: any = (name, relativeTo?): any => requireModule(name, relativeTo || cwd);
-      require.resolve = (name, relativeTo?): string => requireModule.resolve(name, relativeTo || cwd);
-      require.probe = (name, relativeTo?): string => requireModule.probe(name, relativeTo || cwd);
-      return require;
-    })();
+    this.require = createRequire(cwd);
   }
 
   public merge(config: Configuration, overrides: any): Configuration {
