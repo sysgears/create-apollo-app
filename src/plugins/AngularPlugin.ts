@@ -10,7 +10,7 @@ export default class AngularPlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['angular', 'webpack'])) {
-      const webpack = spin.require('webpack');
+      const webpack = builder.require('webpack');
 
       const jsRuleFinder = new JSRuleFinder(builder);
       const tsRule = jsRuleFinder.findAndCreateTSRule();
@@ -19,7 +19,7 @@ export default class AngularPlugin implements ConfigPlugin {
           rules: [
             {
               test: tsRule.test,
-              use: spin.require.resolve('angular2-template-loader')
+              use: builder.require.resolve('angular2-template-loader')
             }
           ]
         },
@@ -44,14 +44,14 @@ export default class AngularPlugin implements ConfigPlugin {
           builder.config
         );
 
-        const { CheckerPlugin } = spin.require('awesome-typescript-loader');
+        const { CheckerPlugin } = builder.require('awesome-typescript-loader');
 
         builder.config = spin.merge(builder.config, {
           module: {
             rules: [
               {
                 test: /\.html$/,
-                loader: spin.require.resolve('html-loader')
+                loader: builder.require.resolve('html-loader')
               }
             ]
           },

@@ -4,6 +4,7 @@ import * as merge from 'webpack-merge';
 
 import { Builder, Builders } from './Builder';
 import { ConfigPlugin } from './ConfigPlugin';
+import createRequire, { RequireFunction } from './createRequire';
 import EnhancedError from './EnhancedError';
 import Spin from './Spin';
 import Stack from './Stack';
@@ -31,7 +32,7 @@ export default class ConfigReader {
           throw new EnhancedError(`Error parsing ${path.resolve(filePath)}`, e);
         }
       } else {
-        const exports = this.spin.require(filePath);
+        const exports = require(path.resolve(filePath));
         configObject = exports instanceof Function ? exports(this.spin) : exports;
       }
     }
@@ -57,6 +58,7 @@ export default class ConfigReader {
       const builder: any =
         typeof builderVal === 'object' && builderVal.constructor !== Array ? { ...builderVal } : { stack: builderVal };
       builder.name = name;
+      builder.require = createRequire(path.resolve(relativePath));
       builder.stack = new Stack(config.options.stack || [], typeof builder === 'object' ? builder.stack : builder);
       builder.plugins = (config.plugins || []).concat(builder.plugins || []);
       builder.roles = builder.roles || ['build', 'watch'];

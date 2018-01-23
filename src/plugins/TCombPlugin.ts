@@ -13,7 +13,7 @@ export default class TCombPlugin implements ConfigPlugin {
       if (jsRule) {
         jsRule.use = spin.merge(jsRule.use, {
           options: {
-            plugins: [[spin.require.resolve('babel-plugin-tcomb')]]
+            plugins: [[builder.require.resolve('babel-plugin-tcomb')]]
           }
         });
       }

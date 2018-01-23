@@ -13,7 +13,7 @@ export default class ApolloPlugin implements ConfigPlugin {
       const persistGraphQL = builder.persistGraphQL && !spin.test;
       if (builder.stack.hasAny(['server', 'web'])) {
         if (!persistPlugins) {
-          const PersistGraphQLPlugin = spin.require('persistgraphql-webpack-plugin');
+          const PersistGraphQLPlugin = builder.require('persistgraphql-webpack-plugin');
           const moduleName = path.resolve('node_modules/persisted_queries.json');
           if (persistGraphQL) {
             const clientPersistPlugin = new PersistGraphQLPlugin({
@@ -40,13 +40,13 @@ export default class ApolloPlugin implements ConfigPlugin {
           rules: [
             {
               test: /\.graphqls/,
-              use: spin.require.resolve('raw-loader')
+              use: builder.require.resolve('raw-loader')
             },
             {
               test: /\.(graphql|gql)$/,
               exclude: /node_modules/,
-              use: [spin.require.resolve('graphql-tag/loader')].concat(
-                persistGraphQL ? [spin.require.resolve('persistgraphql-webpack-plugin/graphql-loader')] : []
+              use: [builder.require.resolve('graphql-tag/loader')].concat(
+                persistGraphQL ? [builder.require.resolve('persistgraphql-webpack-plugin/graphql-loader')] : []
               )
             }
           ]
@@ -54,12 +54,12 @@ export default class ApolloPlugin implements ConfigPlugin {
       });
 
       if (builder.stack.hasAny(['server', 'web'])) {
-        const webpack = spin.require('webpack');
+        const webpack = builder.require('webpack');
 
         if (persistGraphQL) {
           const jsRuleFinder = new JSRuleFinder(builder);
           const jsRule = jsRuleFinder.findAndCreateJSRule();
-          jsRule.use = spin.merge(jsRule.use, [spin.require.resolve('persistgraphql-webpack-plugin/js-loader')]);
+          jsRule.use = spin.merge(jsRule.use, [builder.require.resolve('persistgraphql-webpack-plugin/js-loader')]);
         }
 
         builder.config = spin.merge(builder.config, {

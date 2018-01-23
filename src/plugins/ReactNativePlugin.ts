@@ -7,15 +7,15 @@ import JSRuleFinder from './shared/JSRuleFinder';
 
 let babelRegisterDone = false;
 
-const registerBabel = (spin: Spin) => {
+const registerBabel = (builder: Builder) => {
   if (!babelRegisterDone) {
-    spin.require('babel-register')({
-      presets: [spin.require.resolve('babel-preset-env'), spin.require.resolve('babel-preset-flow')],
+    builder.require('babel-register')({
+      presets: [builder.require.resolve('babel-preset-env'), builder.require.resolve('babel-preset-flow')],
       ignore: /node_modules(?!\/(haul|react-native))/,
       retainLines: true,
       sourceMaps: 'inline'
     });
-    spin.require('babel-polyfill');
+    builder.require('babel-polyfill');
 
     babelRegisterDone = true;
   }
@@ -26,25 +26,25 @@ export default class ReactNativePlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['react-native', 'webpack'])) {
-      registerBabel(spin);
+      registerBabel(builder);
 
-      const webpack = spin.require('webpack');
+      const webpack = builder.require('webpack');
 
       const mobileAssetTest = /\.(bmp|gif|jpg|jpeg|png|psd|svg|webp|m4v|aac|aiff|caf|m4a|mp3|wav|html|pdf|ttf)$/;
 
-      const AssetResolver = spin.require('haul/src/resolvers/AssetResolver');
-      const HasteResolver = spin.require('haul/src/resolvers/HasteResolver');
+      const AssetResolver = builder.require('haul/src/resolvers/AssetResolver');
+      const HasteResolver = builder.require('haul/src/resolvers/HasteResolver');
 
       const reactNativeRule = {
-        loader: spin.require.resolve('babel-loader'),
+        loader: builder.require.resolve('babel-loader'),
         options: {
           babelrc: false,
           cacheDirectory: (builder.cache === 'auto' ? spin.dev : builder.cache) ? '.cache/babel-loader' : false,
           compact: !spin.dev,
-          presets: ([spin.require.resolve('babel-preset-expo')] as any[]).concat(
-            spin.dev ? [] : [[spin.require.resolve('babel-preset-minify'), { mangle: false }]]
+          presets: ([builder.require.resolve('babel-preset-expo')] as any[]).concat(
+            spin.dev ? [] : [[builder.require.resolve('babel-preset-minify'), { mangle: false }]]
           ),
-          plugins: [spin.require.resolve('haul/src/utils/fixRequireIssues')]
+          plugins: [builder.require.resolve('haul/src/utils/fixRequireIssues')]
         }
       };
 
@@ -79,7 +79,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
         resolve: {
           plugins: [
             new HasteResolver({
-              directories: [spin.require.resolve('react-native')]
+              directories: [builder.require.resolve('react-native')]
             }),
             new AssetResolver({
               platform: stack.platform,
@@ -91,11 +91,11 @@ export default class ReactNativePlugin implements ConfigPlugin {
         target: 'webworker'
       });
 
-      const reactVer = spin.require('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
+      const reactVer = builder.require('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
       if (stack.hasAny('dll')) {
         builder.config = spin.merge(builder.config, {
           entry: {
-            vendor: [spin.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
+            vendor: [builder.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
           }
         });
       } else {
@@ -114,7 +114,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 ]
               : [],
             entry: {
-              index: [spin.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
+              index: [builder.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
             }
           },
           builder.config

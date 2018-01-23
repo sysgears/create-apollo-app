@@ -15,7 +15,7 @@ export default class ReactHotLoaderPlugin implements ConfigPlugin {
         builder.config,
         {
           entry: {
-            index: [spin.require.resolve('react-hot-loader/patch')]
+            index: [builder.require.resolve('react-hot-loader/patch')]
           }
         }
       );
@@ -24,7 +24,7 @@ export default class ReactHotLoaderPlugin implements ConfigPlugin {
       const isBabelUsed = jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0;
       jsRule.use = spin.merge(jsRule.use, {
         options: {
-          plugins: [spin.require.resolve(isBabelUsed ? 'react-hot-loader/babel' : 'react-hot-loader/webpack')]
+          plugins: [builder.require.resolve(isBabelUsed ? 'react-hot-loader/babel' : 'react-hot-loader/webpack')]
         }
       });
     }

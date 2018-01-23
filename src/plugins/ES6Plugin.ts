@@ -24,20 +24,20 @@ export default class ES6Plugin implements ConfigPlugin {
       const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules/;
       jsRule.use = {
-        loader: spin.require.resolve('babel-loader'),
+        loader: builder.require.resolve('babel-loader'),
         options: {
           babelrc: false,
           cacheDirectory: (builder.cache === 'auto' ? spin.dev : builder.cache) ? '.cache/babel-loader' : false,
           compact: !spin.dev,
           presets: ([
-            spin.require.resolve('babel-preset-react'),
-            [spin.require.resolve('babel-preset-env'), { modules: false }],
-            spin.require.resolve('babel-preset-stage-0')
-          ] as any[]).concat(spin.dev ? [] : [[spin.require.resolve('babel-preset-minify'), { mangle: false }]]),
+            builder.require.resolve('babel-preset-react'),
+            [builder.require.resolve('babel-preset-env'), { modules: false }],
+            builder.require.resolve('babel-preset-stage-0')
+          ] as any[]).concat(spin.dev ? [] : [[builder.require.resolve('babel-preset-minify'), { mangle: false }]]),
           plugins: [
-            spin.require.resolve('babel-plugin-transform-runtime'),
-            spin.require.resolve('babel-plugin-transform-decorators-legacy'),
-            spin.require.resolve('babel-plugin-transform-class-properties')
+            builder.require.resolve('babel-plugin-transform-runtime'),
+            builder.require.resolve('babel-plugin-transform-decorators-legacy'),
+            builder.require.resolve('babel-plugin-transform-class-properties')
           ],
           only: jsRuleFinder.extensions.map(ext => '*.' + ext)
         }

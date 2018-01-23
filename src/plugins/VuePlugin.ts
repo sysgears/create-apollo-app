@@ -7,14 +7,14 @@ export default class VuePlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['vue', 'webpack'])) {
-      const webpack = spin.require('webpack');
+      const webpack = builder.require('webpack');
 
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
             {
               test: /\.vue$/,
-              use: spin.require.resolve('vue-loader')
+              use: builder.require.resolve('vue-loader')
             }
           ]
         },

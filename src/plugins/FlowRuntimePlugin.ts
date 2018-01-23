@@ -14,7 +14,7 @@ export default class FlowRuntimePLugin implements ConfigPlugin {
         options: {
           plugins: [
             [
-              spin.require.resolve('babel-plugin-flow-runtime'),
+              builder.require.resolve('babel-plugin-flow-runtime'),
               {
                 assert: true,
                 annotate: true

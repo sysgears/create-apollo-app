@@ -16,7 +16,7 @@ export default class StyledComponentsPlugin implements ConfigPlugin {
       if (jsRule) {
         jsRule.use = spin.merge(jsRule.use, {
           options: {
-            plugins: [[spin.require.resolve('babel-plugin-styled-components'), { ssr: builder.ssr }]]
+            plugins: [[builder.require.resolve('babel-plugin-styled-components'), { ssr: builder.ssr }]]
           }
         });
       }

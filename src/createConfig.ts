@@ -69,6 +69,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     if (spin.dev && builder.webpackDll && !stack.hasAny('server') && !builderName) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
+      dllBuilder.require = builder.require;
       dllBuilder.parent = builder;
       dllBuilder.stack = new Stack(dllBuilder.stack.technologies, 'dll');
       builders[`${builderId.split('[')[0]}[${builder.name}Dll]`] = dllBuilder;
@@ -80,7 +81,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
   for (const builderId of Object.keys(builders)) {
     const builder = builders[builderId];
     const overridesConfig = builder.overridesConfig || WEBPACK_OVERRIDES_NAME;
-    const overrides = fs.existsSync(overridesConfig) ? spin.require('./' + overridesConfig) : {};
+    const overrides = fs.existsSync(overridesConfig) ? builder.require('./' + overridesConfig) : {};
 
     builder.depPlatforms = overrides.dependencyPlatforms || builder.depPlatforms || {};
     builder.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));

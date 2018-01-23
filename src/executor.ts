@@ -150,7 +150,7 @@ class MobileAssetsPlugin {
 }
 
 const startClientWebpack = (hasBackend, spin, builder) => {
-  const webpack = spin.require('webpack');
+  const webpack = builder.require('webpack');
 
   const config = builder.config;
 
@@ -187,7 +187,7 @@ const startServerWebpack = (spin, builder) => {
   const logger = minilog(`webpack-for-${config.name}`);
 
   try {
-    const webpack = spin.require('webpack');
+    const webpack = builder.require('webpack');
     const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
 
     const compiler = webpack(config);
@@ -242,7 +242,7 @@ const startServerWebpack = (spin, builder) => {
 };
 
 const openFrontend = (spin, builder, logger) => {
-  const openurl = spin.require('openurl');
+  const openurl = builder.require('openurl');
   try {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
@@ -253,7 +253,7 @@ const openFrontend = (spin, builder, logger) => {
         openurl.open(localUrl);
       }
     } else if (builder.stack.hasAny('react-native')) {
-      startExpoProject(spin, builder.config, builder.stack.platform, logger);
+      startExpoProject(spin, builder, logger);
     }
   } catch (e) {
     logger.error(e.stack);
@@ -270,8 +270,8 @@ const debugMiddleware = (req, res, next) => {
 };
 
 const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder, reporter, logger) => {
-  const webpack = spin.require('webpack');
-  const waitOn = spin.require('wait-on');
+  const webpack = builder.require('webpack');
+  const waitOn = builder.require('wait-on');
 
   const config = builder.config;
   const platform = builder.stack.platform;
@@ -290,7 +290,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
-        manifest: spin.require('./' + jsonPath)
+        manifest: builder.require('./' + jsonPath)
       })
     );
     vendorHashesJson = JSON.parse(
@@ -427,7 +427,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   let inspectorProxy;
 
   if (platform === 'web') {
-    const WebpackDevServer = spin.require('webpack-dev-server');
+    const WebpackDevServer = builder.require('webpack-dev-server');
 
     serverInstance = new WebpackDevServer(compiler, {
       ...config.devServer,
@@ -441,12 +441,12 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       }
     });
   } else {
-    const connect = spin.require('connect');
-    const compression = spin.require('compression');
-    const httpProxyMiddleware = spin.require('http-proxy-middleware');
-    const mime = spin.require('mime', spin.require.resolve('webpack-dev-middleware'));
-    const webpackDevMiddleware = spin.require('webpack-dev-middleware');
-    const webpackHotMiddleware = spin.require('webpack-hot-middleware');
+    const connect = builder.require('connect');
+    const compression = builder.require('compression');
+    const httpProxyMiddleware = builder.require('http-proxy-middleware');
+    const mime = builder.require('mime', builder.require.resolve('webpack-dev-middleware'));
+    const webpackDevMiddleware = builder.require('webpack-dev-middleware');
+    const webpackHotMiddleware = builder.require('webpack-hot-middleware');
 
     const app = connect();
 
@@ -454,36 +454,36 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     mime.define({ 'application/javascript': ['bundle'] }, true);
     mime.define({ 'application/json': ['assets'] }, true);
 
-    messageSocket = spin.require('react-native/local-cli/server/util/messageSocket.js');
-    webSocketProxy = spin.require('react-native/local-cli/server/util/webSocketProxy.js');
+    messageSocket = builder.require('react-native/local-cli/server/util/messageSocket.js');
+    webSocketProxy = builder.require('react-native/local-cli/server/util/webSocketProxy.js');
 
     try {
-      const InspectorProxy = spin.require('react-native/local-cli/server/util/inspectorProxy.js');
+      const InspectorProxy = builder.require('react-native/local-cli/server/util/inspectorProxy.js');
       inspectorProxy = new InspectorProxy();
     } catch (ignored) {}
-    const copyToClipBoardMiddleware = spin.require(
+    const copyToClipBoardMiddleware = builder.require(
       'react-native/local-cli/server/middleware/copyToClipBoardMiddleware'
     );
     let cpuProfilerMiddleware;
     try {
-      cpuProfilerMiddleware = spin.require('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
+      cpuProfilerMiddleware = builder.require('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
     } catch (ignored) {}
-    const getDevToolsMiddleware = spin.require('react-native/local-cli/server/middleware/getDevToolsMiddleware');
+    const getDevToolsMiddleware = builder.require('react-native/local-cli/server/middleware/getDevToolsMiddleware');
     let heapCaptureMiddleware;
     try {
-      heapCaptureMiddleware = spin.require('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
+      heapCaptureMiddleware = builder.require('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
     } catch (ignored) {}
-    const indexPageMiddleware = spin.require('react-native/local-cli/server/middleware/indexPage');
-    const loadRawBodyMiddleware = spin.require('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
-    const openStackFrameInEditorMiddleware = spin.require(
+    const indexPageMiddleware = builder.require('react-native/local-cli/server/middleware/indexPage');
+    const loadRawBodyMiddleware = builder.require('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
+    const openStackFrameInEditorMiddleware = builder.require(
       'react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware'
     );
-    const statusPageMiddleware = spin.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-    const systraceProfileMiddleware = spin.require(
+    const statusPageMiddleware = builder.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+    const systraceProfileMiddleware = builder.require(
       'react-native/local-cli/server/middleware/systraceProfileMiddleware.js'
     );
-    const unless = spin.require('react-native/local-cli/server/middleware/unless');
-    const symbolicateMiddleware = spin.require('haul/src/server/middleware/symbolicateMiddleware');
+    const unless = builder.require('react-native/local-cli/server/middleware/unless');
+    const symbolicateMiddleware = builder.require('haul/src/server/middleware/symbolicateMiddleware');
 
     const args = {
       port: config.devServer.port,
@@ -501,7 +501,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
         '/debugger-ui',
         serveStatic(
           path.join(
-            path.dirname(spin.require.resolve('react-native/package.json')),
+            path.dirname(builder.require.resolve('react-native/package.json')),
             '/local-cli/server/util/debugger-ui'
           )
         )
@@ -653,7 +653,7 @@ const isDllValid = (platform, config, builder, logger): boolean => {
 };
 
 const buildDll = (platform, config, builder: Builder, spin: Spin) => {
-  const webpack = spin.require('webpack');
+  const webpack = builder.require('webpack');
   return new Promise(done => {
     const name = `vendor_${platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
@@ -704,12 +704,12 @@ const buildDll = (platform, config, builder: Builder, spin: Spin) => {
   });
 };
 
-const setupExpoDir = (spin: Spin, dir, platform) => {
+const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
   mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
   fs.writeFileSync(
     path.join(reactNativeDir, 'package.json'),
-    fs.readFileSync(spin.require.resolve('react-native/package.json'))
+    fs.readFileSync(builder.require.resolve('react-native/package.json'))
   );
   fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
   const pkg = JSON.parse(fs.readFileSync('package.json').toString());
@@ -730,8 +730,8 @@ const setupExpoDir = (spin: Spin, dir, platform) => {
   }
 };
 
-const startExpoServer = async (spin: Spin, projectRoot: string, packagerPort) => {
-  const { Config, Project, ProjectSettings } = spin.require('xdl');
+const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string, packagerPort) => {
+  const { Config, Project, ProjectSettings } = builder.require('xdl');
 
   Config.validation.reactNativeVersionWarnings = false;
   Config.developerTool = 'crna';
@@ -743,20 +743,20 @@ const startExpoServer = async (spin: Spin, projectRoot: string, packagerPort) =>
   });
 };
 
-const startExpoProject = async (spin, config, platform, logger) => {
-  const { UrlUtils, Android, Simulator } = spin.require('xdl');
-  const qr = spin.require('qrcode-terminal');
+const startExpoProject = async (spin: Spin, builder: Builder, logger: any) => {
+  const { UrlUtils, Android, Simulator } = builder.require('xdl');
+  const qr = builder.require('qrcode-terminal');
 
   try {
-    const projectRoot = path.join(path.resolve('.'), '.expo', platform);
-    setupExpoDir(spin, projectRoot, platform);
-    await startExpoServer(spin, projectRoot, config.devServer.port);
+    const projectRoot = path.join(path.resolve('.'), '.expo', builder.platform);
+    setupExpoDir(spin, builder, projectRoot, builder.platform);
+    await startExpoServer(spin, builder, projectRoot, builder.config.devServer.port);
 
     const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
     const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
       hostType: 'localhost'
     });
-    logger.info(`Expo address for ${platform}, Local: ${localAddress}, LAN: ${address}`);
+    logger.info(`Expo address for ${builder.platform}, Local: ${localAddress}, LAN: ${address}`);
     logger.info(
       "To open this app on your phone scan this QR code in Expo Client (if it doesn't get started automatically)"
     );
@@ -764,13 +764,13 @@ const startExpoProject = async (spin, config, platform, logger) => {
       logger.info('\n' + code);
     });
     if (!containerized()) {
-      if (platform === 'android') {
+      if (builder.platform === 'android') {
         const { success, error } = await Android.openProjectAsync(projectRoot);
 
         if (!success) {
           logger.error(error.message);
         }
-      } else if (platform === 'ios') {
+      } else if (builder.platform === 'ios') {
         const { success, msg } = await Simulator.openUrlInSimulatorSafeAsync(localAddress);
 
         if (!success) {
@@ -783,8 +783,8 @@ const startExpoProject = async (spin, config, platform, logger) => {
   }
 };
 
-const startWebpack = async (spin: Spin, platforms: any, builder: Builder) => {
-  const VirtualModules = spin.require('webpack-virtual-modules');
+const startWebpack = async (spin: Spin, builder: Builder, platforms: any) => {
+  const VirtualModules = builder.require('webpack-virtual-modules');
   if (!frontendVirtualModules) {
     frontendVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
   }
@@ -805,12 +805,12 @@ const allocateExpoPorts = async expoPlatforms => {
   }
 };
 
-const startExpoProdServer = async (spin: Spin, builders: Builders, logger) => {
-  const connect = spin.require('connect');
-  const mime = spin.require('mime', spin.require.resolve('webpack-dev-middleware'));
-  const compression = spin.require('compression');
-  const statusPageMiddleware = spin.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-  const { UrlUtils } = spin.require('xdl');
+const startExpoProdServer = async (spin: Spin, mainBuilder: Builder, builders: Builders, logger) => {
+  const connect = mainBuilder.require('connect');
+  const mime = mainBuilder.require('mime', mainBuilder.require.resolve('webpack-dev-middleware'));
+  const compression = mainBuilder.require('compression');
+  const statusPageMiddleware = mainBuilder.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+  const { UrlUtils } = mainBuilder.require('xdl');
 
   logger.info(`Starting Expo prod server`);
   const packagerPort = 3030;
@@ -870,7 +870,7 @@ const startExpoProdServer = async (spin: Spin, builders: Builders, logger) => {
   serverInstance.keepAliveTimeout = 0;
 
   const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
-  await startExpoServer(spin, projectRoot, packagerPort);
+  await startExpoServer(spin, mainBuilder, projectRoot, packagerPort);
   const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
     hostType: 'localhost'
   });
@@ -878,23 +878,23 @@ const startExpoProdServer = async (spin: Spin, builders: Builders, logger) => {
 };
 
 const startExp = async (spin: Spin, builders: Builders, logger) => {
-  let hasMobileBuilders: boolean = false;
+  let mainBuilder: Builder;
   for (const name of Object.keys(builders)) {
     const builder = builders[name];
     if (builder.stack.hasAny(['ios', 'android'])) {
-      hasMobileBuilders = true;
+      mainBuilder = builder;
       break;
     }
   }
-  if (!hasMobileBuilders) {
+  if (!mainBuilder) {
     throw new Error('Builders for `ios` or `android` not found');
   }
 
   const projectRoot = path.join(process.cwd(), '.expo', 'all');
-  setupExpoDir(spin, projectRoot, 'all');
+  setupExpoDir(spin, mainBuilder, projectRoot, 'all');
   const expIdx = process.argv.indexOf('exp');
   if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[expIdx + 1]) >= 0) {
-    await startExpoProdServer(spin, builders, logger);
+    await startExpoProdServer(spin, mainBuilder, builders, logger);
   }
   if (process.argv[expIdx + 1] !== 'server') {
     const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(expIdx + 1), {
@@ -930,10 +930,10 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
       '--include',
       'babel-polyfill',
       '--webpack-config',
-      spin.require.resolve('spinjs/webpack.config.js')
+      builder.require.resolve('spinjs/webpack.config.js')
     ];
     if (builder.stack.hasAny('react')) {
-      const majorVer = spin.require('react/package.json').version.split('.')[0];
+      const majorVer = builder.require('react/package.json').version.split('.')[0];
       const reactVer = majorVer >= 16 ? majorVer : 15;
       if (reactVer >= 16) {
         testArgs.push('--include', 'raf/polyfill');
@@ -982,7 +982,7 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
           spin.watch && builder.webpackDll && builder.child
             ? buildDll(stack.platform, builder.child.config, builder, spin)
             : Promise.resolve();
-        prepareDllPromise.then(() => startWebpack(spin, platforms, builder));
+        prepareDllPromise.then(() => startWebpack(spin, builder, platforms));
       }
     });
   }
