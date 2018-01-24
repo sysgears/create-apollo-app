@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
 import Spin from '../Spin';
@@ -27,7 +29,10 @@ export default class ES6Plugin implements ConfigPlugin {
         loader: builder.require.resolve('babel-loader'),
         options: {
           babelrc: false,
-          cacheDirectory: (builder.cache === 'auto' ? spin.dev : builder.cache) ? '.cache/babel-loader' : false,
+          cacheDirectory:
+            builder.cache === false || (builder.cache === 'auto' && !spin.dev)
+              ? false
+              : path.join(builder.cache === true ? '.cache' : builder.cache, 'babel-loader'),
           compact: !spin.dev,
           presets: ([
             builder.require.resolve('babel-preset-react'),

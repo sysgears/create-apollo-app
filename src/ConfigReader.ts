@@ -50,7 +50,7 @@ export default class ConfigReader {
 
     config.options = config.options || {};
 
-    const relativePath = path.relative(path.dirname(filePath), this.spin.cwd);
+    const relativePath = path.relative(this.spin.cwd, path.dirname(filePath));
     const builders: Builders = {};
     const { stack, plugins, ...options } = config.options;
     for (const name of Object.keys(config.builders)) {
@@ -69,11 +69,17 @@ export default class ConfigReader {
       const builderId = `${relativePath}[${builder.name}]`;
       builders[builderId] = builder;
       // TODO: remove backendBuildDir, frontendBuildDir in 0.5.x
-      builder.buildDir = builder.backendBuildDir || builder.frontendBuildDir ? undefined : builder.buildDir || 'build';
-      builder.dllBuildDir = builder.dllBuildDir || 'build/dll';
+      builder.buildDir = path.join(
+        relativePath,
+        builder.backendBuildDir || builder.frontendBuildDir ? undefined : builder.buildDir || 'build'
+      );
+      builder.dllBuildDir = path.join(relativePath, builder.dllBuildDir || 'build/dll');
       builder.webpackDll = typeof builder.webpackDll !== 'undefined' ? builder.webpackDll : true;
       builder.sourceMap = typeof builder.sourceMap !== 'undefined' ? builder.sourceMap : true;
-      builder.cache = typeof builder.cache !== 'undefined' ? builder.cache : 'auto';
+      builder.cache =
+        typeof builder.cache === 'string' && builder.cache !== 'auto'
+          ? path.join(relativePath, builder.cache)
+          : typeof builder.cache !== 'undefined' ? builder.cache : 'auto';
       builder.plugins = this.plugins.concat((builder.plugins || []).map(pluginName => new (require(pluginName))()));
     }
     return builders;

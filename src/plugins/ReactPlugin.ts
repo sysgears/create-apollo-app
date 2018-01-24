@@ -35,12 +35,8 @@ export default class ReactPlugin implements ConfigPlugin {
           const entry = builder.config.entry[key];
           for (let idx = 0; idx < entry.length; idx++) {
             const item = entry[idx];
-            if (
-              item.startsWith('./') &&
-              ['.tsx', '.jsx', '.ts', '.js'].indexOf(path.extname(item)) >= 0 &&
-              item.indexOf('node_modules') < 0
-            ) {
-              const baseItem = './' + path.join(path.dirname(item), path.basename(item, path.extname(item)));
+            if (['.tsx', '.jsx', '.ts', '.js'].indexOf(path.extname(item)) >= 0 && item.indexOf('node_modules') < 0) {
+              const baseItem = path.join(path.dirname(item), path.basename(item, path.extname(item)));
               for (const ext of ['.js', '.jsx', '.ts', '.tsx']) {
                 if (fs.existsSync(baseItem + ext)) {
                   entry[idx] = baseItem + ext;

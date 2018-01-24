@@ -261,7 +261,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index.push('webpack/hot/signal.js');
         }
       }
-      index.push(builder.entry || './src/server/index.js');
+      index.push(path.join(builder.require.cwd, builder.entry || './src/server/index.js'));
 
       config = {
         ...config,
@@ -297,7 +297,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index: (spin.dev
             ? ['webpack/hot/dev-server', `webpack-dev-server/client?http://localhost:${webpackDevPort}/`]
             : []
-          ).concat([builder.entry || './src/client/index.js'])
+          ).concat([path.join(builder.require.cwd, builder.entry || './src/client/index.js')])
         },
         output: {
           ...config.output,
@@ -328,7 +328,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       config = {
         ...config,
         entry: {
-          index: [builder.entry || './src/mobile/index.js']
+          index: [path.join(builder.require.cwd, builder.entry || './src/mobile/index.js')]
         },
         output: {
           ...config.output,

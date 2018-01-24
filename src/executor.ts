@@ -46,8 +46,8 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (serverPath, debugOpt, logger) => {
-  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2] });
+const spawnServer = (cwd, serverPath, debugOpt, logger) => {
+  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2], cwd });
   logger(`Spawning ${['node', debugOpt, serverPath].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
@@ -56,11 +56,11 @@ const spawnServer = (serverPath, debugOpt, logger) => {
     }
     logger('Backend has been stopped');
     server = undefined;
-    runServer(serverPath, logger);
+    runServer(cwd, serverPath, logger);
   });
 };
 
-const runServer = (serverPath, logger) => {
+const runServer = (cwd, serverPath, logger) => {
   if (!fs.existsSync(serverPath)) {
     throw new Error(`Backend doesn't exist at ${serverPath}, exiting`);
   }
@@ -79,11 +79,11 @@ const runServer = (serverPath, logger) => {
         const nodeMinor = parseInt(nodeVersion[2], 10);
         nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
         detectPort(9229).then(debugPort => {
-          spawnServer(serverPath, nodeDebugOpt + '=' + debugPort, logger);
+          spawnServer(cwd, serverPath, nodeDebugOpt + '=' + debugPort, logger);
         });
       });
     } else {
-      spawnServer(serverPath, nodeDebugOpt, logger);
+      spawnServer(cwd, serverPath, nodeDebugOpt, logger);
     }
   }
 };
@@ -229,7 +229,7 @@ const startServerWebpack = (spin, builder) => {
               }
             }
           } else {
-            runServer(path.join(output.path, 'index.js'), logger);
+            runServer(builder.require.cwd, path.join(output.path, 'index.js'), logger);
           }
         }
       });
@@ -290,7 +290,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
-        manifest: builder.require('./' + jsonPath)
+        manifest: require(path.resolve('./' + jsonPath))
       })
     );
     vendorHashesJson = JSON.parse(
@@ -712,7 +712,7 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
     fs.readFileSync(builder.require.resolve('react-native/package.json'))
   );
   fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
-  const pkg = JSON.parse(fs.readFileSync('package.json').toString());
+  const pkg = JSON.parse(fs.readFileSync(builder.require.resolve('./package.json')).toString());
   const origDeps = pkg.dependencies;
   pkg.dependencies = { 'react-native': origDeps['react-native'] };
   if (platform !== 'all') {
@@ -720,7 +720,7 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   }
   pkg.main = `index.mobile`;
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
-  const appJson = JSON.parse(fs.readFileSync('app.json').toString());
+  const appJson = JSON.parse(fs.readFileSync(builder.require.resolve('./app.json')).toString());
   if (appJson.expo.icon) {
     appJson.expo.icon = path.join(path.resolve('.'), appJson.expo.icon);
   }
@@ -746,17 +746,18 @@ const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string
 const startExpoProject = async (spin: Spin, builder: Builder, logger: any) => {
   const { UrlUtils, Android, Simulator } = builder.require('xdl');
   const qr = builder.require('qrcode-terminal');
+  const platform = builder.stack.platform;
 
   try {
-    const projectRoot = path.join(path.resolve('.'), '.expo', builder.platform);
-    setupExpoDir(spin, builder, projectRoot, builder.platform);
+    const projectRoot = path.join(builder.require.cwd, '.expo', platform);
+    setupExpoDir(spin, builder, projectRoot, platform);
     await startExpoServer(spin, builder, projectRoot, builder.config.devServer.port);
 
     const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
     const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
       hostType: 'localhost'
     });
-    logger.info(`Expo address for ${builder.platform}, Local: ${localAddress}, LAN: ${address}`);
+    logger.info(`Expo address for ${platform}, Local: ${localAddress}, LAN: ${address}`);
     logger.info(
       "To open this app on your phone scan this QR code in Expo Client (if it doesn't get started automatically)"
     );
@@ -764,13 +765,13 @@ const startExpoProject = async (spin: Spin, builder: Builder, logger: any) => {
       logger.info('\n' + code);
     });
     if (!containerized()) {
-      if (builder.platform === 'android') {
+      if (platform === 'android') {
         const { success, error } = await Android.openProjectAsync(projectRoot);
 
         if (!success) {
           logger.error(error.message);
         }
-      } else if (builder.platform === 'ios') {
+      } else if (platform === 'ios') {
         const { success, msg } = await Simulator.openUrlInSimulatorSafeAsync(localAddress);
 
         if (!success) {
@@ -923,39 +924,41 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
     for (const name of Object.keys(builders)) {
       builder = builders[name];
       if (builder.roles.indexOf('test') >= 0) {
-        break;
+        const testArgs = [
+          '--include',
+          'babel-polyfill',
+          '--webpack-config',
+          builder.require.resolve('spinjs/webpack.config.js')
+        ];
+        if (builder.stack.hasAny('react')) {
+          const majorVer = builder.require('react/package.json').version.split('.')[0];
+          const reactVer = majorVer >= 16 ? majorVer : 15;
+          if (reactVer >= 16) {
+            testArgs.push('--include', 'raf/polyfill');
+          }
+        }
+
+        const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
+        testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
+        spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
+
+        const env: any = Object.create(process.env);
+        if (argv.c) {
+          (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
+        }
+
+        const mochaWebpack = spawn(testCmd, testArgs, {
+          stdio: [0, 1, 2],
+          env,
+          cwd: builder.require.cwd
+        });
+        mochaWebpack.on('close', code => {
+          if (code !== 0) {
+            process.exit(code);
+          }
+        });
       }
     }
-    const testArgs = [
-      '--include',
-      'babel-polyfill',
-      '--webpack-config',
-      builder.require.resolve('spinjs/webpack.config.js')
-    ];
-    if (builder.stack.hasAny('react')) {
-      const majorVer = builder.require('react/package.json').version.split('.')[0];
-      const reactVer = majorVer >= 16 ? majorVer : 15;
-      if (reactVer >= 16) {
-        testArgs.push('--include', 'raf/polyfill');
-      }
-    }
-
-    const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
-    testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
-    spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
-
-    const env: any = Object.create(process.env);
-    if (argv.c) {
-      (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
-    }
-
-    const mochaWebpack = spawn(testCmd, testArgs, {
-      stdio: [0, 1, 2],
-      env
-    });
-    mochaWebpack.on('close', code => {
-      process.exit(code);
-    });
   } else {
     const expoPlatforms = [];
     const platforms = {};
