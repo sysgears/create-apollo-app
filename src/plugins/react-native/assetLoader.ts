@@ -158,9 +158,7 @@ module.exports = async function assetLoader() {
     this.emitFile(dest, item.content);
   });
 
-  let publicPath = `__webpack_public_path__ + ${JSON.stringify(
-    (path.join('/', assets, '/') + url).replace(/[\\]+/g, '/')
-  )}`;
+  let publicPath = `__webpack_public_path__ + ${JSON.stringify((path.join(assets, '/') + url).replace(/[\\]+/g, '/'))}`;
 
   if (config.publicPath) {
     // support functions as publicPath to generate them dynamically
