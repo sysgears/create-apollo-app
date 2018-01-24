@@ -30,14 +30,12 @@ export default class TypeScriptPlugin implements ConfigPlugin {
           const entry = builder.config.entry[key];
           for (let idx = 0; idx < entry.length; idx++) {
             const item = entry[idx];
-            if (
-              item.startsWith('./') &&
-              ['.js', '.jsx', '.ts', '.tsx'].indexOf(path.extname(item)) >= 0 &&
-              item.indexOf('node_modules') < 0
-            ) {
-              const tsItem = './' + path.join(path.dirname(item), path.basename(item, path.extname(item))) + '.ts';
-              if (!fs.existsSync(item) && fs.existsSync(tsItem)) {
-                entry[idx] = tsItem;
+            if (['.js', '.jsx', '.ts', '.tsx'].indexOf(path.extname(item)) >= 0 && item.indexOf('node_modules') < 0) {
+              const baseItem = path.join(path.dirname(item), path.basename(item, path.extname(item)));
+              for (const ext of ['.js', '.jsx', '.ts', '.tsx']) {
+                if (fs.existsSync(baseItem + ext)) {
+                  entry[idx] = baseItem + ext;
+                }
               }
             }
           }

@@ -120,7 +120,7 @@ const webpackReporter = (spin: Spin, outputPath, log, err?, stats?) => {
   }
 };
 
-let frontendVirtualModules;
+const frontendVirtualModules = [];
 
 class MobileAssetsPlugin {
   public vendorAssets: any;
@@ -154,7 +154,10 @@ const startClientWebpack = (hasBackend, spin, builder) => {
 
   const config = builder.config;
 
-  config.plugins.push(frontendVirtualModules);
+  const VirtualModules = builder.require('webpack-virtual-modules');
+  const clientVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
+  config.plugins.push(clientVirtualModules);
+  frontendVirtualModules.push(clientVirtualModules);
 
   const logger = minilog(`webpack-for-${config.name}`);
   try {
@@ -179,7 +182,9 @@ const startClientWebpack = (hasBackend, spin, builder) => {
 let backendReloadCount = 0;
 const increaseBackendReloadCount = () => {
   backendReloadCount++;
-  frontendVirtualModules.writeModule('node_modules/backend_reload.js', `var count = ${backendReloadCount};\n`);
+  for (const virtualModules of frontendVirtualModules) {
+    virtualModules.writeModule('node_modules/backend_reload.js', `var count = ${backendReloadCount};\n`);
+  }
 };
 
 const startServerWebpack = (spin, builder) => {
@@ -220,7 +225,7 @@ const startServerWebpack = (spin, builder) => {
 
             if (builder.frontendRefreshOnBackendChange) {
               for (const module of stats.compilation.modules) {
-                if (module.built && module.resource && module.resource.indexOf(path.resolve('./src/server')) === 0) {
+                if (module.built && module.resource && module.resource.split(/[\\\/]/).indexOf('server') >= 0) {
                   // Force front-end refresh on back-end change
                   logger.debug('Force front-end current page refresh, due to change in backend at:', module.resource);
                   increaseBackendReloadCount();
@@ -785,11 +790,6 @@ const startExpoProject = async (spin: Spin, builder: Builder, logger: any) => {
 };
 
 const startWebpack = async (spin: Spin, builder: Builder, platforms: any) => {
-  const VirtualModules = builder.require('webpack-virtual-modules');
-  if (!frontendVirtualModules) {
-    frontendVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
-  }
-
   if (builder.stack.platform === 'server') {
     startServerWebpack(spin, builder);
   } else {

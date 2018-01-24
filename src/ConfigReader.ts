@@ -69,10 +69,10 @@ export default class ConfigReader {
       const builderId = `${relativePath}[${builder.name}]`;
       builders[builderId] = builder;
       // TODO: remove backendBuildDir, frontendBuildDir in 0.5.x
-      builder.buildDir = path.join(
-        relativePath,
-        builder.backendBuildDir || builder.frontendBuildDir ? undefined : builder.buildDir || 'build'
-      );
+      builder.buildDir =
+        builder.backendBuildDir || builder.frontendBuildDir
+          ? undefined
+          : path.join(relativePath, builder.buildDir || 'build');
       builder.dllBuildDir = path.join(relativePath, builder.dllBuildDir || 'build/dll');
       builder.webpackDll = typeof builder.webpackDll !== 'undefined' ? builder.webpackDll : true;
       builder.sourceMap = typeof builder.sourceMap !== 'undefined' ? builder.sourceMap : true;
