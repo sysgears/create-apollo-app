@@ -292,10 +292,20 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   if (builder.webpackDll && builder.child) {
     const name = `vendor_${platform}`;
     const jsonPath = path.join(builder.dllBuildDir, `${name}_dll.json`);
+    const relJson = JSON.parse(fs.readFileSync(path.resolve('./' + jsonPath)).toString());
+    const json = { ...relJson, content: {} };
+
+    const relProcToBuilder = path.relative(spin.cwd, builder.require.cwd);
+    for (const relPath of Object.keys(relJson.content)) {
+      const joined = path.join(relProcToBuilder, relPath).replace(/\\/g, '/');
+      const filename = joined.startsWith('.') ? joined : './' + joined;
+      json.content[filename] = relJson.content[relPath];
+    }
+
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
-        manifest: require(path.resolve('./' + jsonPath))
+        manifest: json
       })
     );
     vendorHashesJson = JSON.parse(
@@ -609,30 +619,32 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   serverInstance.keepAliveTimeout = 0;
 };
 
-const isDllValid = (platform, config, builder, logger): boolean => {
-  const name = `vendor_${platform}`;
+const isDllValid = (spin, builder, logger): boolean => {
+  const name = `vendor_${builder.stack.platform}`;
   try {
     const hashesPath = path.join(builder.dllBuildDir, `${name}_dll_hashes.json`);
     if (!fs.existsSync(hashesPath)) {
       return false;
     }
-    const meta = JSON.parse(fs.readFileSync(hashesPath).toString());
-    if (SPIN_DLL_VERSION !== meta.version) {
+    const relMeta = JSON.parse(fs.readFileSync(hashesPath).toString());
+    if (SPIN_DLL_VERSION !== relMeta.version) {
       return false;
     }
-    if (!fs.existsSync(path.join(builder.dllBuildDir, meta.name))) {
+    if (!fs.existsSync(path.join(builder.dllBuildDir, relMeta.name))) {
       return false;
     }
-    if (builder.sourceMap && !fs.existsSync(path.join(builder.dllBuildDir, meta.name + '.map'))) {
+    if (builder.sourceMap && !fs.existsSync(path.join(builder.dllBuildDir, relMeta.name + '.map'))) {
       return false;
     }
-    if (!_.isEqual(meta.modules, config.entry.vendor)) {
+    if (!_.isEqual(relMeta.modules, builder.config.entry.vendor)) {
       return false;
     }
 
-    const json = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
+    const relJson = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
 
-    for (const filename of Object.keys(json.content)) {
+    const relProcToBuilder = path.relative(spin.cwd, builder.require.cwd);
+    for (const relPath of Object.keys(relJson.content)) {
+      const filename = path.join(relProcToBuilder, relPath);
       if (filename.indexOf(' ') < 0) {
         if (!fs.existsSync(filename)) {
           logger.warn(`${name} DLL need to be regenerated, file: ${filename} is missing.`);
@@ -642,7 +654,7 @@ const isDllValid = (platform, config, builder, logger): boolean => {
           .createHash('md5')
           .update(fs.readFileSync(filename))
           .digest('hex');
-        if (meta.hashes[filename] !== hash) {
+        if (relMeta.hashes[relPath] !== hash) {
           logger.warn(`Hash for ${name} DLL file ${filename} has changed, need to rebuild it`);
           return false;
         }
@@ -657,14 +669,15 @@ const isDllValid = (platform, config, builder, logger): boolean => {
   }
 };
 
-const buildDll = (platform, config, builder: Builder, spin: Spin) => {
+const buildDll = (spin: Spin, builder: Builder) => {
   const webpack = builder.require('webpack');
+  const config = builder.child.config;
   return new Promise(done => {
-    const name = `vendor_${platform}`;
+    const name = `vendor_${builder.stack.platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
     const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
 
-    if (!isDllValid(platform, config, builder, logger)) {
+    if (!isDllValid(spin, builder, logger)) {
       logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
 
       mkdirp.sync(builder.dllBuildDir);
@@ -685,16 +698,28 @@ const buildDll = (platform, config, builder: Builder, spin: Spin) => {
           });
           fs.writeFileSync(path.join(builder.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
 
-          const meta = { name: vendorKey, hashes: {}, modules: config.entry.vendor, version: SPIN_DLL_VERSION };
+          const meta = { name: vendorKey, hashes: {}, modules: builder.config.entry.vendor, version: SPIN_DLL_VERSION };
           for (const filename of Object.keys(json.content)) {
             if (filename.indexOf(' ') < 0) {
               meta.hashes[filename] = crypto
                 .createHash('md5')
                 .update(fs.readFileSync(filename))
                 .digest('hex');
-              fs.writeFileSync(path.join(builder.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
             }
           }
+
+          const relJson = { ...json, content: {} };
+          const relMeta = { ...meta, hashes: {} };
+          const relBuilderToProc = path.relative(builder.require.cwd, spin.cwd);
+          for (const filename of Object.keys(json.content)) {
+            const joined = path.join(relBuilderToProc, filename).replace(/\\/g, '/');
+            const relPath = joined.startsWith('.') ? joined : './' + joined;
+            relJson.content[relPath] = json.content[filename];
+            relMeta.hashes[relPath] = meta.hashes[filename];
+          }
+
+          fs.writeFileSync(path.join(builder.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(relMeta));
+          fs.writeFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`), JSON.stringify(relJson));
         } catch (e) {
           logger.error(e.stack);
           process.exit(1);
@@ -727,7 +752,7 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
   const appJson = JSON.parse(fs.readFileSync(builder.require.resolve('./app.json')).toString());
   if (appJson.expo.icon) {
-    appJson.expo.icon = path.join(path.resolve('.'), appJson.expo.icon);
+    appJson.expo.icon = path.join(builder.require.cwd, appJson.expo.icon);
   }
   fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
   if (platform !== 'all') {
@@ -982,9 +1007,7 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
           continue;
         }
         const prepareDllPromise: PromiseLike<any> =
-          spin.watch && builder.webpackDll && builder.child
-            ? buildDll(stack.platform, builder.child.config, builder, spin)
-            : Promise.resolve();
+          spin.watch && builder.webpackDll && builder.child ? buildDll(spin, builder) : Promise.resolve();
         prepareDllPromise.then(() => startWebpack(spin, builder, platforms));
       }
     });
