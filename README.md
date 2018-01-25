@@ -128,6 +128,8 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
 |devProxy|Proxy all unknown requests from front-end running on Webpack during development to back-end|
+|webpackConfig|Additional webpack config definitions merged in after config generation|
+|babelConfig|Additional babelrc definitions merged in after config generation|
 
 Common builder options can be put into `options` property, from there they will be copied into each builder. `stack` property inside `options` will be prepended to each builder stack.
 Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.

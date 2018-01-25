@@ -27,25 +27,28 @@ export default class ES6Plugin implements ConfigPlugin {
       jsRule.exclude = /node_modules/;
       jsRule.use = {
         loader: builder.require.resolve('babel-loader'),
-        options: {
-          babelrc: false,
-          cacheDirectory:
-            builder.cache === false || (builder.cache === 'auto' && !spin.dev)
-              ? false
-              : path.join(builder.cache === true ? '.cache' : builder.cache, 'babel-loader'),
-          compact: !spin.dev,
-          presets: ([
-            builder.require.resolve('babel-preset-react'),
-            [builder.require.resolve('babel-preset-env'), { modules: false }],
-            builder.require.resolve('babel-preset-stage-0')
-          ] as any[]).concat(spin.dev ? [] : [[builder.require.resolve('babel-preset-minify'), { mangle: false }]]),
-          plugins: [
-            builder.require.resolve('babel-plugin-transform-runtime'),
-            builder.require.resolve('babel-plugin-transform-decorators-legacy'),
-            builder.require.resolve('babel-plugin-transform-class-properties')
-          ],
-          only: jsRuleFinder.extensions.map(ext => '*.' + ext)
-        }
+        options: spin.merge(
+          {
+            babelrc: false,
+            cacheDirectory:
+              builder.cache === false || (builder.cache === 'auto' && !spin.dev)
+                ? false
+                : path.join(builder.cache === true ? '.cache' : builder.cache, 'babel-loader'),
+            compact: !spin.dev,
+            presets: ([
+              builder.require.resolve('babel-preset-react'),
+              [builder.require.resolve('babel-preset-env'), { modules: false }],
+              builder.require.resolve('babel-preset-stage-0')
+            ] as any[]).concat(spin.dev ? [] : [[builder.require.resolve('babel-preset-minify'), { mangle: false }]]),
+            plugins: [
+              builder.require.resolve('babel-plugin-transform-runtime'),
+              builder.require.resolve('babel-plugin-transform-decorators-legacy'),
+              builder.require.resolve('babel-plugin-transform-class-properties')
+            ],
+            only: jsRuleFinder.extensions.map(ext => '*.' + ext)
+          },
+          builder.babelConfig
+        )
       };
     }
   }

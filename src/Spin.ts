@@ -19,11 +19,11 @@ export default class Spin {
     this.watch = this.cmd === 'watch';
   }
 
-  public merge(config: Configuration, overrides: any): Configuration {
+  public merge(config: any, overrides: any): Configuration {
     return merge.smart(config, overrides);
   }
 
-  public mergeWithStrategy(strategy: any, config: Configuration, overrides: any): Configuration {
+  public mergeWithStrategy(strategy: any, config: any, overrides: any): Configuration {
     return merge.smartStrategy(strategy)(config, overrides);
   }
 }
