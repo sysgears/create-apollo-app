@@ -14,7 +14,7 @@ export default class VuePlugin implements ConfigPlugin {
           rules: [
             {
               test: /\.vue$/,
-              use: builder.require.resolve('vue-loader')
+              use: 'vue-loader'
             }
           ]
         },

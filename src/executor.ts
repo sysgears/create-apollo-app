@@ -1,4 +1,5 @@
 import { exec, spawn } from 'child_process';
+import * as cors from 'connect-cors';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
 import * as Debug from 'debug';
@@ -295,10 +296,8 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     const relJson = JSON.parse(fs.readFileSync(path.resolve('./' + jsonPath)).toString());
     const json = { ...relJson, content: {} };
 
-    const relProcToBuilder = path.relative(spin.cwd, builder.require.cwd);
     for (const relPath of Object.keys(relJson.content)) {
-      const joined = path.join(relProcToBuilder, relPath).replace(/\\/g, '/');
-      const filename = joined.startsWith('.') ? joined : './' + joined;
+      const filename = builder.require.processRelativePath(relPath);
       json.content[filename] = relJson.content[relPath];
     }
 
@@ -505,13 +504,27 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       projectRoots: [path.resolve('.')]
     };
     app
+      .use(cors())
       .use(loadRawBodyMiddleware)
       .use((req, res, next) => {
         req.path = req.url.split('?')[0];
         debug(`Dev mobile packager request: ${req.path}`);
         next();
       })
-      .use(compression())
+      .use(compression());
+    if (builder.child) {
+      app.use(serveStatic(builder.child.config.output.path));
+    }
+    app
+      .use((req, res, next) => {
+        if (req.path === '/debugger-ui/deltaUrlToBlobUrl.js') {
+          debug('serving monkey patched deltaUrlToBlobUrl');
+          res.writeHead(200, { 'Content-Type': 'application/javascript' });
+          res.end(`window.deltaUrlToBlobUrl = function(url) { return url.replace('.delta', '.bundle'); }`);
+        } else {
+          next();
+        }
+      })
       .use(
         '/debugger-ui',
         serveStatic(
@@ -530,33 +543,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       .use(statusPageMiddleware)
       .use(systraceProfileMiddleware)
       .use(indexPageMiddleware)
-      .use(debugMiddleware)
-      .use((req, res, next) => {
-        const platformPrefix = `/assets/${platform}/`;
-        if (req.path.indexOf(platformPrefix) === 0) {
-          const origPath = path.join(path.resolve('.'), req.path.substring(platformPrefix.length));
-          const extension = path.extname(origPath);
-          const basePath = path.join(path.dirname(origPath), path.basename(origPath, extension));
-          const files = [`.${platform}`, '.native', ''].map(suffix => basePath + suffix + extension);
-          let assetExists = false;
-
-          for (const filePath of files) {
-            if (fs.existsSync(filePath)) {
-              assetExists = true;
-              res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
-              fs.createReadStream(filePath).pipe(res);
-            }
-          }
-
-          if (!assetExists) {
-            logger.warn('Asset not found:', origPath);
-            res.writeHead(404, { 'Content-Type': 'plain' });
-            res.end('Asset: ' + origPath + ' not found. Tried: ' + JSON.stringify(files));
-          }
-        } else {
-          next();
-        }
-      });
+      .use(debugMiddleware);
     if (heapCaptureMiddleware) {
       app.use(heapCaptureMiddleware);
     }
@@ -642,10 +629,9 @@ const isDllValid = (spin, builder, logger): boolean => {
 
     const relJson = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
 
-    const relProcToBuilder = path.relative(spin.cwd, builder.require.cwd);
     for (const relPath of Object.keys(relJson.content)) {
-      const filename = path.join(relProcToBuilder, relPath);
-      if (filename.indexOf(' ') < 0) {
+      const filename = builder.require.processRelativePath(relPath);
+      if (filename.indexOf(' ') < 0 && filename.indexOf('@virtual') < 0) {
         if (!fs.existsSync(filename)) {
           logger.warn(`${name} DLL need to be regenerated, file: ${filename} is missing.`);
           return false;
@@ -700,7 +686,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
 
           const meta = { name: vendorKey, hashes: {}, modules: builder.config.entry.vendor, version: SPIN_DLL_VERSION };
           for (const filename of Object.keys(json.content)) {
-            if (filename.indexOf(' ') < 0) {
+            if (filename.indexOf(' ') < 0 && filename.indexOf('@virtual') < 0) {
               meta.hashes[filename] = crypto
                 .createHash('md5')
                 .update(fs.readFileSync(filename))
@@ -710,10 +696,8 @@ const buildDll = (spin: Spin, builder: Builder) => {
 
           const relJson = { ...json, content: {} };
           const relMeta = { ...meta, hashes: {} };
-          const relBuilderToProc = path.relative(builder.require.cwd, spin.cwd);
           for (const filename of Object.keys(json.content)) {
-            const joined = path.join(relBuilderToProc, filename).replace(/\\/g, '/');
-            const relPath = joined.startsWith('.') ? joined : './' + joined;
+            const relPath = builder.require.builderRelativePath(filename);
             relJson.content[relPath] = json.content[filename];
             relMeta.hashes[relPath] = meta.hashes[filename];
           }
@@ -876,7 +860,7 @@ const startExpoProdServer = async (spin: Spin, mainBuilder: Builder, builders: B
           );
         } else {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(`{'message': 'File not found for request: ${req.path}'}`);
+          res.end(`{"message": "File not found for request: ${req.path}"}`);
         }
       } else {
         next();

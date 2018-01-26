@@ -26,7 +26,7 @@ export default class ES6Plugin implements ConfigPlugin {
       const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules/;
       jsRule.use = {
-        loader: builder.require.resolve('babel-loader'),
+        loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
         options: spin.merge(
           {
             babelrc: false,
@@ -36,14 +36,14 @@ export default class ES6Plugin implements ConfigPlugin {
                 : path.join(builder.cache === true ? '.cache' : builder.cache, 'babel-loader'),
             compact: !spin.dev,
             presets: ([
-              builder.require.resolve('babel-preset-react'),
-              [builder.require.resolve('babel-preset-env'), { modules: false }],
-              builder.require.resolve('babel-preset-stage-0')
-            ] as any[]).concat(spin.dev ? [] : [[builder.require.resolve('babel-preset-minify'), { mangle: false }]]),
+              'babel-preset-react',
+              ['babel-preset-env', { modules: false }],
+              'babel-preset-stage-0'
+            ] as any[]).concat(spin.dev ? [] : [['babel-preset-minify', { mangle: false }]]),
             plugins: [
-              builder.require.resolve('babel-plugin-transform-runtime'),
-              builder.require.resolve('babel-plugin-transform-decorators-legacy'),
-              builder.require.resolve('babel-plugin-transform-class-properties')
+              'babel-plugin-transform-runtime',
+              'babel-plugin-transform-decorators-legacy',
+              'babel-plugin-transform-class-properties'
             ],
             only: jsRuleFinder.extensions.map(ext => '*.' + ext)
           },

@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 
 import { Builder } from '../Builder';
@@ -9,13 +10,12 @@ let babelRegisterDone = false;
 
 const registerBabel = (builder: Builder) => {
   if (!babelRegisterDone) {
-    builder.require('babel-register')({
-      presets: [builder.require.resolve('babel-preset-env'), builder.require.resolve('babel-preset-flow')],
+    require('babel-register')({
+      presets: ['babel-preset-env', 'babel-preset-flow'],
       ignore: /node_modules(?!\/(haul|react-native))/,
       retainLines: true,
       sourceMaps: 'inline'
     });
-    builder.require('babel-polyfill');
 
     babelRegisterDone = true;
   }
@@ -36,7 +36,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const HasteResolver = builder.require('haul/src/resolvers/HasteResolver');
 
       const reactNativeRule = {
-        loader: builder.require.resolve('babel-loader'),
+        loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
         options: spin.merge(
           {
             babelrc: false,
@@ -45,10 +45,10 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 ? false
                 : path.join(builder.cache === true ? '.cache' : builder.cache, 'babel-loader'),
             compact: !spin.dev,
-            presets: ([builder.require.resolve('babel-preset-expo')] as any[]).concat(
-              spin.dev ? [] : [[builder.require.resolve('babel-preset-minify'), { mangle: false }]]
+            presets: (['babel-preset-expo'] as any[]).concat(
+              spin.dev ? [] : [['babel-preset-minify', { mangle: false }]]
             ),
-            plugins: [builder.require.resolve('haul/src/utils/fixRequireIssues')]
+            plugins: ['haul/src/utils/fixRequireIssues']
           },
           builder.babelConfig
         )
@@ -64,6 +64,11 @@ export default class ReactNativePlugin implements ConfigPlugin {
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
         .reduce((acc, val) => acc.concat(val));
 
+      const reactVer = builder.require('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
+      const polyfillCode = fs
+        .readFileSync(require.resolve(`../../react-native-polyfills/react-native-polyfill-${reactVer}`))
+        .toString();
+      const VirtualModules = builder.require('webpack-virtual-modules');
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
@@ -71,10 +76,10 @@ export default class ReactNativePlugin implements ConfigPlugin {
             {
               test: mobileAssetTest,
               use: {
-                loader: require.resolve('./react-native/assetLoader'),
+                loader: 'spinjs/lib/plugins/react-native/assetLoader',
                 query: {
                   platform: stack.platform,
-                  root: path.resolve('.'),
+                  root: builder.require.cwd,
                   cwd: spin.cwd,
                   bundle: false
                 }
@@ -94,14 +99,14 @@ export default class ReactNativePlugin implements ConfigPlugin {
           ],
           mainFields: ['react-native', 'browser', 'main']
         },
+        plugins: [new VirtualModules({ 'node_modules/@virtual/react-native-polyfill.js': polyfillCode })],
         target: 'webworker'
       });
 
-      const reactVer = builder.require('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
       if (stack.hasAny('dll')) {
         builder.config = spin.merge(builder.config, {
           entry: {
-            vendor: [builder.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
+            vendor: ['@virtual/react-native-polyfill']
           }
         });
       } else {
@@ -120,7 +125,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 ]
               : [],
             entry: {
-              index: [builder.require.resolve(`spinjs/react-native-polyfills/react-native-polyfill-${reactVer}.js`)]
+              index: ['@virtual/react-native-polyfill']
             }
           },
           builder.config

@@ -150,17 +150,12 @@ const createConfig = (builder: Builder, spin: Spin) => {
 
   const cwd = process.cwd();
 
-  const baseDir = path.join(cwd, 'node_modules');
-  const webpackDir = path.normalize(path.join(builder.require.resolve('webpack/package.json', cwd), '../../'));
-
   const baseConfig: any = {
     name: builder.name,
     module: {
       rules: []
     },
-    resolve: {
-      modules: [baseDir].concat(webpackDir !== baseDir ? [webpackDir] : []).concat(['node_modules'])
-    },
+    resolve: {},
     watchOptions: {
       ignored: /build/
     },
@@ -261,7 +256,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index.push('webpack/hot/signal.js');
         }
       }
-      index.push(path.join(builder.require.cwd, builder.entry || './src/server/index.js'));
+      index.push(builder.require.processRelativePath(builder.entry || './src/server/index.js'));
 
       config = {
         ...config,
@@ -297,7 +292,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index: (spin.dev
             ? ['webpack/hot/dev-server', `webpack-dev-server/client?http://localhost:${webpackDevPort}/`]
             : []
-          ).concat([path.join(builder.require.cwd, builder.entry || './src/client/index.js')])
+          ).concat([builder.require.processRelativePath(builder.entry || './src/client/index.js')])
         },
         output: {
           ...config.output,
@@ -328,7 +323,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       config = {
         ...config,
         entry: {
-          index: [path.join(builder.require.cwd, builder.entry || './src/mobile/index.js')]
+          index: [builder.require.processRelativePath(builder.entry || './src/mobile/index.js')]
         },
         output: {
           ...config.output,

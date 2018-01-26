@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.86",
+  "version": "0.4.87",
   "main": "lib/index.js",
   "scripts": {
     "clean": "rimraf ./lib",
@@ -53,6 +53,11 @@
     ]
   },
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-flow": "^6.23.0",
+    "babel-register": "^6.26.0",
+    "connect-cors": "^0.5.6",
     "containerized": "^1.0.2",
     "debug": "^3.1.0",
     "detect-port": "^1.2.2",

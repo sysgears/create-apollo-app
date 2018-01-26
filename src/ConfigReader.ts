@@ -58,7 +58,7 @@ export default class ConfigReader {
       const builder: any =
         typeof builderVal === 'object' && builderVal.constructor !== Array ? { ...builderVal } : { stack: builderVal };
       builder.name = name;
-      builder.require = createRequire(path.resolve(relativePath));
+      builder.require = createRequire(path.resolve(relativePath), this.spin.cwd);
       builder.stack = new Stack(config.options.stack || [], typeof builder === 'object' ? builder.stack : builder);
       builder.plugins = (config.plugins || []).concat(builder.plugins || []);
       builder.roles = builder.roles || ['build', 'watch'];

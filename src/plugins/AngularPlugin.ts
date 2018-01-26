@@ -19,7 +19,7 @@ export default class AngularPlugin implements ConfigPlugin {
           rules: [
             {
               test: tsRule.test,
-              use: builder.require.resolve('angular2-template-loader')
+              use: 'angular2-template-loader'
             }
           ]
         },
@@ -51,7 +51,7 @@ export default class AngularPlugin implements ConfigPlugin {
             rules: [
               {
                 test: /\.html$/,
-                loader: builder.require.resolve('html-loader')
+                loader: 'html-loader'
               }
             ]
           },

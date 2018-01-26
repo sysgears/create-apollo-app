@@ -51,7 +51,7 @@ module.exports = async function assetLoader() {
   const callback = this.async();
   const query = this.query;
   const options = this.options[query.config] || {};
-  const requireRelative = createRequire(query.cwd);
+  const requireRelative = createRequire(query.cwd, process.cwd());
   const size = requireRelative('image-size');
   const hasha = requireRelative('hasha');
   const hashAssetFiles = requireRelative('expo/tools/hashAssetFiles');
@@ -69,7 +69,10 @@ module.exports = async function assetLoader() {
 
   const filepath = this.resourcePath;
   const dirname = path.dirname(filepath);
-  const url = path.relative(config.root, dirname);
+  const url = path
+    .relative(config.root, dirname)
+    .replace(/\\/g, '/')
+    .replace(/^[\.\/]*/, '');
   const type = path.extname(filepath).replace(/^\./, '');
   const assets = path.join('assets', config.bundle ? '' : config.platform);
   const suffix = `(@\\d+(\\.\\d+)?x)?(\\.(${config.platform}|native))?\\.${type}$`;

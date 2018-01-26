@@ -16,7 +16,7 @@ export default class TypeScriptPlugin implements ConfigPlugin {
       tsRule.test = /\.ts$/;
       tsRule.use = [
         {
-          loader: builder.require.resolve('awesome-typescript-loader'),
+          loader: 'awesome-typescript-loader',
           options: { ...builder.tsLoaderOptions }
         }
       ];
@@ -31,7 +31,9 @@ export default class TypeScriptPlugin implements ConfigPlugin {
           for (let idx = 0; idx < entry.length; idx++) {
             const item = entry[idx];
             if (['.js', '.jsx', '.ts', '.tsx'].indexOf(path.extname(item)) >= 0 && item.indexOf('node_modules') < 0) {
-              const baseItem = path.join(path.dirname(item), path.basename(item, path.extname(item)));
+              const baseItem = builder.require.processRelativePath(
+                path.join(path.dirname(item), path.basename(item, path.extname(item)))
+              );
               for (const ext of ['.js', '.jsx', '.ts', '.tsx']) {
                 if (fs.existsSync(baseItem + ext)) {
                   entry[idx] = baseItem + ext;

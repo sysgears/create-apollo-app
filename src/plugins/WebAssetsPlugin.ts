@@ -16,7 +16,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.(png|ico|jpg|gif|xml)$/,
               use: {
-                loader: builder.require.resolve('url-loader'),
+                loader: 'url-loader',
                 options: {
                   name: '[hash].[ext]',
                   limit: 100000
@@ -26,7 +26,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: builder.require.resolve('url-loader'),
+                loader: 'url-loader',
                 options: {
                   name: './assets/[hash].[ext]',
                   limit: 100000
@@ -36,7 +36,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: builder.require.resolve('file-loader'),
+                loader: 'file-loader',
                 options: {
                   name: './assets/[hash].[ext]'
                 }
@@ -46,7 +46,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
         }
       });
     } else if (!stack.hasAny('dll') && stack.hasAll(['webpack', 'server']) && !builder.ssr) {
-      const ignoreLoader = builder.require.resolve('ignore-loader');
+      const ignoreLoader = 'ignore-loader';
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [
