@@ -1,4 +1,5 @@
 import { exec, spawn } from 'child_process';
+import * as cluster from 'cluster';
 import * as cors from 'connect-cors';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
@@ -21,6 +22,7 @@ import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import Spin from './Spin';
 
 const SPIN_DLL_VERSION = 1;
+const BACKEND_CHANGE_MSG = 'backend_change';
 
 const debug = Debug('spinjs');
 const expoPorts = {};
@@ -229,7 +231,7 @@ const startServerWebpack = (spin, builder) => {
                 if (module.built && module.resource && module.resource.split(/[\\\/]/).indexOf('server') >= 0) {
                   // Force front-end refresh on back-end change
                   logger.debug('Force front-end current page refresh, due to change in backend at:', module.resource);
-                  increaseBackendReloadCount();
+                  process.send({ cmd: BACKEND_CHANGE_MSG });
                   break;
                 }
               }
@@ -984,12 +986,40 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
     const prepareExpoPromise =
       spin.watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
     prepareExpoPromise.then(() => {
-      for (const name of Object.keys(builders)) {
-        const builder = builders[name];
-        const stack = builder.stack;
-        if (stack.hasAny(['dll', 'test'])) {
-          continue;
+      if (cluster.isMaster) {
+        const workerBuilders = {};
+
+        for (const id of Object.keys(builders)) {
+          const builder = builders[id];
+          if (builder.stack.hasAny(['dll', 'test'])) {
+            continue;
+          }
+
+          const worker = cluster.fork({ BUILDER_ID: id });
+          workerBuilders[worker.process.pid] = builder;
         }
+
+        for (const id of Object.keys(cluster.workers)) {
+          cluster.workers[id].on('message', msg => {
+            debug(`Master received message ${JSON.stringify(msg)}`);
+            for (const wid of Object.keys(cluster.workers)) {
+              cluster.workers[wid].send(msg);
+            }
+          });
+        }
+
+        cluster.on('exit', (worker, code, signal) => {
+          debug(`Worker ${workerBuilders[worker.process.pid].id} died`);
+        });
+      } else {
+        const builder = builders[process.env.BUILDER_ID];
+        process.on('message', msg => {
+          if (msg.cmd === BACKEND_CHANGE_MSG) {
+            debug(`Increase backend reload count in ${builder.id}`);
+            increaseBackendReloadCount();
+          }
+        });
+
         const prepareDllPromise: PromiseLike<any> =
           spin.watch && builder.webpackDll && builder.child ? buildDll(spin, builder) : Promise.resolve();
         prepareDllPromise.then(() => startWebpack(spin, builder, platforms));

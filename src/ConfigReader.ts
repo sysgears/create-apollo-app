@@ -67,6 +67,7 @@ export default class ConfigReader {
         builder[key] = merged[key];
       }
       const builderId = `${relativePath}[${builder.name}]`;
+      builder.id = builderId;
       builders[builderId] = builder;
       // TODO: remove backendBuildDir, frontendBuildDir in 0.5.x
       builder.buildDir =
