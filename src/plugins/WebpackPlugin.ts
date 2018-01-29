@@ -160,7 +160,22 @@ const createConfig = (builder: Builder, spin: Spin) => {
       ignored: /build/
     },
     bail: !spin.dev,
-    stats: 'none'
+    stats: {
+      hash: false,
+      version: false,
+      timings: true,
+      assets: false,
+      chunks: false,
+      modules: false,
+      reasons: false,
+      children: false,
+      source: true,
+      errors: true,
+      errorDetails: true,
+      warnings: true,
+      publicPath: false,
+      colors: true
+    }
   };
 
   if (builder.sourceMap) {

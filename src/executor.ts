@@ -107,6 +107,9 @@ const webpackReporter = (spin: Spin, builder: Builder, outputPath: string, log, 
       fs.writeFileSync(path.join(outputPath, 'stats.json'), JSON.stringify(stats.toJson()));
     }
   }
+  if (!spin.watch && cluster.isWorker) {
+    process.exit(0);
+  }
 };
 
 const frontendVirtualModules = [];
@@ -906,75 +909,93 @@ const startExp = async (spin: Spin, builders: Builders, logger) => {
   }
 };
 
+const runBuilder = (spin: Spin, builder: Builder, platforms) => {
+  const prepareDllPromise: PromiseLike<any> =
+    spin.watch && builder.webpackDll && builder.child ? buildDll(spin, builder) : Promise.resolve();
+  prepareDllPromise.then(() => startWebpack(spin, builder, platforms));
+};
+
 const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
-  if (argv.verbose) {
-    Object.keys(builders).forEach(name => {
-      const builder = builders[name];
-      spinLogger.log(`${name} = `, require('util').inspect(builder.config, false, null));
-    });
-  }
-
-  if (cmd === 'exp') {
-    startExp(spin, builders, spinLogger);
-  } else if (cmd === 'test') {
-    // TODO: Remove this in 0.5.x
-    let builder;
-    for (const name of Object.keys(builders)) {
-      builder = builders[name];
-      if (builder.roles.indexOf('test') >= 0) {
-        const testArgs = [
-          '--include',
-          'babel-polyfill',
-          '--webpack-config',
-          builder.require.resolve('spinjs/webpack.config.js')
-        ];
-        if (builder.stack.hasAny('react')) {
-          const majorVer = builder.require('react/package.json').version.split('.')[0];
-          const reactVer = majorVer >= 16 ? majorVer : 15;
-          if (reactVer >= 16) {
-            testArgs.push('--include', 'raf/polyfill');
-          }
-        }
-
-        const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
-        testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
-        spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
-
-        const env: any = Object.create(process.env);
-        if (argv.c) {
-          (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
-        }
-
-        const mochaWebpack = spawn(testCmd, testArgs, {
-          stdio: [0, 1, 2],
-          env,
-          cwd: builder.require.cwd
-        });
-        mochaWebpack.on('close', code => {
-          if (code !== 0) {
-            process.exit(code);
-          }
-        });
-      }
+  const expoPlatforms = [];
+  const platforms = {};
+  Object.keys(builders).forEach(name => {
+    const builder = builders[name];
+    const stack = builder.stack;
+    platforms[stack.platform] = true;
+    if (stack.hasAny('react-native') && stack.hasAny('ios')) {
+      expoPlatforms.push('ios');
+    } else if (stack.hasAny('react-native') && stack.hasAny('android')) {
+      expoPlatforms.push('android');
     }
-  } else {
-    const expoPlatforms = [];
-    const platforms = {};
-    Object.keys(builders).forEach(name => {
-      const builder = builders[name];
-      const stack = builder.stack;
-      platforms[stack.platform] = true;
-      if (stack.hasAny('react-native') && stack.hasAny('ios')) {
-        expoPlatforms.push('ios');
-      } else if (stack.hasAny('react-native') && stack.hasAny('android')) {
-        expoPlatforms.push('android');
+  });
+
+  if (cluster.isMaster) {
+    if (argv.verbose) {
+      Object.keys(builders).forEach(name => {
+        const builder = builders[name];
+        spinLogger.log(`${name} = `, require('util').inspect(builder.config, false, null));
+      });
+    }
+
+    if (cmd === 'exp') {
+      startExp(spin, builders, spinLogger);
+    } else if (cmd === 'test') {
+      // TODO: Remove this in 0.5.x
+      let builder;
+      for (const name of Object.keys(builders)) {
+        builder = builders[name];
+        if (builder.roles.indexOf('test') >= 0) {
+          const testArgs = [
+            '--include',
+            'babel-polyfill',
+            '--webpack-config',
+            builder.require.resolve('spinjs/webpack.config.js')
+          ];
+          if (builder.stack.hasAny('react')) {
+            const majorVer = builder.require('react/package.json').version.split('.')[0];
+            const reactVer = majorVer >= 16 ? majorVer : 15;
+            if (reactVer >= 16) {
+              testArgs.push('--include', 'raf/polyfill');
+            }
+          }
+
+          const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
+          testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
+          spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
+
+          const env: any = Object.create(process.env);
+          if (argv.c) {
+            (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
+          }
+
+          const mochaWebpack = spawn(testCmd, testArgs, {
+            stdio: [0, 1, 2],
+            env,
+            cwd: builder.require.cwd
+          });
+          mochaWebpack.on('close', code => {
+            if (code !== 0) {
+              process.exit(code);
+            }
+          });
+        }
       }
-    });
-    const prepareExpoPromise =
-      spin.watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
-    prepareExpoPromise.then(() => {
-      if (cluster.isMaster) {
+    } else {
+      const prepareExpoPromise =
+        spin.watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
+      prepareExpoPromise.then(() => {
         const workerBuilders = {};
+
+        let potentialWorkerCount = 0;
+        for (const id of Object.keys(builders)) {
+          const builder = builders[id];
+          if (builder.stack.hasAny(['dll', 'test'])) {
+            continue;
+          }
+          if (builder.cluster !== false) {
+            potentialWorkerCount++;
+          }
+        }
 
         for (const id of Object.keys(builders)) {
           const builder = builders[id];
@@ -982,8 +1003,12 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
             continue;
           }
 
-          const worker = cluster.fork({ BUILDER_ID: id });
-          workerBuilders[worker.process.pid] = builder;
+          if (potentialWorkerCount > 1 && !builder.cluster) {
+            const worker = cluster.fork({ BUILDER_ID: id });
+            workerBuilders[worker.process.pid] = builder;
+          } else {
+            runBuilder(spin, builder, platforms);
+          }
         }
 
         for (const id of Object.keys(cluster.workers)) {
@@ -998,20 +1023,18 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
         cluster.on('exit', (worker, code, signal) => {
           debug(`Worker ${workerBuilders[worker.process.pid].id} died`);
         });
-      } else {
-        const builder = builders[process.env.BUILDER_ID];
-        process.on('message', msg => {
-          if (msg.cmd === BACKEND_CHANGE_MSG) {
-            debug(`Increase backend reload count in ${builder.id}`);
-            increaseBackendReloadCount();
-          }
-        });
-
-        const prepareDllPromise: PromiseLike<any> =
-          spin.watch && builder.webpackDll && builder.child ? buildDll(spin, builder) : Promise.resolve();
-        prepareDllPromise.then(() => startWebpack(spin, builder, platforms));
+      });
+    }
+  } else {
+    const builder = builders[process.env.BUILDER_ID];
+    process.on('message', msg => {
+      if (msg.cmd === BACKEND_CHANGE_MSG) {
+        debug(`Increase backend reload count in ${builder.id}`);
+        increaseBackendReloadCount();
       }
     });
+
+    runBuilder(spin, builder, platforms);
   }
 };
 
