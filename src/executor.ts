@@ -491,6 +491,20 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     const unless = builder.require('react-native/local-cli/server/middleware/unless');
     const symbolicateMiddleware = builder.require('haul/src/server/middleware/symbolicateMiddleware');
 
+    const devMiddleware = webpackDevMiddleware(
+      compiler,
+      _.merge({}, config.devServer, {
+        reporter(mwOpts, { state, stats }) {
+          if (state) {
+            logger('bundle is now VALID.');
+          } else {
+            logger('bundle is now INVALID.');
+          }
+          reporter(null, stats);
+        }
+      })
+    );
+
     const args = {
       port: config.devServer.port,
       projectRoots: [path.resolve('.')]
@@ -500,17 +514,51 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       .use(loadRawBodyMiddleware)
       .use((req, res, next) => {
         req.path = req.url.split('?')[0];
-        debug(`Dev mobile packager request: ${req.path}`);
+        const origWriteHead = res.writeHead;
+        res.writeHead = (...parms) => {
+          const code = parms[0];
+          if (code === 404) {
+            logger.error(`404 at URL ${req.url}`);
+            if (req.url.indexOf('assets') >= 0) {
+              const outputPath = builder.child.config.output.path;
+              const dumpFs = (fileSys, rootDir, dir) =>
+                fileSys
+                  .readdirSync(path.join(rootDir, dir))
+                  .reduce(
+                    (files, file) =>
+                      fileSys.statSync(path.join(rootDir, dir, file)).isDirectory()
+                        ? files.concat(dumpFs(fileSys, rootDir, path.join(dir, file)))
+                        : files.concat(path.join(dir, file)),
+                    []
+                  );
+              logger.info(
+                `Is disk file exist ${path.join(outputPath, req.path)} ${fs.existsSync(
+                  path.join(outputPath, req.path)
+                )}`
+              );
+              logger.info(
+                `Is mem file exist ${req.path} ${fs.existsSync(devMiddleware.fileSystem.existsSync(req.path))}`
+              );
+              debug(`${builder.name} Disk fs dump at ${outputPath}:`, dumpFs(fs, outputPath, ''));
+              debug(`${builder.name} Mem fs dump:`, dumpFs(devMiddleware.fileSystem, '/', ''));
+            }
+          }
+          origWriteHead.apply(res, parms);
+        };
+        if (req.path !== '/onchange') {
+          logger.debug(`${builder.name} Dev mobile packager request: ${req.path}`);
+        }
         next();
       })
       .use(compression());
+    app.use('/assets', serveStatic(path.join(builder.require.cwd, '.expo', builder.stack.platform)));
     if (builder.child) {
       app.use(serveStatic(builder.child.config.output.path));
     }
     app
       .use((req, res, next) => {
         if (req.path === '/debugger-ui/deltaUrlToBlobUrl.js') {
-          debug('serving monkey patched deltaUrlToBlobUrl');
+          debug(`${builder.name} serving monkey patched deltaUrlToBlobUrl`);
           res.writeHead(200, { 'Content-Type': 'application/javascript' });
           res.end(`window.deltaUrlToBlobUrl = function(url) { return url.replace('.delta', '.bundle'); }`);
         } else {
@@ -545,19 +593,6 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     if (inspectorProxy) {
       app.use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)));
     }
-    const devMiddleware = webpackDevMiddleware(
-      compiler,
-      _.merge({}, config.devServer, {
-        reporter(mwOpts, { state, stats }) {
-          if (state) {
-            logger('bundle is now VALID.');
-          } else {
-            logger('bundle is now INVALID.');
-          }
-          reporter(null, stats);
-        }
-      })
-    );
 
     app
       .use((req, res, next) => {
@@ -728,7 +763,9 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
   const appJson = JSON.parse(fs.readFileSync(builder.require.resolve('./app.json')).toString());
   if (appJson.expo.icon) {
-    appJson.expo.icon = path.join(builder.require.cwd, appJson.expo.icon);
+    const iconPath = path.join(builder.require.cwd, appJson.expo.icon);
+    fs.writeFileSync(path.join(dir, path.basename(iconPath)), fs.readFileSync(iconPath));
+    appJson.expo.icon = path.basename(iconPath);
   }
   fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
   if (platform !== 'all') {
@@ -1004,7 +1041,7 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
           }
 
           if (potentialWorkerCount > 1 && !builder.cluster) {
-            const worker = cluster.fork({ BUILDER_ID: id });
+            const worker = cluster.fork({ BUILDER_ID: id, EXPO_PORTS: JSON.stringify(expoPorts) });
             workerBuilders[worker.process.pid] = builder;
           } else {
             runBuilder(spin, builder, platforms);
@@ -1027,6 +1064,10 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
     }
   } else {
     const builder = builders[process.env.BUILDER_ID];
+    const builderExpoPorts = JSON.parse(process.env.EXPO_PORTS);
+    for (const platform of Object.keys(builderExpoPorts)) {
+      expoPorts[platform] = builderExpoPorts[platform];
+    }
     process.on('message', msg => {
       if (msg.cmd === BACKEND_CHANGE_MSG) {
         debug(`Increase backend reload count in ${builder.id}`);
