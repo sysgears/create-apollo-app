@@ -178,7 +178,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     quiet: false,
     noInfo: true,
     historyApiFallback: true,
-    stats: { colors: true, chunkModules: false }
+    stats: builder.stats
   };
 
   const plugins = createPlugins(builder, spin);

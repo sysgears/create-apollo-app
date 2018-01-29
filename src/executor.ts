@@ -91,32 +91,18 @@ const runServer = (cwd, serverPath, logger) => {
   }
 };
 
-const webpackReporter = (spin: Spin, outputPath, log, err?, stats?) => {
+const webpackReporter = (spin: Spin, builder: Builder, outputPath: string, log, err?, stats?) => {
   if (err) {
     log(err.stack);
     throw new Error('Build error');
   }
   if (stats) {
-    log(
-      stats.toString({
-        hash: false,
-        version: false,
-        timings: true,
-        assets: false,
-        chunks: false,
-        modules: false,
-        reasons: false,
-        children: false,
-        source: true,
-        errors: true,
-        errorDetails: true,
-        warnings: true,
-        publicPath: false,
-        colors: true
-      })
-    );
+    const str = stats.toString(builder.stats);
+    if (str.length > 0) {
+      log(str);
+    }
 
-    if (!spin.watch) {
+    if (builder.writeStats) {
       mkdirp.sync(outputPath);
       fs.writeFileSync(path.join(outputPath, 'stats.json'), JSON.stringify(stats.toJson()));
     }
@@ -156,6 +142,7 @@ const startClientWebpack = (hasBackend, spin, builder) => {
   const webpack = builder.require('webpack');
 
   const config = builder.config;
+  const configOutputPath = config.output.path;
 
   const VirtualModules = builder.require('webpack-virtual-modules');
   const clientVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
@@ -164,7 +151,7 @@ const startClientWebpack = (hasBackend, spin, builder) => {
 
   const logger = minilog(`webpack-for-${config.name}`);
   try {
-    const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, builder, configOutputPath, logger, ...args);
 
     if (spin.watch) {
       startWebpackDevServer(hasBackend, spin, builder, reporter, logger);
@@ -196,7 +183,7 @@ const startServerWebpack = (spin, builder) => {
 
   try {
     const webpack = builder.require('webpack');
-    const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
     const compiler = webpack(config);
 
@@ -663,7 +650,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
   return new Promise(done => {
     const name = `vendor_${builder.stack.platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
-    const reporter = (...args) => webpackReporter(spin, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, builder.child, config.output.path, logger, ...args);
 
     if (!isDllValid(spin, builder, logger)) {
       logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
