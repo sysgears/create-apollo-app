@@ -82,7 +82,6 @@ export default class ConfigReader {
           ? path.join(relativePath, builder.cache)
           : typeof builder.cache !== 'undefined' ? builder.cache : 'auto';
       builder.plugins = this.plugins.concat((builder.plugins || []).map(pluginName => new (require(pluginName))()));
-      builder.stats = builder.stats || 'none';
     }
     return builders;
   }

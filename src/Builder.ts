@@ -10,7 +10,6 @@ export interface Builder {
   parent?: Builder;
   child?: Builder;
   config?: any;
-  stats: any;
   [x: string]: any;
 }
 

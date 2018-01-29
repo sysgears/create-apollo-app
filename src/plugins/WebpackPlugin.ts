@@ -159,7 +159,8 @@ const createConfig = (builder: Builder, spin: Spin) => {
     watchOptions: {
       ignored: /build/
     },
-    bail: !spin.dev
+    bail: !spin.dev,
+    stats: 'none'
   };
 
   if (builder.sourceMap) {
@@ -177,8 +178,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     headers: { 'Access-Control-Allow-Origin': '*' },
     quiet: false,
     noInfo: true,
-    historyApiFallback: true,
-    stats: builder.stats
+    historyApiFallback: true
   };
 
   const plugins = createPlugins(builder, spin);

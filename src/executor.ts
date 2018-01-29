@@ -97,7 +97,7 @@ const webpackReporter = (spin: Spin, builder: Builder, outputPath: string, log, 
     throw new Error('Build error');
   }
   if (stats) {
-    const str = stats.toString(builder.stats);
+    const str = stats.toString(builder.config.stats);
     if (str.length > 0) {
       log(str);
     }
@@ -650,7 +650,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
   return new Promise(done => {
     const name = `vendor_${builder.stack.platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
-    const reporter = (...args) => webpackReporter(spin, builder.child, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
     if (!isDllValid(spin, builder, logger)) {
       logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
