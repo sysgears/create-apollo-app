@@ -539,14 +539,14 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
               logger.info(
                 `Is mem file exist ${req.path} ${fs.existsSync(devMiddleware.fileSystem.existsSync(req.path))}`
               );
-              debug(`${builder.name} Disk fs dump at ${outputPath}:`, dumpFs(fs, outputPath, ''));
-              debug(`${builder.name} Mem fs dump:`, dumpFs(devMiddleware.fileSystem, '/', ''));
+              debug(`Disk fs dump at ${outputPath}:`, dumpFs(fs, outputPath, ''));
+              debug(`Mem fs dump:`, dumpFs(devMiddleware.fileSystem, '', ''));
             }
           }
           origWriteHead.apply(res, parms);
         };
         if (req.path !== '/onchange') {
-          logger.debug(`${builder.name} Dev mobile packager request: ${req.path}`);
+          logger.debug(`Dev mobile packager request: ${req.path}`);
         }
         next();
       })
@@ -558,7 +558,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     app
       .use((req, res, next) => {
         if (req.path === '/debugger-ui/deltaUrlToBlobUrl.js') {
-          debug(`${builder.name} serving monkey patched deltaUrlToBlobUrl`);
+          debug(`serving monkey patched deltaUrlToBlobUrl`);
           res.writeHead(200, { 'Content-Type': 'application/javascript' });
           res.end(`window.deltaUrlToBlobUrl = function(url) { return url.replace('.delta', '.bundle'); }`);
         } else {
