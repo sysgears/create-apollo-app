@@ -151,7 +151,7 @@ module.exports = async function assetLoader() {
   );
 
   pairs.forEach((item: any) => {
-    let dest = item.destination;
+    let dest = item.destination.replace(/\\/g, '/');
 
     if (config.outputPath) {
       // support functions as outputPath to generate them dynamically
