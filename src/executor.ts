@@ -528,9 +528,19 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
           origWriteHead.apply(res, parms);
         };
         if (req.path !== '/onchange') {
-          logger.debug(`Dev mobile packager request: ${req.path}`);
+          logger.debug(`Dev mobile packager request: ${debug.enabled ? req.url : req.path}`);
         }
         next();
+      })
+      .use((req, res, next) => {
+        const query = url.parse(req.url, true).query;
+        const urlPlatform = query && query.platform;
+        if (urlPlatform && urlPlatform !== builder.stack.platform) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end(`Serving '${builder.stack.platform}' bundles, but got request from '${urlPlatform}'`);
+        } else {
+          next();
+        }
       })
       .use(compression());
     app.use('/assets', serveStatic(path.join(builder.require.cwd, '.expo', builder.stack.platform)));
@@ -818,11 +828,10 @@ const startWebpack = async (spin: Spin, builder: Builder, platforms: any) => {
 };
 
 const allocateExpoPorts = async expoPlatforms => {
-  let startPort = 19000;
+  const startPorts = { android: 19000, ios: 19500 };
   for (const platform of expoPlatforms) {
-    const expoPort = await detectPort(startPort);
+    const expoPort = await detectPort(startPorts[platform]);
     expoPorts[platform] = expoPort;
-    startPort = expoPort + 1;
   }
 };
 
