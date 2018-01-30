@@ -15,7 +15,7 @@ import * as path from 'path';
 import * as serveStatic from 'serve-static';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
-import { RawSource } from 'webpack-sources';
+import { ConcatSource, RawSource } from 'webpack-sources';
 
 import { Builder, Builders } from './Builder';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
@@ -360,22 +360,26 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       callback();
     }
   });
-  if (builder.sourceMap && builder.webpackDll && builder.child && platform !== 'web') {
+  if (builder.webpackDll && builder.child && platform !== 'web') {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
           if (file.endsWith('.bundle')) {
-            const sourceListMap = new SourceListMap();
-            sourceListMap.add(vendorSourceListMap);
-            sourceListMap.add(
-              fromStringWithSourceMap(
-                compilation.assets[file].source(),
-                JSON.parse(compilation.assets[file + '.map'].source())
-              )
-            );
-            const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
-            compilation.assets[file] = new RawSource(sourceAndMap.source);
-            compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
+            if (builder.sourceMap) {
+              const sourceListMap = new SourceListMap();
+              sourceListMap.add(vendorSourceListMap);
+              sourceListMap.add(
+                fromStringWithSourceMap(
+                  compilation.assets[file].source(),
+                  JSON.parse(compilation.assets[file + '.map'].source())
+                )
+              );
+              const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
+              compilation.assets[file] = new RawSource(sourceAndMap.source);
+              compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
+            } else {
+              compilation.assets[file] = new ConcatSource(vendorSource, compilation.assets[file]);
+            }
           }
         });
       });
