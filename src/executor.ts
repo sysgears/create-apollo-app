@@ -491,6 +491,8 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     const unless = builder.require('react-native/local-cli/server/middleware/unless');
     const symbolicateMiddleware = builder.require('haul/src/server/middleware/symbolicateMiddleware');
 
+    // Workaround for bug in Haul /symbolicate under Windows
+    compiler.options.output.path = path.sep;
     const devMiddleware = webpackDevMiddleware(
       compiler,
       _.merge({}, config.devServer, {
@@ -514,34 +516,14 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       .use(loadRawBodyMiddleware)
       .use((req, res, next) => {
         req.path = req.url.split('?')[0];
+        if (req.path === '/symbolicate') {
+          req.rawBody = req.rawBody.replace(/index\.mobile\.delta/g, 'index.mobile.bundle');
+        }
         const origWriteHead = res.writeHead;
         res.writeHead = (...parms) => {
           const code = parms[0];
           if (code === 404) {
             logger.error(`404 at URL ${req.url}`);
-            if (req.url.indexOf('assets') >= 0) {
-              const outputPath = builder.child.config.output.path;
-              const dumpFs = (fileSys, rootDir, dir) =>
-                fileSys
-                  .readdirSync(path.join(rootDir, dir))
-                  .reduce(
-                    (files, file) =>
-                      fileSys.statSync(path.join(rootDir, dir, file)).isDirectory()
-                        ? files.concat(dumpFs(fileSys, rootDir, path.join(dir, file)))
-                        : files.concat(path.join(dir, file)),
-                    []
-                  );
-              logger.info(
-                `Is disk file exist ${path.join(outputPath, req.path)} ${fs.existsSync(
-                  path.join(outputPath, req.path)
-                )}`
-              );
-              logger.info(
-                `Is mem file exist ${req.path} ${fs.existsSync(devMiddleware.fileSystem.existsSync(req.path))}`
-              );
-              debug(`Disk fs dump at ${outputPath}:`, dumpFs(fs, outputPath, ''));
-              debug(`Mem fs dump:`, dumpFs(devMiddleware.fileSystem, '', ''));
-            }
           }
           origWriteHead.apply(res, parms);
         };
