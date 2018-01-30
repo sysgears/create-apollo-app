@@ -43,7 +43,10 @@ export default class ReactNativePlugin implements ConfigPlugin {
             cacheDirectory:
               builder.cache === false || (builder.cache === 'auto' && !spin.dev)
                 ? false
-                : path.join(builder.cache === true ? '.cache' : builder.cache, 'babel-loader'),
+                : path.join(
+                    builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
+                    'babel-loader'
+                  ),
             compact: !spin.dev,
             presets: (['babel-preset-expo'] as any[]).concat(
               spin.dev ? [] : [['babel-preset-minify', { mangle: false }]]
