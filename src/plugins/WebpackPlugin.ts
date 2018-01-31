@@ -127,7 +127,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
   return plugins;
 };
 
-const getDepsForNode = (spin: Spin, builder) => {
+const getDepsForNode = (spin: Spin, builder: Builder): string[] => {
   const pkg = builder.require('./package.json');
   const deps = [];
   for (const key of Object.keys(pkg.dependencies)) {
@@ -136,7 +136,13 @@ const getDepsForNode = (spin: Spin, builder) => {
       key.indexOf('@types') !== 0 &&
       (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0) || val === builder.parent.name)
     ) {
-      deps.push(key);
+      const resolves = builder.require.probe(key);
+      const exists = builder.require.probe(key + '/package.json');
+      if (resolves) {
+        deps.push(key);
+      } else if (!resolves && !exists) {
+        throw new Error(`Cannot find module '${key}'`);
+      }
     }
   }
   return deps;
