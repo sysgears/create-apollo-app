@@ -1,3 +1,4 @@
+import * as cluster from 'cluster';
 import * as fs from 'fs';
 import * as minilog from 'minilog';
 
@@ -54,7 +55,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
   if (!discoveredBuilders) {
     throw new Error('Cannot find spinjs config');
   }
-  if (argv.verbose) {
+  if (cluster.isMaster && argv.verbose) {
     spinLogger.log('SpinJS Config:\n', require('util').inspect(discoveredBuilders, false, null));
   }
 
