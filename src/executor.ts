@@ -769,8 +769,26 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   }
 };
 
+const deviceLoggers = {};
+
 const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string, packagerPort) => {
-  const { Config, Project, ProjectSettings } = builder.require('xdl');
+  const { Config, Project, ProjectSettings, ProjectUtils } = builder.require('xdl');
+  deviceLoggers[projectRoot] = minilog('expo-for-' + builder.name);
+
+  if (!ProjectUtils.logWithLevel._patched) {
+    const origExpoLogger = ProjectUtils.logWithLevel;
+    ProjectUtils.logWithLevel = (projRoot, level, object, msg, id) => {
+      if (level === 'error') {
+        const json = JSON.parse(msg);
+        const info = object.includesStack ? json.message + '\n' + json.stack : json.message;
+        deviceLoggers[projRoot].log(info.replace(/\\n/g, '\n'));
+      } else {
+        deviceLoggers[projRoot].log(msg);
+      }
+      return origExpoLogger.call(ProjectUtils, projRoot, level, object, msg, id);
+    };
+    ProjectUtils.logWithLevel._patched = true;
+  }
 
   Config.validation.reactNativeVersionWarnings = false;
   Config.developerTool = 'crna';

@@ -88,7 +88,8 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     builder.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
 
     const strategy = {
-      entry: 'replace'
+      entry: 'replace',
+      stats: 'replace'
     };
     if (overrides[builder.name]) {
       builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[builder.name]);
