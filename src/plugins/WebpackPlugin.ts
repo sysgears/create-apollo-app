@@ -260,6 +260,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
       },
       bail: true
     };
+    if (stack.hasAny('web')) {
+      config.entry.vendor.push('webpack-dev-server/client');
+    }
     if (builder.sourceMap) {
       config.devtool = spin.dev ? '#cheap-module-source-map' : '#nosources-source-map';
     }

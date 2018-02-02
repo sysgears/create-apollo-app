@@ -646,7 +646,7 @@ const isDllValid = (spin, builder, logger): boolean => {
     if (builder.sourceMap && !fs.existsSync(path.join(builder.dllBuildDir, relMeta.name + '.map'))) {
       return false;
     }
-    if (!_.isEqual(relMeta.modules, builder.config.entry.vendor)) {
+    if (!_.isEqual(relMeta.modules, builder.child.config.entry.vendor)) {
       return false;
     }
 
@@ -707,7 +707,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
           });
           fs.writeFileSync(path.join(builder.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
 
-          const meta = { name: vendorKey, hashes: {}, modules: builder.config.entry.vendor, version: SPIN_DLL_VERSION };
+          const meta = { name: vendorKey, hashes: {}, modules: config.entry.vendor, version: SPIN_DLL_VERSION };
           for (const filename of Object.keys(json.content)) {
             if (filename.indexOf(' ') < 0 && filename.indexOf('@virtual') < 0) {
               meta.hashes[filename] = crypto
