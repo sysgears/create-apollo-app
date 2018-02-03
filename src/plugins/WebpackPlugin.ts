@@ -161,7 +161,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     module: {
       rules: []
     },
-    resolve: {},
+    resolve: { symlinks: false },
     watchOptions: {
       ignored: /build/
     },
