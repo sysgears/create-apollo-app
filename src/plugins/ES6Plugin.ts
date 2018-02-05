@@ -25,9 +25,11 @@ export default class ES6Plugin implements ConfigPlugin {
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findAndCreateJSRule();
       jsRule.exclude = /node_modules/;
+      const { merge, ...config } = builder.babelConfig || { merge: {} };
       jsRule.use = {
         loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
-        options: spin.merge(
+        options: spin.mergeWithStrategy(
+          merge,
           {
             babelrc: false,
             cacheDirectory:
@@ -50,7 +52,7 @@ export default class ES6Plugin implements ConfigPlugin {
             ],
             only: jsRuleFinder.extensions.map(ext => '*.' + ext)
           },
-          builder.babelConfig
+          config
         )
       };
     }

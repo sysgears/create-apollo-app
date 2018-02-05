@@ -35,9 +35,11 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const AssetResolver = builder.require('haul/src/resolvers/AssetResolver');
       const HasteResolver = builder.require('haul/src/resolvers/HasteResolver');
 
+      const { merge, ...config } = builder.babelConfig || { merge: {} };
       const reactNativeRule = {
         loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
-        options: spin.merge(
+        options: spin.mergeWithStrategy(
+          merge,
           {
             babelrc: false,
             cacheDirectory:
@@ -53,7 +55,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
             ),
             plugins: ['haul/src/utils/fixRequireIssues']
           },
-          builder.babelConfig
+          config
         )
       };
 
