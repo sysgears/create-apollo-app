@@ -171,6 +171,10 @@ const config = {
 
 See `webpack-merge` strategies documentation [here](https://github.com/survivejs/webpack-merge#merging-with-strategies)
 
+#### Current working directory
+When reading `.spinrc.js` configs `spinjs` does so recursively in all the child directories. When config in each such directory is being read or builder get executed, process current working directory is set to point to this same directory. This
+scheme of operation should be compatible to all 3rd party tools.
+
 ### Community support
 
 - [Gitter channel] - questions, answers, general discussions
