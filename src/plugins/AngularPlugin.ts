@@ -28,7 +28,7 @@ export default class AngularPlugin implements ConfigPlugin {
           new webpack.ContextReplacementPlugin(
             // The (\\|\/) piece accounts for path separators in *nix and Windows
             /angular[\\\/]core[\\\/]@angular/,
-            path.resolve('src'),
+            path.join(builder.require.cwd, 'src'),
             {} // a map of your routes
           )
         ]

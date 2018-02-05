@@ -115,7 +115,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
               name: 'vendor',
               filename: '[name].[hash].js',
               minChunks(module) {
-                return module.resource && module.resource.indexOf(path.resolve('./node_modules')) === 0;
+                return module.resource && module.resource.indexOf(path.join(builder.require.cwd, 'node_modules')) === 0;
               }
             })
           );
@@ -228,7 +228,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     if (builder.sourceMap) {
       config.output = {
         devtoolModuleFilenameTemplate: spin.dev
-          ? ({ resourcePath }) => path.resolve(resourcePath)
+          ? ({ resourcePath }) => path.join(builder.require.cwd, resourcePath)
           : info => path.relative(cwd, info.absoluteResourcePath)
       };
     }
@@ -255,7 +255,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
       output: {
         ...config.output,
         filename: `${name}_[hash]_dll.js`,
-        path: path.resolve(builder.dllBuildDir),
+        path: path.join(builder.require.cwd, builder.dllBuildDir),
         library: name
       },
       bail: true
@@ -280,7 +280,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index.push('webpack/hot/signal.js');
         }
       }
-      index.push(builder.require.processRelativePath(builder.entry || './src/server/index.js'));
+      index.push(builder.entry || './src/server/index.js');
 
       config = {
         ...config,
@@ -290,7 +290,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
         output: {
           ...config.output,
           filename: '[name].js',
-          path: path.resolve(builder.buildDir || builder.backendBuildDir || 'build/server'),
+          path: path.join(builder.require.cwd, builder.buildDir || builder.backendBuildDir || 'build/server'),
           publicPath: '/'
         }
       };
@@ -316,14 +316,14 @@ const createConfig = (builder: Builder, spin: Spin) => {
           index: (spin.dev
             ? ['webpack/hot/dev-server', `webpack-dev-server/client?http://localhost:${webpackDevPort}/`]
             : []
-          ).concat([builder.require.processRelativePath(builder.entry || './src/client/index.js')])
+          ).concat([builder.entry || './src/client/index.js'])
         },
         output: {
           ...config.output,
           filename: '[name].[hash].js',
           path: builder.buildDir
-            ? path.resolve(builder.buildDir)
-            : path.resolve(path.join(builder.frontendBuildDir || 'build/client', 'web')),
+            ? path.join(builder.require.cwd, builder.buildDir)
+            : path.join(builder.require.cwd, builder.frontendBuildDir || 'build/client', 'web'),
           publicPath: '/'
         },
         devServer: {
@@ -347,15 +347,15 @@ const createConfig = (builder: Builder, spin: Spin) => {
       config = {
         ...config,
         entry: {
-          index: [builder.require.processRelativePath(builder.entry || './src/mobile/index.js')]
+          index: [builder.entry || './src/mobile/index.js']
         },
         output: {
           ...config.output,
           filename: `index.mobile.bundle`,
           publicPath: '/',
           path: builder.buildDir
-            ? path.resolve(builder.buildDir)
-            : path.resolve(path.join(builder.frontendBuildDir || 'build/client', builder.name))
+            ? path.join(builder.require.cwd, builder.buildDir)
+            : path.join(builder.require.cwd, builder.frontendBuildDir || 'build/client', builder.name)
         },
         devServer: {
           ...baseDevServerConfig,

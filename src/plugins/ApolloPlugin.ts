@@ -14,6 +14,7 @@ export default class ApolloPlugin implements ConfigPlugin {
       if (builder.stack.hasAny(['server', 'web'])) {
         if (!persistPlugins) {
           const PersistGraphQLPlugin = builder.require('persistgraphql-webpack-plugin');
+          // Tricky - this way it works for now both for single-package and monorepo projects
           const moduleName = path.resolve('node_modules/persisted_queries.json');
           if (persistGraphQL) {
             const clientPersistPlugin = new PersistGraphQLPlugin({
