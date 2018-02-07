@@ -36,34 +36,41 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const HasteResolver = builder.require('haul/src/resolvers/HasteResolver');
 
       const { merge, ...config } = builder.babelConfig || { merge: {} };
-      const reactNativeRule = {
-        loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
-        options: spin.mergeWithStrategy(
-          merge,
-          {
-            babelrc: false,
-            cacheDirectory:
-              builder.cache === false || (builder.cache === 'auto' && !spin.dev)
-                ? false
-                : path.join(
-                    builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
-                    'babel-loader'
-                  ),
-            compact: !spin.dev,
-            presets: (['babel-preset-expo'] as any[]).concat(
-              spin.dev ? [] : [['babel-preset-minify', { mangle: false }]]
-            ),
-            plugins: ['haul/src/utils/fixRequireIssues']
-          },
-          config
-        )
-      };
 
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findAndCreateJSRule();
-      jsRule.exclude = /node_modules\/(?!react-native.*|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/;
-      const origUse = jsRule.use || require.resolve('./shared/identity-loader');
-      jsRule.use = req => (req.resource.indexOf('node_modules') >= 0 ? reactNativeRule : origUse);
+      builder.config.module.rules.push({
+        test: new RegExp(
+          '^.*\\/node_modules\\/.*\\.' +
+            String(jsRule.test)
+              .split('.')
+              .pop()
+              .slice(0, -1)
+        ),
+        exclude: /node_modules\/(?!react-native.*|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/,
+        use: {
+          loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
+          options: spin.mergeWithStrategy(
+            merge,
+            {
+              babelrc: false,
+              cacheDirectory:
+                builder.cache === false || (builder.cache === 'auto' && !spin.dev)
+                  ? false
+                  : path.join(
+                      builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
+                      'babel-loader'
+                    ),
+              compact: !spin.dev,
+              presets: (['babel-preset-expo'] as any[]).concat(
+                spin.dev ? [] : [['babel-preset-minify', { mangle: false }]]
+              ),
+              plugins: ['haul/src/utils/fixRequireIssues']
+            },
+            config
+          )
+        }
+      });
 
       builder.config.resolve.extensions = [`.${stack.platform}.`, '.native.', '.']
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))

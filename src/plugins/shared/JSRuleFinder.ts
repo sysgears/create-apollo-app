@@ -12,12 +12,14 @@ export default class JSRuleFinder {
 
   public findJSRule(): any {
     if (!this.jsRule) {
-      const jsCandidates = ['/\\.js$/', '/\\.jsx?$/'];
+      const jsCandidates = ['\\.js$/', '\\.jsx?$/'];
 
       for (const rule of this.builder.config.module.rules) {
-        if (jsCandidates.indexOf(String(rule.test)) >= 0) {
-          this.jsRule = rule;
-          break;
+        for (const candidate of jsCandidates) {
+          if (String(rule.test).indexOf(candidate) >= 0) {
+            this.jsRule = rule;
+            break;
+          }
         }
       }
     }
@@ -29,7 +31,7 @@ export default class JSRuleFinder {
     if (this.jsRule) {
       throw new Error('js rule already exists!');
     }
-    this.jsRule = { test: /\.js$/ };
+    this.jsRule = { test: /^(?!.*\/node_modules\/).*\.js$/ };
     this.builder.config.module.rules = this.builder.config.module.rules.concat(this.jsRule);
     return this.jsRule;
   }
@@ -40,12 +42,14 @@ export default class JSRuleFinder {
 
   public findTSRule(): any {
     if (!this.tsRule) {
-      const jsCandidates = ['/\\.ts$/', '/\\.tsx?$/'];
+      const jsCandidates = ['\\.ts$/', '\\.tsx?$/'];
 
       for (const rule of this.builder.config.module.rules) {
-        if (jsCandidates.indexOf(String(rule.test)) >= 0) {
-          this.tsRule = rule;
-          break;
+        for (const candidate of jsCandidates) {
+          if (String(rule.test).indexOf(candidate) >= 0) {
+            this.jsRule = rule;
+            break;
+          }
         }
       }
     }
@@ -57,7 +61,7 @@ export default class JSRuleFinder {
     if (this.tsRule) {
       throw new Error('ts rule already exists!');
     }
-    this.tsRule = { test: /\.ts$/ };
+    this.tsRule = { test: /^(?!.*\/node_modules\/).*\.ts$/ };
     this.builder.config.module.rules = this.builder.config.module.rules.concat(this.tsRule);
     return this.tsRule;
   }
