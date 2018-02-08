@@ -7,8 +7,8 @@ import BuilderDiscoverer from './BuilderDiscoverer';
 import { ConfigPlugin } from './ConfigPlugin';
 import AngularPlugin from './plugins/AngularPlugin';
 import ApolloPlugin from './plugins/ApolloPlugin';
+import BabelPlugin from './plugins/BabelPlugin';
 import CssProcessorPlugin from './plugins/CssProcessorPlugin';
-import ES6Plugin from './plugins/ES6Plugin';
 import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
 import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
 import ReactNativePlugin from './plugins/ReactNativePlugin';
@@ -36,7 +36,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     new CssProcessorPlugin(),
     new ApolloPlugin(),
     new TypeScriptPlugin(),
-    new ES6Plugin(),
+    new BabelPlugin(),
     new ReactPlugin(),
     new ReactHotLoaderPlugin(),
     new TCombPlugin(),

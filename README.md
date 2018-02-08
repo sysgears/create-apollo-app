@@ -24,7 +24,7 @@ npm install -g spinjs
 The basic `spinjs` usage is simple: you describe the stack used in your application in the property `spin` of `package.json`:
 ```json
 {
-  "spin": "webpack:es6:apollo:react-native:ios"
+  "spin": "webpack:babel:apollo:react-native:ios"
 }
 ```
 and you are all set.
@@ -59,7 +59,7 @@ At the moment `spinjs` supports the following technologies, that can be specifie
 |Technology                |Description|
 |--------------------------|-----------|
 |webpack|Webpack|
-|es6|Transpile code from the ECMAScript 6 to ECMAScript 5|
+|babel|Transpile code from the ECMAScript 6 to ECMAScript 5|
 |ts|Transpile code from TypeScript to ECMAScript 5|
 |vue|Vue.js|
 |angular|Angular 4|
@@ -86,13 +86,13 @@ configuration should be used:
     "spin": {
         "builders": {
             "backend": {
-                "stack": "webpack:es6:apollo:react:styled-components:sass:server"
+                "stack": "webpack:babel:apollo:react:styled-components:sass:server"
             },
             "frontend": {
-                "stack": "webpack:es6:apollo:react:styled-components:sass:web"
+                "stack": "webpack:babel:apollo:react:styled-components:sass:web"
             },
             "mobile": {
-                "stack": "webpack:es6:apollo:react-native:styled-components:sass:ios"
+                "stack": "webpack:babel:apollo:react-native:styled-components:sass:ios"
             }
         }
     }
