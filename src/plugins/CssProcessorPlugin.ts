@@ -27,11 +27,13 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       let plugin;
 
       if (stack.hasAny('server')) {
-        createRule = (ext, ruleList) => ({
-          test: new RegExp(`\\.${ext}$`),
+        createRule = (ext: string, nodeModules: boolean, ruleList: any[]) => ({
+          test: nodeModules
+            ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
+            : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
           use: [{ loader: 'isomorphic-style-loader' }, { loader: 'css-loader', options: { ...loaderOptions } }]
             .concat(
-              postCssLoader
+              postCssLoader && !nodeModules
                 ? {
                     loader: postCssLoader,
                     options: useDefaultPostCss
@@ -47,16 +49,18 @@ export default class CssProcessorPlugin implements ConfigPlugin {
         if (!dev) {
           ExtractTextPlugin = builder.require('extract-text-webpack-plugin');
         }
-        createRule = (ext, ruleList) => {
+        createRule = (ext: string, nodeModules: boolean, ruleList: any[]) => {
           if (!dev && !plugin) {
             plugin = new ExtractTextPlugin({ filename: `[name].[contenthash].css` });
           }
           return {
-            test: new RegExp(`\\.${ext}$`),
+            test: nodeModules
+              ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
+              : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
             use: dev
               ? [{ loader: 'style-loader' }, { loader: 'css-loader', options: { ...loaderOptions, importLoaders: 1 } }]
                   .concat(
-                    postCssLoader
+                    postCssLoader && !nodeModules
                       ? {
                           loader: postCssLoader,
                           options: useDefaultPostCss
@@ -71,11 +75,11 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                   use: [
                     {
                       loader: 'css-loader',
-                      options: { importLoaders: postCssLoader ? 1 : 0 }
+                      options: { importLoaders: postCssLoader && !nodeModules ? 1 : 0 }
                     }
                   ]
                     .concat(
-                      postCssLoader
+                      postCssLoader && !nodeModules
                         ? {
                             loader: postCssLoader,
                             options: useDefaultPostCss ? postCssDefaultConfig(builder) : {}
@@ -89,15 +93,17 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       }
 
       if (createRule && stack.hasAny('css')) {
-        rules.push(createRule('css', []));
+        rules.push(createRule('css', false, []), createRule('css', true, []));
       }
 
       if (createRule && stack.hasAny('sass')) {
-        rules.push(createRule('scss', [{ loader: 'sass-loader', options: { ...loaderOptions } }]));
+        const sassRule = [{ loader: 'sass-loader', options: { ...loaderOptions } }];
+        rules.push(createRule('scss', false, sassRule), createRule('scss', true, sassRule));
       }
 
       if (createRule && stack.hasAny('less')) {
-        rules.push(createRule('less', [{ loader: 'less-loader', options: { ...loaderOptions } }]));
+        const lessRule = [{ loader: 'less-loader', options: { ...loaderOptions } }];
+        rules.push(createRule('less', false, lessRule), createRule('less', true, lessRule));
       }
 
       builder.config = spin.merge(builder.config, {
