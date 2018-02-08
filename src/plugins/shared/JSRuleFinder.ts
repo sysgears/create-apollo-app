@@ -31,7 +31,7 @@ export default class JSRuleFinder {
     if (this.jsRule) {
       throw new Error('js rule already exists!');
     }
-    this.jsRule = { test: /^(?!.*\/node_modules\/).*\.js$/ };
+    this.jsRule = { test: /^(?!.*[\\\/]node_modules[\\\/]).*\.js$/ };
     this.builder.config.module.rules = this.builder.config.module.rules.concat(this.jsRule);
     return this.jsRule;
   }
@@ -61,7 +61,7 @@ export default class JSRuleFinder {
     if (this.tsRule) {
       throw new Error('ts rule already exists!');
     }
-    this.tsRule = { test: /^(?!.*\/node_modules\/).*\.ts$/ };
+    this.tsRule = { test: /^(?!.*[\\\/]node_modules[\\\/]).*\.ts$/ };
     this.builder.config.module.rules = this.builder.config.module.rules.concat(this.tsRule);
     return this.tsRule;
   }

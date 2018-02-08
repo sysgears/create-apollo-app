@@ -15,13 +15,13 @@ export default class ReactPlugin implements ConfigPlugin {
       const jsRule = jsRuleFinder.findJSRule();
       const tsRule = jsRuleFinder.findTSRule();
       if (jsRule) {
-        jsRule.test = /^(?!.*\/node_modules\/).*\.jsx?$/;
+        jsRule.test = /^(?!.*[\\\/]node_modules[\\\/]).*\.jsx?$/;
         if (jsRule.use && jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0) {
           jsRule.use.options.only = jsRuleFinder.extensions.map(ext => '*.' + ext);
         }
       }
       if (tsRule) {
-        tsRule.test = /^(?!.*\/node_modules\/).*\.tsx?$/;
+        tsRule.test = /^(?!.*[\\\/]node_modules[\\\/]).*\.tsx?$/;
       }
 
       const majorVer = builder.require('react/package.json').version.split('.')[0];
