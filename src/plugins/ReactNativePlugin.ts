@@ -5,6 +5,7 @@ import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
+import UPFinder from './shared/UPFinder';
 
 let babelRegisterDone = false;
 
@@ -37,15 +38,27 @@ export default class ReactNativePlugin implements ConfigPlugin {
 
       const { merge, ...config } = builder.babelConfig || { merge: {} };
 
-      const babelrc =
-        fs.existsSync(path.join(builder.require.cwd, '.babelrc.native')) ||
-        fs.existsSync(path.join(builder.require.cwd, '.babelrc.native.json'));
+      const babelrc = new UPFinder(builder).find(['.babelrc.native']);
 
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findAndCreateJSRule();
+      const cacheDirectory =
+        builder.cache === false || (builder.cache === 'auto' && !spin.dev)
+          ? false
+          : path.join(
+              builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
+              'babel-loader'
+            );
+      const defaultConfig = !!babelrc
+        ? JSON.parse(fs.readFileSync(babelrc).toString())
+        : {
+            compact: !spin.dev,
+            presets: (['expo'] as any[]).concat(spin.dev ? [] : [['minify', { mangle: false }]]),
+            plugins: ['haul/src/utils/fixRequireIssues']
+          };
       builder.config.module.rules.push({
         test: new RegExp(
-          '^.*\\/node_modules\\/.*\\.' +
+          '^.*[\\\\\\/]node_modules[\\\\\\/].*\\.' +
             String(jsRule.test)
               .split('.')
               .pop()
@@ -54,25 +67,15 @@ export default class ReactNativePlugin implements ConfigPlugin {
         exclude: /node_modules\/(?!react-native.*|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/,
         use: {
           loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
-          options: babelrc
-            ? { babelrc }
-            : spin.mergeWithStrategy(
-                merge,
-                {
-                  babelrc,
-                  cacheDirectory:
-                    builder.cache === false || (builder.cache === 'auto' && !spin.dev)
-                      ? false
-                      : path.join(
-                          builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
-                          'babel-loader'
-                        ),
-                  compact: !spin.dev,
-                  presets: (['expo'] as any[]).concat(spin.dev ? [] : [['minify', { mangle: false }]]),
-                  plugins: ['haul/src/utils/fixRequireIssues']
-                },
-                config
-              )
+          options: spin.mergeWithStrategy(
+            merge,
+            {
+              babelrc: false,
+              cacheDirectory,
+              ...defaultConfig
+            },
+            config
+          )
         }
       });
 

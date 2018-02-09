@@ -16,7 +16,7 @@ export default class ReactPlugin implements ConfigPlugin {
       const tsRule = jsRuleFinder.findTSRule();
       if (jsRule) {
         jsRule.test = /^(?!.*[\\\/]node_modules[\\\/]).*\.jsx?$/;
-        if (jsRule.use && jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0) {
+        if (jsRule.use && jsRule.use.loader && jsRule.use.loader.indexOf('babel') >= 0 && !jsRule.use.options.babelrc) {
           jsRule.use.options.only = jsRuleFinder.extensions.map(ext => '*.' + ext);
         }
       }

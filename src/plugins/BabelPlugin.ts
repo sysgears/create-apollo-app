@@ -5,6 +5,7 @@ import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
+import UPFinder from './shared/UPFinder';
 
 export default class BabelPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
@@ -24,28 +25,26 @@ export default class BabelPlugin implements ConfigPlugin {
         );
       }
 
-      const babelrc =
-        fs.existsSync(path.join(builder.require.cwd, '.babelrc')) ||
-        fs.existsSync(path.join(builder.require.cwd, '.babelrc.json'));
-
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findAndCreateJSRule();
       const { merge, ...config } = builder.babelConfig || { merge: {} };
+      const cacheDirectory =
+        builder.cache === false || (builder.cache === 'auto' && !spin.dev)
+          ? false
+          : path.join(
+              builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
+              'babel-loader'
+            );
+      const babelrc = new UPFinder(builder).find(['.babelrc', '.babelrc.js']);
       jsRule.use = {
         loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
-        options: babelrc
-          ? { babelrc }
+        options: !!babelrc
+          ? { babelrc: true, cacheDirectory }
           : spin.mergeWithStrategy(
               merge,
               {
-                babelrc,
-                cacheDirectory:
-                  builder.cache === false || (builder.cache === 'auto' && !spin.dev)
-                    ? false
-                    : path.join(
-                        builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
-                        'babel-loader'
-                      ),
+                babelrc: false,
+                cacheDirectory,
                 compact: !spin.dev,
                 presets: (['react', ['env', { modules: false }], 'stage-0'] as any[]).concat(
                   spin.dev ? [] : [['minify', { mangle: false }]]

@@ -13,7 +13,7 @@ export default class StyledComponentsPlugin implements ConfigPlugin {
     ) {
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findJSRule();
-      if (jsRule) {
+      if (jsRule && !jsRule.use.options.babelrc) {
         jsRule.use = spin.merge(jsRule.use, {
           options: {
             plugins: [['babel-plugin-styled-components', { ssr: builder.ssr }]]
