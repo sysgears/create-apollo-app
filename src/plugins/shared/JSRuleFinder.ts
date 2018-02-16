@@ -47,7 +47,7 @@ export default class JSRuleFinder {
       for (const rule of this.builder.config.module.rules) {
         for (const candidate of jsCandidates) {
           if (String(rule.test).indexOf(candidate) >= 0) {
-            this.jsRule = rule;
+            this.tsRule = rule;
             break;
           }
         }
