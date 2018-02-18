@@ -138,7 +138,7 @@ const getDepsForNode = (spin: Spin, builder: Builder): string[] => {
     ) {
       const resolves = builder.require.probe(key);
       const exists = builder.require.probe(key + '/package.json');
-      if (resolves) {
+      if (resolves && resolves.endsWith('.js')) {
         deps.push(key);
       } else if (!resolves && !exists) {
         throw new Error(`Cannot find module '${key}'`);

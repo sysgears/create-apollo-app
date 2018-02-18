@@ -31,7 +31,10 @@ export default class CssProcessorPlugin implements ConfigPlugin {
           test: nodeModules
             ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
             : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
-          use: [{ loader: 'isomorphic-style-loader' }, { loader: 'css-loader', options: { ...loaderOptions } }]
+          use: ([
+            { loader: 'isomorphic-style-loader' },
+            { loader: 'css-loader', options: { ...loaderOptions } }
+          ] as any[])
             .concat(
               postCssLoader && !nodeModules
                 ? {
@@ -58,7 +61,10 @@ export default class CssProcessorPlugin implements ConfigPlugin {
               ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
               : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
             use: dev
-              ? [{ loader: 'style-loader' }, { loader: 'css-loader', options: { ...loaderOptions, importLoaders: 1 } }]
+              ? ([
+                  { loader: 'style-loader' },
+                  { loader: 'css-loader', options: { ...loaderOptions, importLoaders: 1 } }
+                ] as any[])
                   .concat(
                     postCssLoader && !nodeModules
                       ? {
