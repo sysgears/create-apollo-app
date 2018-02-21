@@ -23,7 +23,8 @@ export default class TypeScriptPlugin implements ConfigPlugin {
 
       builder.config.resolve.extensions = ['.']
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
-        .reduce((acc, val) => acc.concat(val));
+        .reduce((acc, val) => acc.concat(val))
+        .concat(['.json']);
 
       if (!stack.hasAny('dll')) {
         for (const key of Object.keys(builder.config.entry)) {

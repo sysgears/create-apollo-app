@@ -81,7 +81,8 @@ export default class ReactNativePlugin implements ConfigPlugin {
 
       builder.config.resolve.extensions = [`.${stack.platform}.`, '.native.', '.']
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
-        .reduce((acc, val) => acc.concat(val));
+        .reduce((acc, val) => acc.concat(val))
+        .concat(['.json']);
 
       const reactVer = builder.require('react-native/package.json').version.split('.')[1] >= 43 ? 16 : 15;
       const polyfillCode = fs
