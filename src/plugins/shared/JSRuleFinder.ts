@@ -73,6 +73,8 @@ export default class JSRuleFinder {
   get extensions(): string[] {
     const result = [];
 
+    this.findJSRule();
+    this.findTSRule();
     const jsTestStr = String(this.jsRule ? this.jsRule.test : 'js');
     const tsTestStr = String(this.tsRule ? this.tsRule.test : '');
 
