@@ -726,6 +726,15 @@ const buildDll = (spin: Spin, builder: Builder) => {
   });
 };
 
+const copyExpoImage = (cwd: string, expoDir: string, appJson: any, keyPath: string) => {
+  const imagePath: string = _.get(appJson, keyPath);
+  if (imagePath) {
+    const absImagePath = path.join(cwd, imagePath);
+    fs.writeFileSync(path.join(expoDir, path.basename(absImagePath)), fs.readFileSync(absImagePath));
+    _.set(appJson, keyPath, path.basename(absImagePath));
+  }
+};
+
 const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
   mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
@@ -743,11 +752,14 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   pkg.main = `index.mobile`;
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
   const appJson = JSON.parse(fs.readFileSync(builder.require.resolve('./app.json')).toString());
-  if (appJson.expo.icon) {
-    const iconPath = path.join(builder.require.cwd, appJson.expo.icon);
-    fs.writeFileSync(path.join(dir, path.basename(iconPath)), fs.readFileSync(iconPath));
-    appJson.expo.icon = path.basename(iconPath);
-  }
+  [
+    'expo.icon',
+    'expo.ios.icon',
+    'expo.android.icon',
+    'expo.splash.image',
+    'expo.android.splash.image',
+    'expo.ios.splash.image'
+  ].forEach(keyPath => copyExpoImage(builder.require.cwd, dir, appJson, keyPath));
   fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
   if (platform !== 'all') {
     fs.writeFileSync(path.join(dir, '.exprc'), JSON.stringify({ manifestPort: expoPorts[platform] }));
