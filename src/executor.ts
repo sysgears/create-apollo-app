@@ -757,8 +757,14 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
     'expo.ios.icon',
     'expo.android.icon',
     'expo.splash.image',
-    'expo.android.splash.image',
-    'expo.ios.splash.image'
+    'expo.ios.splash.image',
+    'expo.ios.splash.tabletImage',
+    'expo.android.splash.ldpi',
+    'expo.android.splash.mdpi',
+    'expo.android.splash.hdpi',
+    'expo.android.splash.xhdpi',
+    'expo.android.splash.xxhdpi',
+    'expo.android.splash.xxxhdpi'
   ].forEach(keyPath => copyExpoImage(builder.require.cwd, dir, appJson, keyPath));
   fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
   if (platform !== 'all') {
