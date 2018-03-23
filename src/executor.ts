@@ -49,7 +49,7 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (cwd, serverPath, options: { debugOpt: any, nodeDebugger: boolean }, logger) => {
+const spawnServer = (cwd, serverPath, options: { debugOpt: any; nodeDebugger: boolean }, logger) => {
   server = spawn('node', [options.debugOpt, serverPath], { stdio: [0, 1, 2], cwd });
   logger(`Spawning ${['node', options.debugOpt, serverPath].join(' ')}`);
   server.on('exit', code => {
@@ -76,20 +76,21 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
         nodeDebugOpt = '';
         // disables node debugger when the option was set to false
         spawnServer(cwd, serverPath, { debugOpt: '', nodeDebugger }, logger);
-      }
-      exec('node -v', (error, stdout, stderr) => {
-        if (error) {
-          spinLogger.error(error);
-          process.exit(1);
-        }
-        const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
-        const nodeMajor = parseInt(nodeVersion[1], 10);
-        const nodeMinor = parseInt(nodeVersion[2], 10);
-        nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
-        detectPort(9229).then(debugPort => {
-          spawnServer(cwd, serverPath, { debugOpt: nodeDebugOpt + '=' + debugPort, nodeDebugger }, logger);
+      } else {
+        exec('node -v', (error, stdout, stderr) => {
+          if (error) {
+            spinLogger.error(error);
+            process.exit(1);
+          }
+          const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
+          const nodeMajor = parseInt(nodeVersion[1], 10);
+          const nodeMinor = parseInt(nodeVersion[2], 10);
+          nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
+          detectPort(9229).then(debugPort => {
+            spawnServer(cwd, serverPath, { debugOpt: nodeDebugOpt + '=' + debugPort, nodeDebugger }, logger);
+          });
         });
-      });
+      }
     } else {
       spawnServer(cwd, serverPath, { debugOpt: nodeDebugOpt, nodeDebugger }, logger);
     }
@@ -232,7 +233,7 @@ const startServerWebpack = (spin, builder) => {
               }
             }
           } else {
-            runServer(builder.require.cwd, path.join(output.path, 'index.js'),  builder.nodeDebugger, logger);
+            runServer(builder.require.cwd, path.join(output.path, 'index.js'), builder.nodeDebugger, logger);
           }
         }
       });
@@ -469,19 +470,19 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     try {
       const InspectorProxy = builder.require('react-native/local-cli/server/util/inspectorProxy.js');
       inspectorProxy = new InspectorProxy();
-    } catch (ignored) {}
+    } catch (ignored) { }
     const copyToClipBoardMiddleware = builder.require(
       'react-native/local-cli/server/middleware/copyToClipBoardMiddleware'
     );
     let cpuProfilerMiddleware;
     try {
       cpuProfilerMiddleware = builder.require('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
-    } catch (ignored) {}
+    } catch (ignored) { }
     const getDevToolsMiddleware = builder.require('react-native/local-cli/server/middleware/getDevToolsMiddleware');
     let heapCaptureMiddleware;
     try {
       heapCaptureMiddleware = builder.require('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
-    } catch (ignored) {}
+    } catch (ignored) { }
     const indexPageMiddleware = builder.require('react-native/local-cli/server/middleware/indexPage');
     const loadRawBodyMiddleware = builder.require('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
     const openStackFrameInEditorMiddleware = builder.require(
@@ -561,13 +562,13 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
         }
       })
       .use(
-        '/debugger-ui',
-        serveStatic(
-          path.join(
-            path.dirname(builder.require.resolve('react-native/package.json')),
-            '/local-cli/server/util/debugger-ui'
-          )
+      '/debugger-ui',
+      serveStatic(
+        path.join(
+          path.dirname(builder.require.resolve('react-native/package.json')),
+          '/local-cli/server/util/debugger-ui'
         )
+      )
       )
       .use(getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()))
       .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
