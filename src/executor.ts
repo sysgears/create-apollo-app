@@ -49,9 +49,9 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (cwd, serverPath, debugOpt, logger) => {
-  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2], cwd });
-  logger(`Spawning ${['node', debugOpt, serverPath].join(' ')}`);
+const spawnServer = (cwd, args: any[], options: { nodeDebugger: boolean; serverPath: string }, logger) => {
+  server = spawn('node', [...args], { stdio: [0, 1, 2], cwd });
+  logger(`Spawning ${['node', ...args].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
       // App requested full reload
@@ -59,11 +59,11 @@ const spawnServer = (cwd, serverPath, debugOpt, logger) => {
     }
     logger('Backend has been stopped');
     server = undefined;
-    runServer(cwd, serverPath, logger);
+    runServer(cwd, options.serverPath, options.nodeDebugger, logger);
   });
 };
 
-const runServer = (cwd, serverPath, logger) => {
+const runServer = (cwd, serverPath, nodeDebugger, logger) => {
   if (!fs.existsSync(serverPath)) {
     throw new Error(`Backend doesn't exist at ${serverPath}, exiting`);
   }
@@ -72,21 +72,26 @@ const runServer = (cwd, serverPath, logger) => {
     logger('Starting backend');
 
     if (!nodeDebugOpt) {
-      exec('node -v', (error, stdout, stderr) => {
-        if (error) {
-          spinLogger.error(error);
-          process.exit(1);
-        }
-        const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
-        const nodeMajor = parseInt(nodeVersion[1], 10);
-        const nodeMinor = parseInt(nodeVersion[2], 10);
-        nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
-        detectPort(9229).then(debugPort => {
-          spawnServer(cwd, serverPath, nodeDebugOpt + '=' + debugPort, logger);
+      if (!nodeDebugger) {
+        // disables node debugger when the option was set to false
+        spawnServer(cwd, [serverPath], { serverPath, nodeDebugger }, logger);
+      } else {
+        exec('node -v', (error, stdout, stderr) => {
+          if (error) {
+            spinLogger.error(error);
+            process.exit(1);
+          }
+          const nodeVersion = stdout.match(/^v([0-9]+)\.([0-9]+)\.([0-9]+)/);
+          const nodeMajor = parseInt(nodeVersion[1], 10);
+          const nodeMinor = parseInt(nodeVersion[2], 10);
+          nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
+          detectPort(9229).then(debugPort => {
+            spawnServer(cwd, [serverPath, nodeDebugOpt + '=' + debugPort], { serverPath, nodeDebugger }, logger);
+          });
         });
-      });
+      }
     } else {
-      spawnServer(cwd, serverPath, nodeDebugOpt, logger);
+      spawnServer(cwd, [serverPath, nodeDebugOpt], { serverPath, nodeDebugger }, logger);
     }
   }
 };
@@ -227,7 +232,7 @@ const startServerWebpack = (spin, builder) => {
               }
             }
           } else {
-            runServer(builder.require.cwd, path.join(output.path, 'index.js'), logger);
+            runServer(builder.require.cwd, path.join(output.path, 'index.js'), builder.nodeDebugger, logger);
           }
         }
       });
