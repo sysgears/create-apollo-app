@@ -76,6 +76,7 @@ export default class ConfigReader {
       builders[builderId] = builder;
       // TODO: remove backendBuildDir, frontendBuildDir in 0.5.x
       builder.buildDir = builder.backendBuildDir || builder.frontendBuildDir ? undefined : builder.buildDir || 'build';
+      builder.nodeDebugger = typeof builder.nodeDebugger !== 'undefined' ? builder.nodeDebugger : true;
       builder.dllBuildDir = builder.dllBuildDir || 'build/dll';
       builder.webpackDll = typeof builder.webpackDll !== 'undefined' ? builder.webpackDll : true;
       builder.sourceMap = typeof builder.sourceMap !== 'undefined' ? builder.sourceMap : true;
