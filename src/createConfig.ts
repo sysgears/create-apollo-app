@@ -1,12 +1,14 @@
+import * as cluster from 'cluster';
 import * as fs from 'fs';
+import * as minilog from 'minilog';
 
 import { Builder } from './Builder';
+import BuilderDiscoverer from './BuilderDiscoverer';
 import { ConfigPlugin } from './ConfigPlugin';
-import ConfigRc from './configRc';
 import AngularPlugin from './plugins/AngularPlugin';
 import ApolloPlugin from './plugins/ApolloPlugin';
+import BabelPlugin from './plugins/BabelPlugin';
 import CssProcessorPlugin from './plugins/CssProcessorPlugin';
-import ES6Plugin from './plugins/ES6Plugin';
 import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
 import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
 import ReactNativePlugin from './plugins/ReactNativePlugin';
@@ -18,13 +20,14 @@ import TypeScriptPlugin from './plugins/TypeScriptPlugin';
 import VuePlugin from './plugins/VuePlugin';
 import WebAssetsPlugin from './plugins/WebAssetsPlugin';
 import WebpackPlugin from './plugins/WebpackPlugin';
-import requireModule from './requireModule';
 import Spin from './Spin';
 import Stack from './Stack';
 
 const WEBPACK_OVERRIDES_NAME = 'webpack.overrides.js';
 
-const createConfig = (cmd, argv, builderName?) => {
+const spinLogger = minilog('spin');
+
+const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string) => {
   const builders = {};
 
   const plugins = [
@@ -33,7 +36,7 @@ const createConfig = (cmd, argv, builderName?) => {
     new CssProcessorPlugin(),
     new ApolloPlugin(),
     new TypeScriptPlugin(),
-    new ES6Plugin(),
+    new BabelPlugin(),
     new ReactPlugin(),
     new ReactHotLoaderPlugin(),
     new TCombPlugin(),
@@ -44,46 +47,60 @@ const createConfig = (cmd, argv, builderName?) => {
     new AngularPlugin(),
     new VuePlugin()
   ];
-  const config = new ConfigRc(plugins, argv);
-  const overridesConfig = config.options.overridesConfig || WEBPACK_OVERRIDES_NAME;
-  const overrides = fs.existsSync(overridesConfig) ? requireModule('./' + overridesConfig) : {};
-  const spin = new Spin(cmd, config.builders, config.options, overrides.dependencyPlatforms || {});
+  const spin = new Spin(cwd, cmd);
+  const builderDiscoverer = new BuilderDiscoverer(spin, plugins, argv);
+  const role = cmd === 'exp' ? 'build' : cmd;
 
-  for (const name of Object.keys(config.builders)) {
-    const builder = config.builders[name];
+  const discoveredBuilders = builderDiscoverer.discover() || {};
+  if (!discoveredBuilders) {
+    throw new Error('Cannot find spinjs config');
+  }
+  if (cluster.isMaster && argv.verbose) {
+    spinLogger.log('SpinJS Config:\n', require('util').inspect(discoveredBuilders, false, null));
+  }
+
+  for (const builderId of Object.keys(discoveredBuilders)) {
+    const builder = discoveredBuilders[builderId];
     const stack = builder.stack;
 
-    if (name !== builderName && (builder.enabled === false || builder.roles.indexOf(cmd) < 0)) {
+    if (builder.name !== builderName && (builder.enabled === false || builder.roles.indexOf(role) < 0)) {
       continue;
     }
 
-    if (spin.options.webpackDll && !stack.hasAny('server')) {
+    if (spin.dev && builder.webpackDll && !stack.hasAny('server') && !builderName) {
       const dllBuilder: Builder = { ...builder };
       dllBuilder.name = builder.name + 'Dll';
+      dllBuilder.require = builder.require;
       dllBuilder.parent = builder;
       dllBuilder.stack = new Stack(dllBuilder.stack.technologies, 'dll');
-      builders[dllBuilder.name] = dllBuilder;
+      builders[`${builderId.split('[')[0]}[${builder.name}Dll]`] = dllBuilder;
       builder.child = dllBuilder;
     }
-    builders[name] = builder;
+    builders[builderId] = builder;
   }
 
-  for (const name of Object.keys(builders)) {
-    const builder = builders[name];
-    config.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
+  for (const builderId of Object.keys(builders)) {
+    const builder = builders[builderId];
+    const overridesConfig = builder.overridesConfig || WEBPACK_OVERRIDES_NAME;
+    const overrides = fs.existsSync(overridesConfig) ? builder.require('./' + overridesConfig) : {};
+
+    builder.depPlatforms = overrides.dependencyPlatforms || builder.depPlatforms || {};
+    builder.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
 
     const strategy = {
-      entry: 'replace'
+      entry: 'replace',
+      stats: 'replace'
     };
-    if (overrides[name]) {
-      builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[name]);
+    if (overrides[builder.name]) {
+      builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[builder.name]);
     }
     if (builder.webpackConfig) {
-      builder.config = spin.mergeWithStrategy(strategy, builder.config, builder.webpackConfig);
+      const { merge, ...config } = builder.webpackConfig;
+      builder.config = spin.mergeWithStrategy(merge || strategy, builder.config, config);
     }
   }
 
-  return { builders, options: spin.options };
+  return { builders, spin };
 };
 
 export default createConfig;

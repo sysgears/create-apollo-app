@@ -4,16 +4,13 @@ import * as url from 'url';
 
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
-
-const pkg = requireModule('./package.json');
 
 const __WINDOWS__ = /^win/.test(process.platform);
 
 const createPlugins = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
-  const webpack = requireModule('webpack');
+  const webpack = builder.require('webpack');
   const buildNodeEnv = process.env.NODE_ENV || (spin.dev ? (spin.test ? 'test' : 'development') : 'production');
 
   let plugins = [];
@@ -25,12 +22,12 @@ const createPlugins = (builder: Builder, spin: Spin) => {
       plugins.push(new webpack.NoEmitOnErrorsPlugin());
     }
   } else {
-    const uglifyOpts: any = {};
+    const uglifyOpts: any = builder.sourceMap ? { sourceMap: true } : {};
     if (stack.hasAny('angular')) {
       // https://github.com/angular/angular/issues/10618
       uglifyOpts.mangle = { keep_fnames: true };
     }
-    const UglifyJsPlugin = requireModule('uglifyjs-webpack-plugin');
+    const UglifyJsPlugin = builder.require('uglifyjs-webpack-plugin');
     plugins.push(new UglifyJsPlugin(uglifyOpts));
     const loaderOpts: any = { minimize: true };
     if (stack.hasAny('angular')) {
@@ -42,19 +39,23 @@ const createPlugins = (builder: Builder, spin: Spin) => {
     plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
   }
 
-  const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
+  const backendOption = builder.backendUrl;
+  const defines: any = {};
+  if (backendOption) {
+    defines.__BACKEND_URL__ = `'${backendOption.replace('{ip}', ip.address())}'`;
+  }
 
   if (stack.hasAny('dll')) {
     const name = `vendor_${builder.parent.name}`;
     plugins = [
       new webpack.DefinePlugin({
-        __DEV__: spin.dev,
-        __TEST__: spin.test,
-        'process.env.NODE_ENV': `"${buildNodeEnv}"`
+        'process.env.NODE_ENV': `"${buildNodeEnv}"`,
+        ...defines,
+        ...builder.defines
       }),
       new webpack.DllPlugin({
         name,
-        path: path.join(spin.options.dllBuildDir, `${name}_dll.json`)
+        path: path.join(builder.dllBuildDir, `${name}_dll.json`)
       })
     ];
   } else {
@@ -68,12 +69,12 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         new webpack.DefinePlugin({
           __CLIENT__: false,
           __SERVER__: true,
-          __SSR__: spin.options.ssr && !spin.test,
+          __SSR__: builder.ssr && !spin.test,
           __DEV__: spin.dev,
           __TEST__: spin.test,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-          __BACKEND_URL__: `"${backendUrl}"`,
-          ...spin.options.defines
+          ...defines,
+          ...builder.defines
         })
       ]);
     } else {
@@ -81,25 +82,25 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         new webpack.DefinePlugin({
           __CLIENT__: true,
           __SERVER__: false,
-          __SSR__: spin.options.ssr && !spin.test,
+          __SSR__: builder.ssr && !spin.test,
           __DEV__: spin.dev,
           __TEST__: spin.test,
           'process.env.NODE_ENV': `"${buildNodeEnv}"`,
-          __BACKEND_URL__: `"${backendUrl}"`,
-          ...spin.options.defines
+          ...defines,
+          ...builder.defines
         })
       ]);
 
       if (stack.hasAny('web')) {
-        const ManifestPlugin = requireModule('webpack-manifest-plugin');
+        const ManifestPlugin = builder.require('webpack-manifest-plugin');
         plugins.push(
           new ManifestPlugin({
             fileName: 'assets.json'
           })
         );
 
-        if (!spin.options.ssr) {
-          const HtmlWebpackPlugin = requireModule('html-webpack-plugin');
+        if (!builder.ssr) {
+          const HtmlWebpackPlugin = builder.require('html-webpack-plugin');
           plugins.push(
             new HtmlWebpackPlugin({
               template: builder.htmlTemplate || path.join(__dirname, '../../html-plugin-template.ejs'),
@@ -114,7 +115,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
               name: 'vendor',
               filename: '[name].[hash].js',
               minChunks(module) {
-                return module.resource && module.resource.indexOf(path.resolve('./node_modules')) === 0;
+                return module.resource && module.resource.indexOf(path.join(builder.require.cwd, 'node_modules')) === 0;
               }
             })
           );
@@ -126,15 +127,22 @@ const createPlugins = (builder: Builder, spin: Spin) => {
   return plugins;
 };
 
-const getDepsForNode = (builder, depPlatforms) => {
+const getDepsForNode = (spin: Spin, builder: Builder): string[] => {
+  const pkg = builder.require('./package.json');
   const deps = [];
   for (const key of Object.keys(pkg.dependencies)) {
-    const val = depPlatforms[key];
+    const val = builder.depPlatforms[key];
     if (
       key.indexOf('@types') !== 0 &&
       (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0) || val === builder.parent.name)
     ) {
-      deps.push(key);
+      const resolves = builder.require.probe(key);
+      const exists = builder.require.probe(key + '/package.json');
+      if (resolves && resolves.endsWith('.js')) {
+        deps.push(key);
+      } else if (!resolves && !exists) {
+        throw new Error(`Cannot find module '${key}'`);
+      }
     }
   }
   return deps;
@@ -146,28 +154,44 @@ const webpackPortMap = {};
 const createConfig = (builder: Builder, spin: Spin) => {
   const stack = builder.stack;
 
-  const backendUrl = builder.backendUrl.replace('{ip}', ip.address());
   const cwd = process.cwd();
 
   const baseConfig: any = {
     name: builder.name,
-    devtool: spin.dev ? '#cheap-module-source-map' : '#source-map',
     module: {
       rules: []
     },
-    resolve: {
-      modules: [path.join(cwd, 'node_modules'), 'node_modules']
-    },
+    resolve: { symlinks: false },
     watchOptions: {
       ignored: /build/
     },
-    output: {
+    bail: !spin.dev,
+    stats: {
+      hash: false,
+      version: false,
+      timings: true,
+      assets: false,
+      chunks: false,
+      modules: false,
+      reasons: false,
+      children: false,
+      source: true,
+      errors: true,
+      errorDetails: true,
+      warnings: true,
+      publicPath: false,
+      colors: true
+    }
+  };
+
+  if (builder.sourceMap) {
+    baseConfig.devtool = spin.dev ? '#cheap-module-source-map' : '#nosources-source-map';
+    baseConfig.output = {
       devtoolModuleFilenameTemplate: spin.dev
         ? info => 'webpack:///./' + path.relative(cwd, info.absoluteResourcePath.split('?')[0]).replace(/\\/g, '/')
         : info => path.relative(cwd, info.absoluteResourcePath)
-    },
-    bail: !spin.dev
-  };
+    };
+  }
 
   const baseDevServerConfig = {
     hot: true,
@@ -175,8 +199,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
     headers: { 'Access-Control-Allow-Origin': '*' },
     quiet: false,
     noInfo: true,
-    historyApiFallback: true,
-    stats: { colors: true, chunkModules: false }
+    historyApiFallback: true
   };
 
   const plugins = createPlugins(builder, spin);
@@ -189,14 +212,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
     config = {
       ...config,
       target: 'node',
-      output: {
-        devtoolModuleFilenameTemplate: spin.dev
-          ? ({ resourcePath }) => path.resolve(resourcePath)
-          : info => path.relative(cwd, info.absoluteResourcePath)
-      },
       externals: (context, request, callback) => {
-        if (request.indexOf('webpack') < 0 && !request.startsWith('.')) {
-          const fullPath = requireModule.probe(request, context);
+        if (request.indexOf('webpack') < 0 && request.indexOf('babel-polyfill') < 0 && !request.startsWith('.')) {
+          const fullPath = builder.require.probe(request, context);
           if (fullPath) {
             const ext = path.extname(fullPath);
             if (fullPath.indexOf('node_modules') >= 0 && ['.js', '.jsx', '.json'].indexOf(ext) >= 0) {
@@ -207,6 +225,13 @@ const createConfig = (builder: Builder, spin: Spin) => {
         return callback();
       }
     };
+    if (builder.sourceMap) {
+      config.output = {
+        devtoolModuleFilenameTemplate: spin.dev
+          ? ({ resourcePath }) => path.join(builder.require.cwd, resourcePath)
+          : info => path.relative(cwd, info.absoluteResourcePath)
+      };
+    }
   } else {
     config = {
       ...config,
@@ -224,17 +249,23 @@ const createConfig = (builder: Builder, spin: Spin) => {
     const name = `vendor_${builder.parent.name}`;
     config = {
       ...config,
-      devtool: '#cheap-module-source-map',
       entry: {
-        vendor: getDepsForNode(builder, spin.depPlatforms)
+        vendor: getDepsForNode(spin, builder)
       },
       output: {
         ...config.output,
         filename: `${name}_[hash]_dll.js`,
-        path: path.resolve(spin.options.dllBuildDir),
+        path: path.join(builder.require.cwd, builder.dllBuildDir),
         library: name
-      }
+      },
+      bail: true
     };
+    if (stack.hasAny('web')) {
+      config.entry.vendor.push('webpack-dev-server/client');
+    }
+    if (builder.sourceMap) {
+      config.devtool = spin.dev ? '#cheap-module-source-map' : '#nosources-source-map';
+    }
   } else {
     if (spin.dev) {
       config.module.unsafeCache = false;
@@ -259,14 +290,16 @@ const createConfig = (builder: Builder, spin: Spin) => {
         output: {
           ...config.output,
           filename: '[name].js',
-          sourceMapFilename: '[name].[chunkhash].js.map',
-          path: path.resolve(spin.options.backendBuildDir),
+          path: path.join(builder.require.cwd, builder.buildDir || builder.backendBuildDir || 'build/server'),
           publicPath: '/'
         }
       };
+      if (builder.sourceMap && spin.dev) {
+        // TODO: rollout proper source map handling during Webpack HMR on a server code
+        // Use that to improve situation with source maps of hot reloaded server code
+        config.output.sourceMapFilename = '[name].[chunkhash].js.map';
+      }
     } else if (stack.hasAny('web')) {
-      const { protocol, host } = url.parse(backendUrl);
-      const backendBaseUrl = protocol + '//' + host;
       let webpackDevPort;
       if (!builder.webpackDevPort) {
         if (!webpackPortMap[builder.name]) {
@@ -288,7 +321,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
         output: {
           ...config.output,
           filename: '[name].[hash].js',
-          path: path.resolve(path.join(spin.options.frontendBuildDir, 'web')),
+          path: builder.buildDir
+            ? path.join(builder.require.cwd, builder.buildDir)
+            : path.join(builder.require.cwd, builder.frontendBuildDir || 'build/client', 'web'),
           publicPath: '/'
         },
         devServer: {
@@ -296,10 +331,14 @@ const createConfig = (builder: Builder, spin: Spin) => {
           port: webpackDevPort
         }
       };
-      if (spin.options.devProxy || builder.devProxy) {
+      if (builder.devProxy) {
+        const proxyUrl =
+          typeof builder.devProxy === 'string'
+            ? builder.devProxy
+            : builder.backendUrl ? `http://localhost:${url.parse(builder.backendUrl).port}` : `http://localhost:8080`;
         config.devServer.proxy = {
           '!/*.hot-update.{json,js}': {
-            target: backendBaseUrl,
+            target: proxyUrl,
             logLevel: 'info'
           }
         };
@@ -314,7 +353,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
           ...config.output,
           filename: `index.mobile.bundle`,
           publicPath: '/',
-          path: path.resolve(path.join(spin.options.frontendBuildDir, builder.name))
+          path: builder.buildDir
+            ? path.join(builder.require.cwd, builder.buildDir)
+            : path.join(builder.require.cwd, builder.frontendBuildDir || 'build/client', builder.name)
         },
         devServer: {
           ...baseDevServerConfig,

@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 
 export default class WebAssetsPlugin implements ConfigPlugin {
@@ -9,7 +8,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
 
     if (
       !stack.hasAny('dll') &&
-      (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && spin.options.ssr))
+      (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && builder.ssr))
     ) {
       builder.config = spin.merge(builder.config, {
         module: {
@@ -17,7 +16,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.(png|ico|jpg|gif|xml)$/,
               use: {
-                loader: requireModule.resolve('url-loader'),
+                loader: 'url-loader',
                 options: {
                   name: '[hash].[ext]',
                   limit: 100000
@@ -27,7 +26,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: requireModule.resolve('url-loader'),
+                loader: 'url-loader',
                 options: {
                   name: './assets/[hash].[ext]',
                   limit: 100000
@@ -37,7 +36,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
             {
               test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
-                loader: requireModule.resolve('file-loader'),
+                loader: 'file-loader',
                 options: {
                   name: './assets/[hash].[ext]'
                 }
@@ -46,8 +45,8 @@ export default class WebAssetsPlugin implements ConfigPlugin {
           ]
         }
       });
-    } else if (!stack.hasAny('dll') && stack.hasAll(['webpack', 'server']) && !spin.options.ssr) {
-      const ignoreLoader = requireModule.resolve('ignore-loader');
+    } else if (!stack.hasAny('dll') && stack.hasAll(['webpack', 'server']) && !builder.ssr) {
+      const ignoreLoader = 'ignore-loader';
       builder.config = spin.merge(builder.config, {
         module: {
           rules: [

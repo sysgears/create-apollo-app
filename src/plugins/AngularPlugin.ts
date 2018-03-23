@@ -2,7 +2,6 @@ import * as path from 'path';
 
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 import JSRuleFinder from './shared/JSRuleFinder';
 
@@ -11,7 +10,7 @@ export default class AngularPlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['angular', 'webpack'])) {
-      const webpack = requireModule('webpack');
+      const webpack = builder.require('webpack');
 
       const jsRuleFinder = new JSRuleFinder(builder);
       const tsRule = jsRuleFinder.findAndCreateTSRule();
@@ -20,7 +19,7 @@ export default class AngularPlugin implements ConfigPlugin {
           rules: [
             {
               test: tsRule.test,
-              use: requireModule.resolve('angular2-template-loader')
+              use: 'angular2-template-loader'
             }
           ]
         },
@@ -29,7 +28,7 @@ export default class AngularPlugin implements ConfigPlugin {
           new webpack.ContextReplacementPlugin(
             // The (\\|\/) piece accounts for path separators in *nix and Windows
             /angular[\\\/]core[\\\/]@angular/,
-            path.resolve('src'),
+            path.join(builder.require.cwd, 'src'),
             {} // a map of your routes
           )
         ]
@@ -45,14 +44,14 @@ export default class AngularPlugin implements ConfigPlugin {
           builder.config
         );
 
-        const { CheckerPlugin } = requireModule('awesome-typescript-loader');
+        const { CheckerPlugin } = builder.require('awesome-typescript-loader');
 
         builder.config = spin.merge(builder.config, {
           module: {
             rules: [
               {
                 test: /\.html$/,
-                loader: requireModule.resolve('html-loader')
+                loader: 'html-loader'
               }
             ]
           },

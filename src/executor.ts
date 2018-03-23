@@ -1,4 +1,6 @@
 import { exec, spawn } from 'child_process';
+import * as cluster from 'cluster';
+import * as cors from 'connect-cors';
 import * as containerized from 'containerized';
 import * as crypto from 'crypto';
 import * as Debug from 'debug';
@@ -13,17 +15,17 @@ import * as path from 'path';
 import * as serveStatic from 'serve-static';
 import { fromStringWithSourceMap, SourceListMap } from 'source-list-map';
 import * as url from 'url';
-import { RawSource } from 'webpack-sources';
+import { ConcatSource, RawSource } from 'webpack-sources';
 
+import { Builder, Builders } from './Builder';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
-import requireModule from './requireModule';
+import Spin from './Spin';
 
 const SPIN_DLL_VERSION = 1;
+const BACKEND_CHANGE_MSG = 'backend_change';
 
 const debug = Debug('spinjs');
 const expoPorts = {};
-
-minilog.enable();
 
 const spinLogger = minilog('spin');
 
@@ -39,7 +41,6 @@ const __WINDOWS__ = /^win/.test(process.platform);
 
 let server;
 let startBackend = false;
-let backendFirstStart = true;
 let nodeDebugOpt;
 
 process.on('exit', () => {
@@ -48,9 +49,9 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (nodeOpts: any[], logger) => {
-  server = spawn('node', nodeOpts, { stdio: [0, 1, 2] });
-  logger(`Spawning ${['node', ...nodeOpts].join(' ')}`);
+const spawnServer = (cwd, serverPath, debugOpt, logger) => {
+  server = spawn('node', [debugOpt, serverPath], { stdio: [0, 1, 2], cwd });
+  logger(`Spawning ${['node', debugOpt, serverPath].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
       // App requested full reload
@@ -58,11 +59,11 @@ const spawnServer = (nodeOpts: any[], logger) => {
     }
     logger('Backend has been stopped');
     server = undefined;
-    runServer(nodeOpts[0], logger);
+    runServer(cwd, serverPath, logger);
   });
 };
 
-const runServer = (serverPath, logger, enableNodeDebugger: boolean = false) => {
+const runServer = (cwd, serverPath, logger) => {
   if (!fs.existsSync(serverPath)) {
     throw new Error(`Backend doesn't exist at ${serverPath}, exiting`);
   }
@@ -85,48 +86,37 @@ const runServer = (serverPath, logger, enableNodeDebugger: boolean = false) => {
         const nodeMinor = parseInt(nodeVersion[2], 10);
         nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
         detectPort(9229).then(debugPort => {
-          spawnServer([serverPath, nodeDebugOpt + '=' + debugPort], logger);
+          spawnServer(cwd, serverPath, nodeDebugOpt + '=' + debugPort, logger);
         });
       });
     } else {
-      spawnServer([serverPath, nodeDebugOpt], logger);
+      spawnServer(cwd, serverPath, nodeDebugOpt, logger);
     }
   }
 };
 
-const webpackReporter = (watch, outputPath, log, err?, stats?) => {
+const webpackReporter = (spin: Spin, builder: Builder, outputPath: string, log, err?, stats?) => {
   if (err) {
     log(err.stack);
     throw new Error('Build error');
   }
   if (stats) {
-    log(
-      stats.toString({
-        hash: false,
-        version: false,
-        timings: true,
-        assets: false,
-        chunks: false,
-        modules: false,
-        reasons: false,
-        children: false,
-        source: true,
-        errors: true,
-        errorDetails: true,
-        warnings: true,
-        publicPath: false,
-        colors: true
-      })
-    );
+    const str = stats.toString(builder.config.stats);
+    if (str.length > 0) {
+      log(str);
+    }
 
-    if (!watch) {
+    if (builder.writeStats) {
       mkdirp.sync(outputPath);
       fs.writeFileSync(path.join(outputPath, 'stats.json'), JSON.stringify(stats.toJson()));
     }
   }
+  if (!spin.watch && cluster.isWorker) {
+    process.exit(0);
+  }
 };
 
-let frontendVirtualModules;
+const frontendVirtualModules = [];
 
 class MobileAssetsPlugin {
   public vendorAssets: any;
@@ -155,19 +145,23 @@ class MobileAssetsPlugin {
   }
 }
 
-const startClientWebpack = (hasBackend, watch, builder, options) => {
-  const webpack = requireModule('webpack');
+const startClientWebpack = (hasBackend, spin, builder) => {
+  const webpack = builder.require('webpack');
 
   const config = builder.config;
+  const configOutputPath = config.output.path;
 
-  config.plugins.push(frontendVirtualModules);
+  const VirtualModules = builder.require('webpack-virtual-modules');
+  const clientVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
+  config.plugins.push(clientVirtualModules);
+  frontendVirtualModules.push(clientVirtualModules);
 
   const logger = minilog(`webpack-for-${config.name}`);
   try {
-    const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, builder, configOutputPath, logger, ...args);
 
-    if (watch) {
-      startWebpackDevServer(hasBackend, builder, options, reporter, logger);
+    if (spin.watch) {
+      startWebpackDevServer(hasBackend, spin, builder, reporter, logger);
     } else {
       if (builder.stack.platform !== 'web') {
         config.plugins.push(new MobileAssetsPlugin());
@@ -185,20 +179,22 @@ const startClientWebpack = (hasBackend, watch, builder, options) => {
 let backendReloadCount = 0;
 const increaseBackendReloadCount = () => {
   backendReloadCount++;
-  frontendVirtualModules.writeModule('node_modules/backend_reload.js', `var count = ${backendReloadCount};\n`);
+  for (const virtualModules of frontendVirtualModules) {
+    virtualModules.writeModule('node_modules/backend_reload.js', `var count = ${backendReloadCount};\n`);
+  }
 };
 
-const startServerWebpack = (watch, builder, options) => {
+const startServerWebpack = (spin, builder) => {
   const config = builder.config;
   const logger = minilog(`webpack-for-${config.name}`);
 
   try {
-    const webpack = requireModule('webpack');
-    const reporter = (...args) => webpackReporter(watch, config.output.path, logger, ...args);
+    const webpack = builder.require('webpack');
+    const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
     const compiler = webpack(config);
 
-    if (watch) {
+    if (spin.watch) {
       compiler.plugin('compilation', compilation => {
         compilation.plugin('after-optimize-assets', assets => {
           // Patch webpack-generated original source files path, by stripping hash after filename
@@ -224,18 +220,18 @@ const startServerWebpack = (watch, builder, options) => {
               server.kill('SIGUSR2');
             }
 
-            if (options.frontendRefreshOnBackendChange) {
+            if (builder.frontendRefreshOnBackendChange) {
               for (const module of stats.compilation.modules) {
-                if (module.built && module.resource && module.resource.indexOf(path.resolve('./src/server')) === 0) {
+                if (module.built && module.resource && module.resource.split(/[\\\/]/).indexOf('server') >= 0) {
                   // Force front-end refresh on back-end change
                   logger.debug('Force front-end current page refresh, due to change in backend at:', module.resource);
-                  increaseBackendReloadCount();
+                  process.send({ cmd: BACKEND_CHANGE_MSG });
                   break;
                 }
               }
             }
           } else {
-            runServer(path.join(output.path, 'index.js'), logger, options.enableNodeDebugger);
+            runServer(builder.require.cwd, path.join(output.path, 'index.js'), logger);
           }
         }
       });
@@ -247,8 +243,8 @@ const startServerWebpack = (watch, builder, options) => {
   }
 };
 
-const openFrontend = (builder, logger) => {
-  const openurl = requireModule('openurl');
+const openFrontend = (spin, builder, logger) => {
+  const openurl = builder.require('openurl');
   try {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
@@ -259,7 +255,7 @@ const openFrontend = (builder, logger) => {
         openurl.open(localUrl);
       }
     } else if (builder.stack.hasAny('react-native')) {
-      startExpoProject(builder.config, builder.stack.platform, logger);
+      startExpoProject(spin, builder, logger);
     }
   } catch (e) {
     logger.error(e.stack);
@@ -275,9 +271,9 @@ const debugMiddleware = (req, res, next) => {
   }
 };
 
-const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) => {
-  const webpack = requireModule('webpack');
-  const waitOn = requireModule('wait-on');
+const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder, reporter, logger) => {
+  const webpack = builder.require('webpack');
+  const waitOn = builder.require('wait-on');
 
   const config = builder.config;
   const platform = builder.stack.platform;
@@ -290,51 +286,71 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let vendorSource;
   let vendorMap;
 
-  if (options.webpackDll && builder.child) {
+  if (builder.webpackDll && builder.child) {
     const name = `vendor_${platform}`;
-    const jsonPath = path.join(options.dllBuildDir, `${name}_dll.json`);
+    const jsonPath = path.join(builder.dllBuildDir, `${name}_dll.json`);
+    const json = JSON.parse(fs.readFileSync(path.resolve('./' + jsonPath)).toString());
+
     config.plugins.push(
       new webpack.DllReferencePlugin({
         context: process.cwd(),
-        manifest: requireModule('./' + jsonPath)
+        manifest: json
       })
     );
     vendorHashesJson = JSON.parse(
-      fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`)).toString()
+      fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll_hashes.json`)).toString()
     );
     vendorSource = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
-    );
-    vendorMap = new RawSource(
-      fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.map')).toString()
+      fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name)).toString() + '\n'
     );
     if (platform !== 'web') {
       const vendorAssets = JSON.parse(
-        fs.readFileSync(path.join(options.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
+        fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.assets')).toString()
       );
       config.plugins.push(new MobileAssetsPlugin(vendorAssets));
     }
-    vendorSourceListMap = fromStringWithSourceMap(vendorSource.source(), JSON.parse(vendorMap.source()));
+    if (builder.sourceMap) {
+      vendorMap = new RawSource(
+        fs.readFileSync(path.join(builder.dllBuildDir, vendorHashesJson.name + '.map')).toString()
+      );
+      vendorSourceListMap = fromStringWithSourceMap(vendorSource.source(), JSON.parse(vendorMap.source()));
+    }
   }
 
   const compiler = webpack(config);
+  let awaitedAlready = false;
 
   compiler.plugin('after-emit', (compilation, callback) => {
-    if (backendFirstStart) {
-      if (hasBackend) {
-        const { protocol, hostname, port } = url.parse(builder.backendUrl.replace('{ip}', ip.address()));
-        const backendHostUrl = `${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`;
-        logger.debug(`Webpack dev server is waiting for backend at ${backendHostUrl}`);
-        waitOn({ resources: [`tcp:${backendHostUrl}`] }, err => {
-          if (err) {
-            logger.error(err);
+    if (!awaitedAlready) {
+      if (hasBackend || builder.waitOn) {
+        let waitOnUrls;
+        const backendOption = builder.backendUrl || builder.backendUrl;
+        if (backendOption) {
+          const { protocol, hostname, port } = url.parse(backendOption.replace('{ip}', ip.address()));
+          waitOnUrls = [`tcp:${hostname}:${port || (protocol === 'https:' ? 443 : 80)}`];
+        } else {
+          waitOnUrls = builder.waitOn ? [].concat(builder.waitOn) : undefined;
+        }
+        if (waitOnUrls && waitOnUrls.length) {
+          logger.debug(`waiting for ${waitOnUrls}`);
+          const waitStart = Date.now();
+          const waitNotifier = setInterval(() => {
+            logger.debug(`still waiting for ${waitOnUrls} after ${Date.now() - waitStart}ms...`);
+          }, 10000);
+          waitOn({ resources: waitOnUrls }, err => {
+            clearInterval(waitNotifier);
+            awaitedAlready = true;
+            if (err) {
+              logger.error(err);
+            } else {
+              logger.debug('Backend has been started, resuming webpack dev server...');
+            }
             callback();
-          } else {
-            logger.debug('Backend has been started, resuming webpack dev server...');
-            backendFirstStart = false;
-            callback();
-          }
-        });
+          });
+        } else {
+          awaitedAlready = true;
+          callback();
+        }
       } else {
         callback();
       }
@@ -342,22 +358,26 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
       callback();
     }
   });
-  if (options.webpackDll && builder.child && platform !== 'web') {
+  if (builder.webpackDll && builder.child && platform !== 'web') {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
           if (file.endsWith('.bundle')) {
-            const sourceListMap = new SourceListMap();
-            sourceListMap.add(vendorSourceListMap);
-            sourceListMap.add(
-              fromStringWithSourceMap(
-                compilation.assets[file].source(),
-                JSON.parse(compilation.assets[file + '.map'].source())
-              )
-            );
-            const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
-            compilation.assets[file] = new RawSource(sourceAndMap.source);
-            compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
+            if (builder.sourceMap) {
+              const sourceListMap = new SourceListMap();
+              sourceListMap.add(vendorSourceListMap);
+              sourceListMap.add(
+                fromStringWithSourceMap(
+                  compilation.assets[file].source(),
+                  JSON.parse(compilation.assets[file + '.map'].source())
+                )
+              );
+              const sourceAndMap = sourceListMap.toStringWithSourceMap({ file });
+              compilation.assets[file] = new RawSource(sourceAndMap.source);
+              compilation.assets[file + '.map'] = new RawSource(JSON.stringify(sourceAndMap.map));
+            } else {
+              compilation.assets[file] = new ConcatSource(vendorSource, compilation.assets[file]);
+            }
           }
         });
       });
@@ -365,10 +385,12 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     });
   }
 
-  if (options.webpackDll && builder.child && platform === 'web' && !options.ssr) {
+  if (builder.webpackDll && builder.child && platform === 'web' && !builder.ssr) {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.assets[vendorHashesJson.name] = vendorSource;
-      compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
+      if (builder.sourceMap) {
+        compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
+      }
       callback();
     });
     compiler.plugin('compilation', compilation => {
@@ -393,14 +415,14 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
           assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
         }
       });
-      if (options.webpackDll) {
+      if (builder.webpackDll) {
         assetsMap['vendor.js'] = vendorHashesJson.name;
       }
       fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
     }
     if (frontendFirstStart) {
       frontendFirstStart = false;
-      openFrontend(builder, logger);
+      openFrontend(spin, builder, logger);
     }
   });
 
@@ -413,7 +435,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   let inspectorProxy;
 
   if (platform === 'web') {
-    const WebpackDevServer = requireModule('webpack-dev-server');
+    const WebpackDevServer = builder.require('webpack-dev-server');
 
     serverInstance = new WebpackDevServer(compiler, {
       ...config.devServer,
@@ -427,67 +449,121 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
       }
     });
   } else {
-    const connect = requireModule('connect');
-    const compression = requireModule('compression');
-    const httpProxyMiddleware = requireModule('http-proxy-middleware');
-    const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
-    const webpackDevMiddleware = requireModule('webpack-dev-middleware');
-    const webpackHotMiddleware = requireModule('webpack-hot-middleware');
+    const connect = builder.require('connect');
+    const compression = builder.require('compression');
+    const httpProxyMiddleware = builder.require('http-proxy-middleware');
+    const mime = builder.require('mime', builder.require.resolve('webpack-dev-middleware'));
+    const webpackDevMiddleware = builder.require('webpack-dev-middleware');
+    const webpackHotMiddleware = builder.require('webpack-hot-middleware');
 
     const app = connect();
 
     serverInstance = http.createServer(app);
-    mime.define({ 'application/javascript': ['bundle'] });
-    mime.define({ 'application/json': ['assets'] });
+    mime.define({ 'application/javascript': ['bundle'] }, true);
+    mime.define({ 'application/json': ['assets'] }, true);
 
-    messageSocket = requireModule('react-native/local-cli/server/util/messageSocket.js');
-    webSocketProxy = requireModule('react-native/local-cli/server/util/webSocketProxy.js');
+    messageSocket = builder.require('react-native/local-cli/server/util/messageSocket.js');
+    webSocketProxy = builder.require('react-native/local-cli/server/util/webSocketProxy.js');
 
     try {
-      const InspectorProxy = requireModule('react-native/local-cli/server/util/inspectorProxy.js');
+      const InspectorProxy = builder.require('react-native/local-cli/server/util/inspectorProxy.js');
       inspectorProxy = new InspectorProxy();
     } catch (ignored) {}
-    const copyToClipBoardMiddleware = requireModule(
+    const copyToClipBoardMiddleware = builder.require(
       'react-native/local-cli/server/middleware/copyToClipBoardMiddleware'
     );
     let cpuProfilerMiddleware;
     try {
-      cpuProfilerMiddleware = requireModule('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
+      cpuProfilerMiddleware = builder.require('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
     } catch (ignored) {}
-    const getDevToolsMiddleware = requireModule('react-native/local-cli/server/middleware/getDevToolsMiddleware');
+    const getDevToolsMiddleware = builder.require('react-native/local-cli/server/middleware/getDevToolsMiddleware');
     let heapCaptureMiddleware;
     try {
-      heapCaptureMiddleware = requireModule('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
+      heapCaptureMiddleware = builder.require('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
     } catch (ignored) {}
-    const indexPageMiddleware = requireModule('react-native/local-cli/server/middleware/indexPage');
-    const loadRawBodyMiddleware = requireModule('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
-    const openStackFrameInEditorMiddleware = requireModule(
+    const indexPageMiddleware = builder.require('react-native/local-cli/server/middleware/indexPage');
+    const loadRawBodyMiddleware = builder.require('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
+    const openStackFrameInEditorMiddleware = builder.require(
       'react-native/local-cli/server/middleware/openStackFrameInEditorMiddleware'
     );
-    const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-    const systraceProfileMiddleware = requireModule(
+    const statusPageMiddleware = builder.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+    const systraceProfileMiddleware = builder.require(
       'react-native/local-cli/server/middleware/systraceProfileMiddleware.js'
     );
-    const unless = requireModule('react-native/local-cli/server/middleware/unless');
-    const symbolicateMiddleware = requireModule('haul/src/server/middleware/symbolicateMiddleware');
+    const unless = builder.require('react-native/local-cli/server/middleware/unless');
+    const symbolicateMiddleware = builder.require('haul/src/server/middleware/symbolicateMiddleware');
+
+    // Workaround for bug in Haul /symbolicate under Windows
+    compiler.options.output.path = path.sep;
+    const devMiddleware = webpackDevMiddleware(
+      compiler,
+      _.merge({}, config.devServer, {
+        reporter(mwOpts, { state, stats }) {
+          if (state) {
+            logger('bundle is now VALID.');
+          } else {
+            logger('bundle is now INVALID.');
+          }
+          reporter(null, stats);
+        }
+      })
+    );
 
     const args = {
       port: config.devServer.port,
       projectRoots: [path.resolve('.')]
     };
     app
+      .use(cors())
       .use(loadRawBodyMiddleware)
       .use((req, res, next) => {
         req.path = req.url.split('?')[0];
-        debug(`Dev mobile packager request: ${req.path}`);
+        if (req.path === '/symbolicate') {
+          req.rawBody = req.rawBody.replace(/index\.mobile\.delta/g, 'index.mobile.bundle');
+        }
+        const origWriteHead = res.writeHead;
+        res.writeHead = (...parms) => {
+          const code = parms[0];
+          if (code === 404) {
+            logger.error(`404 at URL ${req.url}`);
+          }
+          origWriteHead.apply(res, parms);
+        };
+        if (req.path !== '/onchange') {
+          logger.debug(`Dev mobile packager request: ${debug.enabled ? req.url : req.path}`);
+        }
         next();
       })
-      .use(compression())
+      .use((req, res, next) => {
+        const query = url.parse(req.url, true).query;
+        const urlPlatform = query && query.platform;
+        if (urlPlatform && urlPlatform !== builder.stack.platform) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end(`Serving '${builder.stack.platform}' bundles, but got request from '${urlPlatform}'`);
+        } else {
+          next();
+        }
+      })
+      .use(compression());
+    app.use('/assets', serveStatic(path.join(builder.require.cwd, '.expo', builder.stack.platform)));
+    if (builder.child) {
+      app.use(serveStatic(builder.child.config.output.path));
+    }
+    app
+      .use((req, res, next) => {
+        if (req.path === '/debugger-ui/deltaUrlToBlobUrl.js') {
+          debug(`serving monkey patched deltaUrlToBlobUrl`);
+          res.writeHead(200, { 'Content-Type': 'application/javascript' });
+          res.end(`window.deltaUrlToBlobUrl = function(url) { return url.replace('.delta', '.bundle'); }`);
+        } else {
+          next();
+        }
+      })
       .use(
         '/debugger-ui',
         serveStatic(
           path.join(
-            path.dirname(requireModule.resolve('react-native/package.json')),
+            path.dirname(builder.require.resolve('react-native/package.json')),
             '/local-cli/server/util/debugger-ui'
           )
         )
@@ -501,33 +577,7 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
       .use(statusPageMiddleware)
       .use(systraceProfileMiddleware)
       .use(indexPageMiddleware)
-      .use(debugMiddleware)
-      .use((req, res, next) => {
-        const platformPrefix = `/assets/${platform}/`;
-        if (req.path.indexOf(platformPrefix) === 0) {
-          const origPath = path.join(path.resolve('.'), req.path.substring(platformPrefix.length));
-          const extension = path.extname(origPath);
-          const basePath = path.join(path.dirname(origPath), path.basename(origPath, extension));
-          const files = [`.${platform}`, '.native', ''].map(suffix => basePath + suffix + extension);
-          let assetExists = false;
-
-          for (const filePath of files) {
-            if (fs.existsSync(filePath)) {
-              assetExists = true;
-              res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
-              fs.createReadStream(filePath).pipe(res);
-            }
-          }
-
-          if (!assetExists) {
-            logger.warn('Asset not found:', origPath);
-            res.writeHead(404, { 'Content-Type': 'plain' });
-            res.end('Asset: ' + origPath + ' not found. Tried: ' + JSON.stringify(files));
-          }
-        } else {
-          next();
-        }
-      });
+      .use(debugMiddleware);
     if (heapCaptureMiddleware) {
       app.use(heapCaptureMiddleware);
     }
@@ -537,19 +587,6 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
     if (inspectorProxy) {
       app.use(unless('/inspector', inspectorProxy.processRequest.bind(inspectorProxy)));
     }
-    const devMiddleware = webpackDevMiddleware(
-      compiler,
-      _.merge({}, config.devServer, {
-        reporter({ state, stats }) {
-          if (state) {
-            logger('bundle is now VALID.');
-          } else {
-            logger('bundle is now INVALID.');
-          }
-          reporter(null, stats);
-        }
-      })
-    );
 
     app
       .use((req, res, next) => {
@@ -590,28 +627,31 @@ const startWebpackDevServer = (hasBackend, builder, options, reporter, logger) =
   serverInstance.keepAliveTimeout = 0;
 };
 
-const isDllValid = (platform, config, options, logger): boolean => {
-  const name = `vendor_${platform}`;
+const isDllValid = (spin, builder, logger): boolean => {
+  const name = `vendor_${builder.stack.platform}`;
   try {
-    const hashesPath = path.join(options.dllBuildDir, `${name}_dll_hashes.json`);
+    const hashesPath = path.join(builder.dllBuildDir, `${name}_dll_hashes.json`);
     if (!fs.existsSync(hashesPath)) {
       return false;
     }
-    const meta = JSON.parse(fs.readFileSync(hashesPath).toString());
-    if (SPIN_DLL_VERSION !== meta.version) {
+    const relMeta = JSON.parse(fs.readFileSync(hashesPath).toString());
+    if (SPIN_DLL_VERSION !== relMeta.version) {
       return false;
     }
-    if (!fs.existsSync(path.join(options.dllBuildDir, meta.name))) {
+    if (!fs.existsSync(path.join(builder.dllBuildDir, relMeta.name))) {
       return false;
     }
-    if (!_.isEqual(meta.modules, config.entry.vendor)) {
+    if (builder.sourceMap && !fs.existsSync(path.join(builder.dllBuildDir, relMeta.name + '.map'))) {
+      return false;
+    }
+    if (!_.isEqual(relMeta.modules, builder.child.config.entry.vendor)) {
       return false;
     }
 
-    const json = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll.json`)).toString());
+    const json = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
 
     for (const filename of Object.keys(json.content)) {
-      if (filename.indexOf(' ') < 0) {
+      if (filename.indexOf(' ') < 0 && filename.indexOf('@virtual') < 0) {
         if (!fs.existsSync(filename)) {
           logger.warn(`${name} DLL need to be regenerated, file: ${filename} is missing.`);
           return false;
@@ -620,7 +660,7 @@ const isDllValid = (platform, config, options, logger): boolean => {
           .createHash('md5')
           .update(fs.readFileSync(filename))
           .digest('hex');
-        if (meta.hashes[filename] !== hash) {
+        if (relMeta.hashes[filename] !== hash) {
           logger.warn(`Hash for ${name} DLL file ${filename} has changed, need to rebuild it`);
           return false;
         }
@@ -635,22 +675,23 @@ const isDllValid = (platform, config, options, logger): boolean => {
   }
 };
 
-const buildDll = (platform, config, options) => {
-  const webpack = requireModule('webpack');
+const buildDll = (spin: Spin, builder: Builder) => {
+  const webpack = builder.require('webpack');
+  const config = builder.child.config;
   return new Promise(done => {
-    const name = `vendor_${platform}`;
+    const name = `vendor_${builder.stack.platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
-    const reporter = (...args) => webpackReporter(true, config.output.path, logger, ...args);
+    const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
-    if (!isDllValid(platform, config, options, logger)) {
+    if (!isDllValid(spin, builder, logger)) {
       logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
 
-      mkdirp.sync(options.dllBuildDir);
+      mkdirp.sync(builder.dllBuildDir);
       const compiler = webpack(config);
 
       compiler.plugin('done', stats => {
         try {
-          const json = JSON.parse(fs.readFileSync(path.join(options.dllBuildDir, `${name}_dll.json`)).toString());
+          const json = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
           const vendorKey = _.findKey(
             stats.compilation.assets,
             (v, key) => key.startsWith('vendor') && key.endsWith('_dll.js')
@@ -661,18 +702,20 @@ const buildDll = (platform, config, options) => {
               assets.push(module._asset);
             }
           });
-          fs.writeFileSync(path.join(options.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
+          fs.writeFileSync(path.join(builder.dllBuildDir, `${vendorKey}.assets`), JSON.stringify(assets));
 
           const meta = { name: vendorKey, hashes: {}, modules: config.entry.vendor, version: SPIN_DLL_VERSION };
           for (const filename of Object.keys(json.content)) {
-            if (filename.indexOf(' ') < 0) {
+            if (filename.indexOf(' ') < 0 && filename.indexOf('@virtual') < 0) {
               meta.hashes[filename] = crypto
                 .createHash('md5')
                 .update(fs.readFileSync(filename))
                 .digest('hex');
-              fs.writeFileSync(path.join(options.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
             }
           }
+
+          fs.writeFileSync(path.join(builder.dllBuildDir, `${name}_dll_hashes.json`), JSON.stringify(meta));
+          fs.writeFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`), JSON.stringify(json));
         } catch (e) {
           logger.error(e.stack);
           process.exit(1);
@@ -687,15 +730,24 @@ const buildDll = (platform, config, options) => {
   });
 };
 
-const setupExpoDir = (dir, platform) => {
+const copyExpoImage = (cwd: string, expoDir: string, appJson: any, keyPath: string) => {
+  const imagePath: string = _.get(appJson, keyPath);
+  if (imagePath) {
+    const absImagePath = path.join(cwd, imagePath);
+    fs.writeFileSync(path.join(expoDir, path.basename(absImagePath)), fs.readFileSync(absImagePath));
+    _.set(appJson, keyPath, path.basename(absImagePath));
+  }
+};
+
+const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
   const reactNativeDir = path.join(dir, 'node_modules', 'react-native');
   mkdirp.sync(path.join(reactNativeDir, 'local-cli'));
   fs.writeFileSync(
     path.join(reactNativeDir, 'package.json'),
-    fs.readFileSync(requireModule.resolve('react-native/package.json'))
+    fs.readFileSync(builder.require.resolve('react-native/package.json'))
   );
   fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
-  const pkg = JSON.parse(fs.readFileSync('package.json').toString());
+  const pkg = JSON.parse(fs.readFileSync(builder.require.resolve('./package.json')).toString());
   const origDeps = pkg.dependencies;
   pkg.dependencies = { 'react-native': origDeps['react-native'] };
   if (platform !== 'all') {
@@ -703,18 +755,47 @@ const setupExpoDir = (dir, platform) => {
   }
   pkg.main = `index.mobile`;
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
-  const appJson = JSON.parse(fs.readFileSync('app.json').toString());
-  if (appJson.expo.icon) {
-    appJson.expo.icon = path.join(path.resolve('.'), appJson.expo.icon);
-  }
+  const appJson = JSON.parse(fs.readFileSync(builder.require.resolve('./app.json')).toString());
+  [
+    'expo.icon',
+    'expo.ios.icon',
+    'expo.android.icon',
+    'expo.splash.image',
+    'expo.ios.splash.image',
+    'expo.ios.splash.tabletImage',
+    'expo.android.splash.ldpi',
+    'expo.android.splash.mdpi',
+    'expo.android.splash.hdpi',
+    'expo.android.splash.xhdpi',
+    'expo.android.splash.xxhdpi',
+    'expo.android.splash.xxxhdpi'
+  ].forEach(keyPath => copyExpoImage(builder.require.cwd, dir, appJson, keyPath));
   fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
   if (platform !== 'all') {
     fs.writeFileSync(path.join(dir, '.exprc'), JSON.stringify({ manifestPort: expoPorts[platform] }));
   }
 };
 
-const startExpoServer = async (projectRoot, packagerPort) => {
-  const { Config, Project, ProjectSettings } = requireModule('xdl');
+const deviceLoggers = {};
+
+const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string, packagerPort) => {
+  const { Config, Project, ProjectSettings, ProjectUtils } = builder.require('xdl');
+  deviceLoggers[projectRoot] = minilog('expo-for-' + builder.name);
+
+  if (!ProjectUtils.logWithLevel._patched) {
+    const origExpoLogger = ProjectUtils.logWithLevel;
+    ProjectUtils.logWithLevel = (projRoot, level, object, msg, id) => {
+      if (level === 'error') {
+        const json = JSON.parse(msg);
+        const info = object.includesStack ? json.message + '\n' + json.stack : json.message;
+        deviceLoggers[projRoot].log(info.replace(/\\n/g, '\n'));
+      } else {
+        deviceLoggers[projRoot].log(msg);
+      }
+      return origExpoLogger.call(ProjectUtils, projRoot, level, object, msg, id);
+    };
+    ProjectUtils.logWithLevel._patched = true;
+  }
 
   Config.validation.reactNativeVersionWarnings = false;
   Config.developerTool = 'crna';
@@ -726,14 +807,15 @@ const startExpoServer = async (projectRoot, packagerPort) => {
   });
 };
 
-const startExpoProject = async (config, platform, logger) => {
-  const { UrlUtils, Android, Simulator } = requireModule('xdl');
-  const qr = requireModule('qrcode-terminal');
+const startExpoProject = async (spin: Spin, builder: Builder, logger: any) => {
+  const { UrlUtils, Android, Simulator } = builder.require('xdl');
+  const qr = builder.require('qrcode-terminal');
+  const platform = builder.stack.platform;
 
   try {
-    const projectRoot = path.join(path.resolve('.'), '.expo', platform);
-    setupExpoDir(projectRoot, platform);
-    await startExpoServer(projectRoot, config.devServer.port);
+    const projectRoot = path.join(builder.require.cwd, '.expo', platform);
+    setupExpoDir(spin, builder, projectRoot, platform);
+    await startExpoServer(spin, builder, projectRoot, builder.config.devServer.port);
 
     const address = await UrlUtils.constructManifestUrlAsync(projectRoot);
     const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
@@ -766,34 +848,28 @@ const startExpoProject = async (config, platform, logger) => {
   }
 };
 
-const startWebpack = async (platforms, watch, builder, options) => {
-  const VirtualModules = requireModule('webpack-virtual-modules');
-  if (!frontendVirtualModules) {
-    frontendVirtualModules = new VirtualModules({ 'node_modules/backend_reload.js': '' });
-  }
-
+const startWebpack = async (spin: Spin, builder: Builder, platforms: any) => {
   if (builder.stack.platform === 'server') {
-    startServerWebpack(watch, builder, options);
+    startServerWebpack(spin, builder);
   } else {
-    startClientWebpack(!!platforms.server, watch, builder, options);
+    startClientWebpack(!!platforms.server, spin, builder);
   }
 };
 
 const allocateExpoPorts = async expoPlatforms => {
-  let startPort = 19000;
+  const startPorts = { android: 19000, ios: 19500 };
   for (const platform of expoPlatforms) {
-    const expoPort = await detectPort(startPort);
+    const expoPort = await detectPort(startPorts[platform]);
     expoPorts[platform] = expoPort;
-    startPort = expoPort + 1;
   }
 };
 
-const startExpoProdServer = async (options, logger) => {
-  const connect = requireModule('connect');
-  const mime = requireModule('mime', requireModule.resolve('webpack-dev-middleware'));
-  const compression = requireModule('compression');
-  const statusPageMiddleware = requireModule('react-native/local-cli/server/middleware/statusPageMiddleware.js');
-  const { UrlUtils } = requireModule('xdl');
+const startExpoProdServer = async (spin: Spin, mainBuilder: Builder, builders: Builders, logger) => {
+  const connect = mainBuilder.require('connect');
+  const mime = mainBuilder.require('mime', mainBuilder.require.resolve('webpack-dev-middleware'));
+  const compression = mainBuilder.require('compression');
+  const statusPageMiddleware = mainBuilder.require('react-native/local-cli/server/middleware/statusPageMiddleware.js');
+  const { UrlUtils } = mainBuilder.require('xdl');
 
   logger.info(`Starting Expo prod server`);
   const packagerPort = 3030;
@@ -811,18 +887,29 @@ const startExpoProdServer = async (options, logger) => {
     .use((req, res, next) => {
       const platform = url.parse(req.url, true).query.platform;
       if (platform) {
-        const filePath = path.join(options.frontendBuildDir, platform, req.path);
-        if (fs.existsSync(filePath)) {
-          res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
-          fs.createReadStream(filePath).pipe(res);
-        } else {
-          if (req.url.indexOf('.bundle?') >= 0) {
-            logger.error(
-              `Bundle for '${platform}' platform is missing! You need to build bundles both for Android and iOS.`
-            );
+        let platformFound: boolean = false;
+        for (const name of Object.keys(builders)) {
+          const builder = builders[name];
+          if (builder.stack.hasAny(platform)) {
+            platformFound = true;
+            const filePath = builder.buildDir
+              ? path.join(builder.buildDir, req.path)
+              : path.join(builder.frontendBuildDir || `build/client`, platform, req.path);
+            if (fs.existsSync(filePath)) {
+              res.writeHead(200, { 'Content-Type': mime.lookup ? mime.lookup(filePath) : mime.getType(filePath) });
+              fs.createReadStream(filePath).pipe(res);
+              return;
+            }
           }
+        }
+
+        if (!platformFound) {
+          logger.error(
+            `Bundle for '${platform}' platform is missing! You need to build bundles both for Android and iOS.`
+          );
+        } else {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(`{'message': 'File not found: ${filePath}'}`);
+          res.end(`{"message": "File not found for request: ${req.path}"}`);
         }
       } else {
         next();
@@ -842,21 +929,34 @@ const startExpoProdServer = async (options, logger) => {
   serverInstance.keepAliveTimeout = 0;
 
   const projectRoot = path.join(path.resolve('.'), '.expo', 'all');
-  await startExpoServer(projectRoot, packagerPort);
+  await startExpoServer(spin, mainBuilder, projectRoot, packagerPort);
   const localAddress = await UrlUtils.constructManifestUrlAsync(projectRoot, {
     hostType: 'localhost'
   });
   logger.info(`Expo server running on address: ${localAddress}`);
 };
 
-const startExp = async (options, logger) => {
-  const projectRoot = path.join(process.cwd(), '.expo', 'all');
-  setupExpoDir(projectRoot, 'all');
-  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[3]) >= 0) {
-    await startExpoProdServer(options, logger);
+const startExp = async (spin: Spin, builders: Builders, logger) => {
+  let mainBuilder: Builder;
+  for (const name of Object.keys(builders)) {
+    const builder = builders[name];
+    if (builder.stack.hasAny(['ios', 'android'])) {
+      mainBuilder = builder;
+      break;
+    }
   }
-  if (process.argv[3] !== 'server') {
-    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(3), {
+  if (!mainBuilder) {
+    throw new Error('Builders for `ios` or `android` not found');
+  }
+
+  const projectRoot = path.join(process.cwd(), '.expo', 'all');
+  setupExpoDir(spin, mainBuilder, projectRoot, 'all');
+  const expIdx = process.argv.indexOf('exp');
+  if (['ba', 'bi', 'build:android', 'build:ios', 'publish', 'p', 'server'].indexOf(process.argv[expIdx + 1]) >= 0) {
+    await startExpoProdServer(spin, mainBuilder, builders, logger);
+  }
+  if (process.argv[expIdx + 1] !== 'server') {
+    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(expIdx + 1), {
       cwd: projectRoot,
       stdio: [0, 1, 2]
     });
@@ -866,77 +966,138 @@ const startExp = async (options, logger) => {
   }
 };
 
-const execute = (cmd, argv, builders: object, options) => {
-  if (argv.verbose) {
-    Object.keys(builders).forEach(name => {
-      const builder = builders[name];
-      spinLogger.log(`${name} = `, require('util').inspect(builder.config, false, null));
-    });
-  }
+const runBuilder = (cmd: string, builder: Builder, platforms) => {
+  process.chdir(builder.require.cwd);
+  const spin = new Spin(builder.require.cwd, cmd);
+  const prepareDllPromise: PromiseLike<any> =
+    spin.watch && builder.webpackDll && builder.child ? buildDll(spin, builder) : Promise.resolve();
+  prepareDllPromise.then(() => startWebpack(spin, builder, platforms));
+};
 
-  if (cmd === 'exp') {
-    startExp(options, spinLogger);
-  } else if (cmd === 'test') {
-    let builder;
-    for (const name of Object.keys(builders)) {
-      builder = builders[name];
-      if (builder.roles.indexOf('test') >= 0) {
-        break;
-      }
+const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
+  const expoPlatforms = [];
+  const platforms = {};
+  Object.keys(builders).forEach(name => {
+    const builder = builders[name];
+    const stack = builder.stack;
+    platforms[stack.platform] = true;
+    if (stack.hasAny('react-native') && stack.hasAny('ios')) {
+      expoPlatforms.push('ios');
+    } else if (stack.hasAny('react-native') && stack.hasAny('android')) {
+      expoPlatforms.push('android');
     }
-    const testArgs = [
-      '--include',
-      'babel-polyfill',
-      '--webpack-config',
-      requireModule.resolve('spinjs/webpack.config.js')
-    ];
-    if (builder.stack.hasAny('react')) {
-      const majorVer = requireModule('react/package.json').version.split('.')[0];
-      const reactVer = majorVer >= 16 ? majorVer : 15;
-      if (reactVer >= 16) {
-        testArgs.push('--include', 'raf/polyfill');
-      }
-    }
+  });
 
-    const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
-    testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
-    spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
-
-    const mochaWebpack = spawn(testCmd, testArgs, {
-      stdio: [0, 1, 2]
-    });
-    mochaWebpack.on('close', code => {
-      process.exit(code);
-    });
-  } else {
-    const expoPlatforms = [];
-    const watch = cmd === 'watch';
-    const platforms = {};
-    Object.keys(builders).forEach(name => {
-      const builder = builders[name];
-      const stack = builder.stack;
-      platforms[stack.platform] = true;
-      if (stack.hasAny('react-native') && stack.hasAny('ios')) {
-        expoPlatforms.push('ios');
-      } else if (stack.hasAny('react-native') && stack.hasAny('android')) {
-        expoPlatforms.push('android');
-      }
-    });
-    const prepareExpoPromise = watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
-    prepareExpoPromise.then(() => {
-      for (const name of Object.keys(builders)) {
+  if (cluster.isMaster) {
+    if (argv.verbose) {
+      Object.keys(builders).forEach(name => {
         const builder = builders[name];
-        const stack = builder.stack;
-        if (stack.hasAny(['dll', 'test'])) {
-          continue;
+        spinLogger.log(`${name} = `, require('util').inspect(builder.config, false, null));
+      });
+    }
+
+    if (cmd === 'exp') {
+      startExp(spin, builders, spinLogger);
+    } else if (cmd === 'test') {
+      // TODO: Remove this in 0.5.x
+      let builder;
+      for (const name of Object.keys(builders)) {
+        builder = builders[name];
+        if (builder.roles.indexOf('test') >= 0) {
+          const testArgs = [
+            '--include',
+            'babel-polyfill',
+            '--webpack-config',
+            builder.require.resolve('spinjs/webpack.config.js')
+          ];
+          if (builder.stack.hasAny('react')) {
+            const majorVer = builder.require('react/package.json').version.split('.')[0];
+            const reactVer = majorVer >= 16 ? majorVer : 15;
+            if (reactVer >= 16) {
+              testArgs.push('--include', 'raf/polyfill');
+            }
+          }
+
+          const testCmd = path.join(process.cwd(), 'node_modules/.bin/mocha-webpack');
+          testArgs.push.apply(testArgs, process.argv.slice(process.argv.indexOf('test') + 1));
+          spinLogger.info(`Running ${testCmd} ${testArgs.join(' ')}`);
+
+          const env: any = Object.create(process.env);
+          if (argv.c) {
+            (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
+          }
+
+          const mochaWebpack = spawn(testCmd, testArgs, {
+            stdio: [0, 1, 2],
+            env,
+            cwd: builder.require.cwd
+          });
+          mochaWebpack.on('close', code => {
+            if (code !== 0) {
+              process.exit(code);
+            }
+          });
         }
-        const prepareDllPromise: PromiseLike<any> =
-          cmd === 'watch' && options.webpackDll && builder.child
-            ? buildDll(stack.platform, builder.child.config, options)
-            : Promise.resolve();
-        prepareDllPromise.then(() => startWebpack(platforms, watch, builder, options));
+      }
+    } else {
+      const prepareExpoPromise =
+        spin.watch && expoPlatforms.length > 0 ? allocateExpoPorts(expoPlatforms) : Promise.resolve();
+      prepareExpoPromise.then(() => {
+        const workerBuilders = {};
+
+        let potentialWorkerCount = 0;
+        for (const id of Object.keys(builders)) {
+          const builder = builders[id];
+          if (builder.stack.hasAny(['dll', 'test'])) {
+            continue;
+          }
+          if (builder.cluster !== false) {
+            potentialWorkerCount++;
+          }
+        }
+
+        for (const id of Object.keys(builders)) {
+          const builder = builders[id];
+          if (builder.stack.hasAny(['dll', 'test'])) {
+            continue;
+          }
+
+          if (potentialWorkerCount > 1 && !builder.cluster) {
+            const worker = cluster.fork({ BUILDER_ID: id, EXPO_PORTS: JSON.stringify(expoPorts) });
+            workerBuilders[worker.process.pid] = builder;
+          } else {
+            runBuilder(cmd, builder, platforms);
+          }
+        }
+
+        for (const id of Object.keys(cluster.workers)) {
+          cluster.workers[id].on('message', msg => {
+            debug(`Master received message ${JSON.stringify(msg)}`);
+            for (const wid of Object.keys(cluster.workers)) {
+              cluster.workers[wid].send(msg);
+            }
+          });
+        }
+
+        cluster.on('exit', (worker, code, signal) => {
+          debug(`Worker ${workerBuilders[worker.process.pid].id} died`);
+        });
+      });
+    }
+  } else {
+    const builder = builders[process.env.BUILDER_ID];
+    const builderExpoPorts = JSON.parse(process.env.EXPO_PORTS);
+    for (const platform of Object.keys(builderExpoPorts)) {
+      expoPorts[platform] = builderExpoPorts[platform];
+    }
+    process.on('message', msg => {
+      if (msg.cmd === BACKEND_CHANGE_MSG) {
+        debug(`Increase backend reload count in ${builder.id}`);
+        increaseBackendReloadCount();
       }
     });
+
+    runBuilder(cmd, builder, platforms);
   }
 };
 

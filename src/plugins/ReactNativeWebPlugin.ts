@@ -1,6 +1,5 @@
 import { Builder } from '../Builder';
 import { ConfigPlugin } from '../ConfigPlugin';
-import requireModule from '../requireModule';
 import Spin from '../Spin';
 
 export default class ReactNativeWebPlugin implements ConfigPlugin {
