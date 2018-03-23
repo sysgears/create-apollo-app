@@ -1,29 +1,29 @@
 import { Configuration } from 'webpack';
 import * as merge from 'webpack-merge';
+
 import { Builder } from './Builder';
 
 export default class Spin {
   public dev: boolean;
   public test: boolean;
+  public watch: boolean;
   public cmd: string;
-  public builders: { [x: string]: Builder };
+  public cwd: string;
   public options: any;
-  public depPlatforms: any;
 
-  constructor(cmd, builders, options, depPlatforms) {
+  constructor(cwd, cmd) {
     this.cmd = cmd;
+    this.cwd = cwd;
     this.dev = this.cmd === 'watch' || this.cmd === 'test';
     this.test = this.cmd === 'test';
-    this.builders = builders;
-    this.options = options;
-    this.depPlatforms = depPlatforms;
+    this.watch = this.cmd === 'watch';
   }
 
-  public merge(config: Configuration, overrides: any): Configuration {
+  public merge(config: any, overrides: any): Configuration {
     return merge.smart(config, overrides);
   }
 
-  public mergeWithStrategy(strategy: any, config: Configuration, overrides: any): Configuration {
+  public mergeWithStrategy(strategy: any, config: any, overrides: any): Configuration {
     return merge.smartStrategy(strategy)(config, overrides);
   }
 }

@@ -29,14 +29,7 @@
 
 import * as path from 'path';
 import * as util from 'util';
-
-import requireModule from '../../requireModule';
-
-const utils = requireModule('loader-utils');
-const size = requireModule('image-size');
-const hasha = requireModule('hasha');
-const hashAssetFiles = requireModule('expo/tools/hashAssetFiles');
-const AssetResolver = requireModule('haul/src/resolvers/AssetResolver');
+import createRequire from '../../createRequire';
 
 interface Config {
   platform: string;
@@ -56,9 +49,14 @@ module.exports = async function assetLoader() {
   this.cacheable();
 
   const callback = this.async();
-
-  const query = utils.getOptions(this) || {};
+  const query = this.query;
   const options = this.options[query.config] || {};
+  const requireRelative = createRequire(query.cwd);
+  const size = requireRelative('image-size');
+  const hasha = requireRelative('hasha');
+  const hashAssetFiles = requireRelative('expo/tools/hashAssetFiles');
+  const AssetResolver = requireRelative('haul/src/resolvers/AssetResolver');
+
   const config: Config = { ...options, ...query };
 
   let info: Info;
@@ -71,7 +69,10 @@ module.exports = async function assetLoader() {
 
   const filepath = this.resourcePath;
   const dirname = path.dirname(filepath);
-  const url = path.relative(config.root, dirname);
+  const url = path
+    .relative(config.root, dirname)
+    .replace(/\\/g, '/')
+    .replace(/^[\.\/]*/, '');
   const type = path.extname(filepath).replace(/^\./, '');
   const assets = path.join('assets', config.bundle ? '' : config.platform);
   const suffix = `(@\\d+(\\.\\d+)?x)?(\\.(${config.platform}|native))?\\.${type}$`;
@@ -150,7 +151,7 @@ module.exports = async function assetLoader() {
   );
 
   pairs.forEach((item: any) => {
-    let dest = item.destination;
+    let dest = item.destination.replace(/\\/g, '/');
 
     if (config.outputPath) {
       // support functions as outputPath to generate them dynamically
@@ -160,7 +161,7 @@ module.exports = async function assetLoader() {
     this.emitFile(dest, item.content);
   });
 
-  let publicPath = `__webpack_public_path__ + ${JSON.stringify(path.join('/', assets, url))}`;
+  let publicPath = `__webpack_public_path__ + ${JSON.stringify((path.join(assets, '/') + url).replace(/[\\]+/g, '/'))}`;
 
   if (config.publicPath) {
     // support functions as publicPath to generate them dynamically
