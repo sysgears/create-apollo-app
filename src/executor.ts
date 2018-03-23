@@ -49,7 +49,7 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (cwd, args: any[], options: { nodeDebugger: boolean, serverPath: string }, logger) => {
+const spawnServer = (cwd, args: any[], options: { nodeDebugger: boolean; serverPath: string }, logger) => {
   server = spawn('node', [...args], { stdio: [0, 1, 2], cwd });
   logger(`Spawning ${['node', ...args].join(' ')}`);
   server.on('exit', code => {
@@ -73,7 +73,6 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
 
     if (!nodeDebugOpt) {
       if (!nodeDebugger) {
-        nodeDebugOpt = '';
         // disables node debugger when the option was set to false
         spawnServer(cwd, [serverPath], { serverPath, nodeDebugger }, logger);
       } else {
@@ -470,19 +469,19 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     try {
       const InspectorProxy = builder.require('react-native/local-cli/server/util/inspectorProxy.js');
       inspectorProxy = new InspectorProxy();
-    } catch (ignored) { }
+    } catch (ignored) {}
     const copyToClipBoardMiddleware = builder.require(
       'react-native/local-cli/server/middleware/copyToClipBoardMiddleware'
     );
     let cpuProfilerMiddleware;
     try {
       cpuProfilerMiddleware = builder.require('react-native/local-cli/server/middleware/cpuProfilerMiddleware');
-    } catch (ignored) { }
+    } catch (ignored) {}
     const getDevToolsMiddleware = builder.require('react-native/local-cli/server/middleware/getDevToolsMiddleware');
     let heapCaptureMiddleware;
     try {
       heapCaptureMiddleware = builder.require('react-native/local-cli/server/middleware/heapCaptureMiddleware.js');
-    } catch (ignored) { }
+    } catch (ignored) {}
     const indexPageMiddleware = builder.require('react-native/local-cli/server/middleware/indexPage');
     const loadRawBodyMiddleware = builder.require('react-native/local-cli/server/middleware/loadRawBodyMiddleware');
     const openStackFrameInEditorMiddleware = builder.require(
@@ -562,13 +561,13 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
         }
       })
       .use(
-      '/debugger-ui',
-      serveStatic(
-        path.join(
-          path.dirname(builder.require.resolve('react-native/package.json')),
-          '/local-cli/server/util/debugger-ui'
+        '/debugger-ui',
+        serveStatic(
+          path.join(
+            path.dirname(builder.require.resolve('react-native/package.json')),
+            '/local-cli/server/util/debugger-ui'
+          )
         )
-      )
       )
       .use(getDevToolsMiddleware(args, () => wsProxy && wsProxy.isChromeConnected()))
       .use(getDevToolsMiddleware(args, () => ms && ms.isChromeConnected()))
