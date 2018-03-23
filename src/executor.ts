@@ -49,9 +49,9 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (cwd, serverPath, options: { debugOpt: any; nodeDebugger: boolean }, logger) => {
-  server = spawn('node', [options.debugOpt, serverPath], { stdio: [0, 1, 2], cwd });
-  logger(`Spawning ${['node', options.debugOpt, serverPath].join(' ')}`);
+const spawnServer = (cwd, args: any[], options: { nodeDebugger: boolean, serverPath: string }, logger) => {
+  server = spawn('node', [...args], { stdio: [0, 1, 2], cwd });
+  logger(`Spawning ${['node', ...args].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
       // App requested full reload
@@ -59,7 +59,7 @@ const spawnServer = (cwd, serverPath, options: { debugOpt: any; nodeDebugger: bo
     }
     logger('Backend has been stopped');
     server = undefined;
-    runServer(cwd, serverPath, options.nodeDebugger, logger);
+    runServer(cwd, options.serverPath, options.nodeDebugger, logger);
   });
 };
 
@@ -75,7 +75,7 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
       if (!nodeDebugger) {
         nodeDebugOpt = '';
         // disables node debugger when the option was set to false
-        spawnServer(cwd, serverPath, { debugOpt: '', nodeDebugger }, logger);
+        spawnServer(cwd, [serverPath], { serverPath, nodeDebugger }, logger);
       } else {
         exec('node -v', (error, stdout, stderr) => {
           if (error) {
@@ -87,12 +87,12 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
           const nodeMinor = parseInt(nodeVersion[2], 10);
           nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
           detectPort(9229).then(debugPort => {
-            spawnServer(cwd, serverPath, { debugOpt: nodeDebugOpt + '=' + debugPort, nodeDebugger }, logger);
+            spawnServer(cwd, [serverPath, nodeDebugOpt + '=' + debugPort], { serverPath, nodeDebugger }, logger);
           });
         });
       }
     } else {
-      spawnServer(cwd, serverPath, { debugOpt: nodeDebugOpt, nodeDebugger }, logger);
+      spawnServer(cwd, [serverPath, nodeDebugOpt], { serverPath, nodeDebugger }, logger);
     }
   }
 };
