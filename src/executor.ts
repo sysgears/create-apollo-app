@@ -49,7 +49,7 @@ process.on('exit', () => {
   }
 });
 
-const spawnServer = (cwd, serverPath, options, logger) => {
+const spawnServer = (cwd, serverPath, options: { debugOpt: any, nodeDebugger: boolean }, logger) => {
   server = spawn('node', [options.debugOpt, serverPath], { stdio: [0, 1, 2], cwd });
   logger(`Spawning ${['node', options.debugOpt, serverPath].join(' ')}`);
   server.on('exit', code => {
@@ -91,7 +91,7 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
         });
       });
     } else {
-      spawnServer(cwd, serverPath, nodeDebugOpt, logger);
+      spawnServer(cwd, serverPath, { debugOpt: nodeDebugOpt, nodeDebugger }, logger);
     }
   }
 };
@@ -232,7 +232,7 @@ const startServerWebpack = (spin, builder) => {
               }
             }
           } else {
-            runServer(builder.require.cwd, path.join(output.path, 'index.js'), logger, builder.nodeDebugger);
+            runServer(builder.require.cwd, path.join(output.path, 'index.js'),  builder.nodeDebugger, logger);
           }
         }
       });
