@@ -132,6 +132,7 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |babelConfig|Additional babelrc definitions merged in after config generation|
 |writeStats|Write `stats.json` to disk, default: `false`|
 |nodeDebugger|To enable or disable node debugger, default: `true`|
+
 Common builder options can be put into `options` property, from there they will be copied into each builder. `stack` property inside `options` will be prepended to each builder stack.
 Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.
 
