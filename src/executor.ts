@@ -72,10 +72,6 @@ const runServer = (cwd, serverPath, logger) => {
     logger('Starting backend');
 
     if (!nodeDebugOpt) {
-      if (!enableNodeDebugger) {
-        nodeDebugOpt = '';
-        return spawnServer([serverPath], logger);
-      }
       exec('node -v', (error, stdout, stderr) => {
         if (error) {
           spinLogger.error(error);
