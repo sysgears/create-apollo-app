@@ -28,7 +28,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
               use: {
                 loader: 'url-loader',
                 options: {
-                  name: './assets/[hash].[ext]',
+                  name: '[hash].[ext]',
                   limit: 100000
                 }
               }
@@ -38,7 +38,7 @@ export default class WebAssetsPlugin implements ConfigPlugin {
               use: {
                 loader: 'file-loader',
                 options: {
-                  name: './assets/[hash].[ext]'
+                  name: '[hash].[ext]'
                 }
               }
             }
