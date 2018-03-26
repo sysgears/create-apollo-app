@@ -10,6 +10,7 @@ import ApolloPlugin from './plugins/ApolloPlugin';
 import BabelPlugin from './plugins/BabelPlugin';
 import CssProcessorPlugin from './plugins/CssProcessorPlugin';
 import FlowRuntimePLugin from './plugins/FlowRuntimePlugin';
+import I18NextPlugin from './plugins/I18NextPlugin';
 import ReactHotLoaderPlugin from './plugins/ReactHotLoaderPlugin';
 import ReactNativePlugin from './plugins/ReactNativePlugin';
 import ReactNativeWebPlugin from './plugins/ReactNativeWebPlugin';
@@ -45,7 +46,8 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     new ReactNativeWebPlugin(),
     new StyledComponentsPlugin(),
     new AngularPlugin(),
-    new VuePlugin()
+    new VuePlugin(),
+    new I18NextPlugin()
   ];
   const spin = new Spin(cwd, cmd);
   const builderDiscoverer = new BuilderDiscoverer(spin, plugins, argv);
