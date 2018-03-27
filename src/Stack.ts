@@ -16,12 +16,14 @@ export default class Stack {
       this.platform = 'server';
     } else if (this.hasAny('web')) {
       this.platform = 'web';
+    } else if (this.hasAny('electron')) {
+      this.platform = 'electron';
     } else if (this.hasAny('android')) {
       this.platform = 'android';
     } else if (this.hasAny('ios')) {
       this.platform = 'ios';
     } else {
-      throw new Error(`stack should include one of 'server', 'web', 'android', 'ios'`);
+      throw new Error(`stack should include one of 'server', 'web', 'electron', 'android', 'ios'`);
     }
   }
 

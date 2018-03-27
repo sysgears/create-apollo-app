@@ -164,7 +164,7 @@ const startClientWebpack = (hasBackend, spin, builder) => {
     if (spin.watch) {
       startWebpackDevServer(hasBackend, spin, builder, reporter, logger);
     } else {
-      if (builder.stack.platform !== 'web') {
+      if (builder.stack.platform !== 'web' && builder.stack.platform !== 'electron') {
         config.plugins.push(new MobileAssetsPlugin());
       }
 
@@ -255,6 +255,8 @@ const openFrontend = (spin, builder, logger) => {
       } else {
         openurl.open(localUrl);
       }
+    } else if (builder.stack.hasAny('electron')) {
+      // do something for electron / hotload?
     } else if (builder.stack.hasAny('react-native')) {
       startExpoProject(spin, builder, logger);
     }
@@ -359,7 +361,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       callback();
     }
   });
-  if (builder.webpackDll && builder.child && platform !== 'web') {
+  if (builder.webpackDll && builder.child && platform !== 'web' && platform !== 'electron') {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
@@ -386,6 +388,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     });
   }
 
+  // Something like this for an Electron stack?
   if (builder.webpackDll && builder.child && platform === 'web' && !builder.ssr) {
     compiler.plugin('after-compile', (compilation, callback) => {
       compilation.assets[vendorHashesJson.name] = vendorSource;
@@ -435,7 +438,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   let ms;
   let inspectorProxy;
 
+  // Something like this for an Electron stack?
   if (platform === 'web') {
+    // or add an '||' for electron here?
     const WebpackDevServer = builder.require('webpack-dev-server');
 
     serverInstance = new WebpackDevServer(compiler, {
@@ -591,7 +596,8 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
 
     app
       .use((req, res, next) => {
-        if (platform !== 'web') {
+        // server and mobiles?
+        if (platform !== 'web' && platform !== 'electron') {
           // Workaround for Expo Client bug in parsing Content-Type header with charset
           const origSetHeader = res.setHeader;
           res.setHeader = (key, value) => {
@@ -615,7 +621,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
 
   logger(`Webpack ${config.name} dev server listening on http://localhost:${config.devServer.port}`);
   serverInstance.listen(config.devServer.port, () => {
-    if (platform !== 'web') {
+    if (platform !== 'web' && platform !== 'electron') {
       wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
       ms = messageSocket.attachToServer(serverInstance, '/message');
       webSocketProxy.attachToServer(serverInstance, '/devtools');
@@ -858,6 +864,7 @@ const startWebpack = async (spin: Spin, builder: Builder, platforms: any) => {
 };
 
 const allocateExpoPorts = async expoPlatforms => {
+  // TODO make the ports configurable
   const startPorts = { android: 19000, ios: 19500 };
   for (const platform of expoPlatforms) {
     const expoPort = await detectPort(startPorts[platform]);
@@ -1086,6 +1093,7 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
       });
     }
   } else {
+    // Not cluster.isMaster
     const builder = builders[process.env.BUILDER_ID];
     const builderExpoPorts = JSON.parse(process.env.EXPO_PORTS);
     for (const platform of Object.keys(builderExpoPorts)) {

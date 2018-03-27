@@ -8,7 +8,9 @@ export default class WebAssetsPlugin implements ConfigPlugin {
 
     if (
       !stack.hasAny('dll') &&
-      (stack.hasAll(['webpack', 'web']) || (stack.hasAll(['webpack', 'server']) && builder.ssr))
+      (stack.hasAll(['webpack', 'web']) ||
+        stack.hasAll(['webpack', 'electron']) ||
+        (stack.hasAll(['webpack', 'server']) && builder.ssr))
     ) {
       builder.config = spin.merge(builder.config, {
         module: {

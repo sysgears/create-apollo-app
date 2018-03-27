@@ -11,7 +11,7 @@ export default class ApolloPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
     if (!builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack'])) {
       const persistGraphQL = builder.persistGraphQL && !spin.test;
-      if (builder.stack.hasAny(['server', 'web'])) {
+      if (builder.stack.hasAny(['server', 'web', 'electron'])) {
         if (!persistPlugins) {
           const PersistGraphQLPlugin = builder.require('persistgraphql-webpack-plugin');
           // Tricky - this way it works for now both for single-package and monorepo projects
@@ -52,7 +52,7 @@ export default class ApolloPlugin implements ConfigPlugin {
         }
       });
 
-      if (builder.stack.hasAny(['server', 'web'])) {
+      if (builder.stack.hasAny(['server', 'web', 'electron'])) {
         const webpack = builder.require('webpack');
 
         if (persistGraphQL) {

@@ -47,7 +47,7 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             )
             .concat(ruleList)
         });
-      } else if (stack.hasAny('web')) {
+      } else if (stack.hasAny(['web', 'electron'])) {
         let ExtractTextPlugin;
         if (!dev) {
           ExtractTextPlugin = builder.require('extract-text-webpack-plugin');
