@@ -8,6 +8,7 @@ import createRequire, { RequireFunction } from './createRequire';
 import EnhancedError from './EnhancedError';
 import Spin from './Spin';
 import Stack from './Stack';
+import GenericWrapperPlugin from './plugins/GenericWrapperPlugin'
 
 export default class ConfigReader {
   private spin: Spin;
@@ -84,7 +85,14 @@ export default class ConfigReader {
         typeof builder.cache === 'string' && builder.cache !== 'auto'
           ? builder.cache
           : typeof builder.cache !== 'undefined' ? builder.cache : 'auto';
-      builder.plugins = this.plugins.concat((builder.plugins || []).map(pluginName => new (require(pluginName))()));
+      builder.plugins = this.plugins.concat((builder.plugins || []).map(
+        plugin => {
+            if(typeof plugin === 'string')
+              return new (require(plugin))()
+            else
+              return new GenericWrapperPlugin(plugin)
+        }
+      ));
     }
     return builders;
   }
