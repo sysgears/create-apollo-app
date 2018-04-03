@@ -9,7 +9,7 @@ export default class StyledComponentsPlugin implements ConfigPlugin {
 
     if (
       stack.hasAll(['styled-components', 'webpack']) &&
-      (stack.hasAny('web') || (stack.hasAny('server') && builder.ssr))
+      (stack.hasAny(['web', 'electron']) || (stack.hasAny('server') && builder.ssr))
     ) {
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findJSRule();

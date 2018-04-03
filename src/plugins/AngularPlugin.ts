@@ -34,7 +34,7 @@ export default class AngularPlugin implements ConfigPlugin {
         ]
       });
 
-      if (!stack.hasAny('dll') && stack.hasAny('web')) {
+      if (!stack.hasAny('dll') && stack.hasAny(['web', 'electron'])) {
         builder.config = spin.merge(
           {
             entry: {

@@ -26,12 +26,15 @@ export default class ReactPlugin implements ConfigPlugin {
 
       const majorVer = builder.require('react/package.json').version.split('.')[0];
       const reactVer = majorVer >= 16 ? majorVer : 15;
-      builder.config.resolve.extensions = (stack.hasAny('web') || stack.hasAny('server') ? ['.web.', '.'] : ['.'])
+      builder.config.resolve.extensions = (stack.hasAny(['web', 'electron']) || stack.hasAny('server')
+        ? ['.web.', '.']
+        : ['.']
+      )
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
         .reduce((acc, val) => acc.concat(val))
         .concat(['.json']);
 
-      if (stack.hasAny('web')) {
+      if (stack.hasAny(['web', 'electron'])) {
         for (const key of Object.keys(builder.config.entry)) {
           const entry = builder.config.entry[key];
           for (let idx = 0; idx < entry.length; idx++) {

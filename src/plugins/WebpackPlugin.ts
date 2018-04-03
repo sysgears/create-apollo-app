@@ -17,7 +17,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
 
   if (spin.dev) {
     plugins.push(new webpack.NamedModulesPlugin());
-    if (stack.hasAny(['server', 'web']) && !spin.test) {
+    if (stack.hasAny(['server', 'web', 'electron']) && !spin.test) {
       plugins.push(new webpack.HotModuleReplacementPlugin());
       plugins.push(new webpack.NoEmitOnErrorsPlugin());
     }
@@ -91,7 +91,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
         })
       ]);
 
-      if (stack.hasAny('web')) {
+      if (stack.hasAny(['web', 'electron'])) {
         const ManifestPlugin = builder.require('webpack-manifest-plugin');
         plugins.push(
           new ManifestPlugin({
