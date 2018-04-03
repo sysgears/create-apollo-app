@@ -957,10 +957,14 @@ const startExp = async (spin: Spin, builders: Builders, logger) => {
     await startExpoProdServer(spin, mainBuilder, builders, logger);
   }
   if (process.argv[expIdx + 1] !== 'server') {
-    const exp = spawn(path.join(process.cwd(), 'node_modules/.bin/exp'), process.argv.splice(expIdx + 1), {
-      cwd: projectRoot,
-      stdio: [0, 1, 2]
-    });
+    const exp = spawn(
+      path.join(process.cwd(), 'node_modules/.bin/exp' + (__WINDOWS__ ? '.cmd' : '')),
+      process.argv.splice(expIdx + 1),
+      {
+        cwd: projectRoot,
+        stdio: [0, 1, 2]
+      }
+    );
     exp.on('exit', code => {
       process.exit(code);
     });
@@ -1025,7 +1029,8 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
 
           const env: any = Object.create(process.env);
           if (argv.c) {
-            (env.SPIN_CWD = spin.cwd), (env.SPIN_CONFIG = path.resolve(argv.c));
+            env.SPIN_CWD = spin.cwd;
+            env.SPIN_CONFIG = path.resolve(argv.c);
           }
 
           const mochaWebpack = spawn(testCmd, testArgs, {
