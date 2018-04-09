@@ -32,16 +32,18 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
             : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
           use: ([
-            { loader: 'isomorphic-style-loader' },
-            { loader: 'css-loader', options: { ...loaderOptions } }
+            { loader: 'isomorphic-style-loader', options: spin.createConfig(builder, 'isomorphicStyle', {}) },
+            { loader: 'css-loader', options: spin.createConfig(builder, 'css', { ...loaderOptions }) }
           ] as any[])
             .concat(
               postCssLoader && !nodeModules
                 ? {
                     loader: postCssLoader,
-                    options: useDefaultPostCss
-                      ? { ...postCssDefaultConfig(builder), ...loaderOptions }
-                      : { ...loaderOptions }
+                    options: spin.createConfig(
+                      builder,
+                      'postCss',
+                      useDefaultPostCss ? { ...postCssDefaultConfig(builder), ...loaderOptions } : { ...loaderOptions }
+                    )
                   }
                 : []
             )
@@ -62,16 +64,23 @@ export default class CssProcessorPlugin implements ConfigPlugin {
               : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
             use: dev
               ? ([
-                  { loader: 'style-loader' },
-                  { loader: 'css-loader', options: { ...loaderOptions, importLoaders: 1 } }
+                  { loader: 'style-loader', options: spin.createConfig(builder, 'style', {}) },
+                  {
+                    loader: 'css-loader',
+                    options: spin.createConfig(builder, 'css', { ...loaderOptions, importLoaders: 1 })
+                  }
                 ] as any[])
                   .concat(
                     postCssLoader && !nodeModules
                       ? {
                           loader: postCssLoader,
-                          options: useDefaultPostCss
-                            ? { ...postCssDefaultConfig(builder), ...loaderOptions }
-                            : { ...loaderOptions }
+                          options: spin.createConfig(
+                            builder,
+                            'postCss',
+                            useDefaultPostCss
+                              ? { ...postCssDefaultConfig(builder), ...loaderOptions }
+                              : { ...loaderOptions }
+                          )
                         }
                       : []
                   )
@@ -81,15 +90,21 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                   use: [
                     {
                       loader: 'css-loader',
-                      options: { importLoaders: postCssLoader && !nodeModules ? 1 : 0 }
+                      options: spin.createConfig(builder, 'css', {
+                        importLoaders: postCssLoader && !nodeModules ? 1 : 0
+                      })
                     }
                   ]
                     .concat(
                       postCssLoader && !nodeModules
-                        ? {
+                        ? ({
                             loader: postCssLoader,
-                            options: useDefaultPostCss ? postCssDefaultConfig(builder) : {}
-                          } as any
+                            options: spin.createConfig(
+                              builder,
+                              'postCss',
+                              useDefaultPostCss ? postCssDefaultConfig(builder) : {}
+                            )
+                          } as any)
                         : []
                     )
                     .concat(ruleList ? ruleList.map(rule => rule.loader) : [])
@@ -103,12 +118,12 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       }
 
       if (createRule && stack.hasAny('sass')) {
-        const sassRule = [{ loader: 'sass-loader', options: { ...loaderOptions } }];
+        const sassRule = [{ loader: 'sass-loader', options: spin.createConfig(builder, 'sass', { ...loaderOptions }) }];
         rules.push(createRule('scss', false, sassRule), createRule('scss', true, sassRule));
       }
 
       if (createRule && stack.hasAny('less')) {
-        const lessRule = [{ loader: 'less-loader', options: { ...loaderOptions } }];
+        const lessRule = [{ loader: 'less-loader', options: spin.createConfig(builder, 'less', { ...loaderOptions }) }];
         rules.push(createRule('less', false, lessRule), createRule('less', true, lessRule));
       }
 

@@ -14,7 +14,7 @@ export default class I18NextPlugin implements ConfigPlugin {
           rules: [
             {
               test: /locales/,
-              use: '@alienfast/i18next-loader'
+              use: { loader: '@alienfast/i18next-loader', options: spin.createConfig(builder, 'i18next', {}) }
             }
           ]
         }

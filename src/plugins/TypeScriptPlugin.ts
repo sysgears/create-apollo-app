@@ -17,7 +17,7 @@ export default class TypeScriptPlugin implements ConfigPlugin {
       tsRule.use = [
         {
           loader: 'awesome-typescript-loader',
-          options: { ...builder.tsLoaderOptions }
+          options: spin.createConfig(builder, 'awesomeTypescript', { ...builder.tsLoaderOptions })
         }
       ];
 

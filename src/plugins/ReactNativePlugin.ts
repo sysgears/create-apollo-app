@@ -36,8 +36,6 @@ export default class ReactNativePlugin implements ConfigPlugin {
       const AssetResolver = builder.require('haul/src/resolvers/AssetResolver');
       const HasteResolver = builder.require('haul/src/resolvers/HasteResolver');
 
-      const { merge, ...config } = builder.babelConfig || { merge: {} };
-
       const babelrc = new UPFinder(builder).find(['.babelrc.native']);
 
       const jsRuleFinder = new JSRuleFinder(builder);
@@ -67,15 +65,11 @@ export default class ReactNativePlugin implements ConfigPlugin {
         exclude: /node_modules\/(?!react-native.*|@expo|expo|lottie-react-native|haul|pretty-format|react-navigation)$/,
         use: {
           loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
-          options: spin.mergeWithStrategy(
-            merge,
-            {
-              babelrc: false,
-              cacheDirectory,
-              ...defaultConfig
-            },
-            config
-          )
+          options: spin.createConfig(builder, 'babel', {
+            babelrc: false,
+            cacheDirectory,
+            ...defaultConfig
+          })
         }
       });
 
@@ -97,12 +91,12 @@ export default class ReactNativePlugin implements ConfigPlugin {
               test: mobileAssetTest,
               use: {
                 loader: 'spinjs/lib/plugins/react-native/assetLoader',
-                query: {
+                options: spin.createConfig(builder, 'asset', {
                   platform: stack.platform,
                   root: builder.require.cwd,
                   cwd: spin.cwd,
                   bundle: false
-                }
+                })
               }
             }
           ]
