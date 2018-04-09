@@ -27,7 +27,6 @@ export default class BabelPlugin implements ConfigPlugin {
 
       const jsRuleFinder = new JSRuleFinder(builder);
       const jsRule = jsRuleFinder.findAndCreateJSRule();
-      const { merge, ...config } = builder.babelConfig || { merge: {} };
       const cacheDirectory =
         builder.cache === false || (builder.cache === 'auto' && !spin.dev)
           ? false
@@ -40,20 +39,16 @@ export default class BabelPlugin implements ConfigPlugin {
         loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
         options: !!babelrc
           ? { babelrc: true, cacheDirectory }
-          : spin.mergeWithStrategy(
-              merge,
-              {
-                babelrc: false,
-                cacheDirectory,
-                compact: !spin.dev,
-                presets: (['react', ['env', { modules: false }], 'stage-0'] as any[]).concat(
-                  spin.dev ? [] : [['minify', { mangle: false }]]
-                ),
-                plugins: ['transform-runtime', 'transform-decorators-legacy', 'transform-class-properties'],
-                only: jsRuleFinder.extensions.map(ext => '*.' + ext)
-              },
-              config
-            )
+          : spin.createConfig(builder, 'babel', {
+              babelrc: false,
+              cacheDirectory,
+              compact: !spin.dev,
+              presets: (['react', ['env', { modules: false }], 'stage-0'] as any[]).concat(
+                spin.dev ? [] : [['minify', { mangle: false }]]
+              ),
+              plugins: ['transform-runtime', 'transform-decorators-legacy', 'transform-class-properties'],
+              only: jsRuleFinder.extensions.map(ext => '*.' + ext)
+            })
       };
     }
   }

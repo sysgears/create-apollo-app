@@ -129,10 +129,9 @@ Each builder has a name and a `stack` property at minimum. Builder properties re
 |frontendRefreshOnBackendChange|Trigger web frontend refresh when backend code changes|
 |persistGraphQL|Generate and use Apollo persistent GraphQL queries|
 |devProxy|Proxy all unknown requests from front-end running on Webpack during development to back-end|
-|webpackConfig|Additional webpack config definitions merged in after config generation|
-|babelConfig|Additional babelrc definitions merged in after config generation|
 |writeStats|Write `stats.json` to disk, default: `false`|
 |nodeDebugger|To enable or disable node debugger, default: `true`|
+|{toolName}Config|Additional options for webpack, loaders or other tools. The `{toolName}` should be the name of the loader or tool and the value is the additional config options for the loader. Possible names for the tools are: `webpackConfig`, `babelConfig`, `cssConfig`, `sassConfig`, `graphqlTagConfig`, etc|
 
 Common builder options can be put into `options` property, from there they will be copied into each builder. `stack` property inside `options` will be prepended to each builder stack.
 Builder can also have builder-specific options, depending on its stack, recognized by `spinjs` plugins.

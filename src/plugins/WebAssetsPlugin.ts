@@ -17,29 +17,29 @@ export default class WebAssetsPlugin implements ConfigPlugin {
               test: /\.(png|ico|jpg|gif|xml)$/,
               use: {
                 loader: 'url-loader',
-                options: {
+                options: spin.createConfig(builder, 'url', {
                   name: '[hash].[ext]',
                   limit: 100000
-                }
+                })
               }
             },
             {
               test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
                 loader: 'url-loader',
-                options: {
+                options: spin.createConfig(builder, 'url', {
                   name: '[hash].[ext]',
                   limit: 100000
-                }
+                })
               }
             },
             {
               test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               use: {
                 loader: 'file-loader',
-                options: {
+                options: spin.createConfig(builder, 'file', {
                   name: '[hash].[ext]'
-                }
+                })
               }
             }
           ]

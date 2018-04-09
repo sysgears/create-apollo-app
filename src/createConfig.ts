@@ -96,10 +96,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     if (overrides[builder.name]) {
       builder.config = spin.mergeWithStrategy(strategy, builder.config, overrides[builder.name]);
     }
-    if (builder.webpackConfig) {
-      const { merge, ...config } = builder.webpackConfig;
-      builder.config = spin.mergeWithStrategy(merge || strategy, builder.config, config);
-    }
+    builder.config = spin.createConfig(builder, 'webpack', builder.config);
   }
 
   return { builders, spin };
