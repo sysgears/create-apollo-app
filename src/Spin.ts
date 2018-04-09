@@ -1,3 +1,4 @@
+// tslint:disable-next-line
 import { Configuration } from 'webpack';
 import * as merge from 'webpack-merge';
 
@@ -17,6 +18,11 @@ export default class Spin {
     this.dev = this.cmd === 'watch' || this.cmd === 'test';
     this.test = this.cmd === 'test';
     this.watch = this.cmd === 'watch';
+  }
+
+  public createConfig(builder: Builder, tool: string, config): Configuration {
+    const { merge: mergeStrategy, ...configOverrides } = builder[tool + 'Config'] || { merge: {} };
+    return this.mergeWithStrategy(mergeStrategy, config, configOverrides);
   }
 
   public merge(config: any, overrides: any): Configuration {
