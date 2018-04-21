@@ -86,12 +86,12 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
           const nodeMinor = parseInt(nodeVersion[2], 10);
           nodeDebugOpt = nodeMajor >= 6 || (nodeMajor === 6 && nodeMinor >= 9) ? '--inspect' : '--debug';
           detectPort(9229).then(debugPort => {
-            spawnServer(cwd, [serverPath, nodeDebugOpt + '=' + debugPort], { serverPath, nodeDebugger }, logger);
+            spawnServer(cwd, [nodeDebugOpt + '=' + debugPort, serverPath], { serverPath, nodeDebugger }, logger);
           });
         });
       }
     } else {
-      spawnServer(cwd, [serverPath, nodeDebugOpt], { serverPath, nodeDebugger }, logger);
+      spawnServer(cwd, [nodeDebugOpt, serverPath], { serverPath, nodeDebugger }, logger);
     }
   }
 };
