@@ -1,5 +1,4 @@
-#!/bin/sh
-":" //# comment; exec /usr/bin/env node --preserve-symlinks "$0" "$@"
+#!/usr/bin/env node
 require('source-map-support').install();
 
 require('./lib/cli');
