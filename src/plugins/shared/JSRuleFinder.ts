@@ -88,6 +88,7 @@ export default class JSRuleFinder {
       result.push('ts');
     }
     if (jsTestStr.indexOf('js') >= 0) {
+      result.push('mjs');
       result.push('js');
     }
     return result;

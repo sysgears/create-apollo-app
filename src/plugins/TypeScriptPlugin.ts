@@ -21,6 +21,10 @@ export default class TypeScriptPlugin implements ConfigPlugin {
         }
       ];
 
+      builder.config = spin.merge(builder.config, {
+        plugins: [new (builder.require('awesome-typescript-loader')).CheckerPlugin()]
+      });
+
       builder.config.resolve.extensions = ['.']
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))
         .reduce((acc, val) => acc.concat(val))

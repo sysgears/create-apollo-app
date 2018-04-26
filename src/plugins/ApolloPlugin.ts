@@ -10,13 +10,14 @@ let persistPlugins;
 export default class ApolloPlugin implements ConfigPlugin {
   public configure(builder: Builder, spin: Spin) {
     if (!builder.stack.hasAny('dll') && builder.stack.hasAll(['apollo', 'webpack'])) {
-      const persistGraphQL = builder.persistGraphQL && !spin.test;
+      const persistGraphQL =
+        builder.persistGraphQL && !spin.test && !!builder.require.probe('persistgraphql-webpack-plugin');
       if (builder.stack.hasAny(['server', 'web'])) {
         if (!persistPlugins) {
-          const PersistGraphQLPlugin = builder.require('persistgraphql-webpack-plugin');
           // Tricky - this way it works for now both for single-package and monorepo projects
           const moduleName = path.resolve('node_modules/persisted_queries.json');
           if (persistGraphQL) {
+            const PersistGraphQLPlugin = builder.require('persistgraphql-webpack-plugin');
             const clientPersistPlugin = new PersistGraphQLPlugin({
               moduleName,
               filename: 'extracted_queries.json',
@@ -29,8 +30,9 @@ export default class ApolloPlugin implements ConfigPlugin {
             persistPlugins = { client: clientPersistPlugin, server: serverPersistPlugin };
           } else {
             // Dummy plugin instances just to create persisted_queries.json virtual module
-            const clientPersistPlugin = new PersistGraphQLPlugin({ moduleName });
-            const serverPersistPlugin = new PersistGraphQLPlugin({ moduleName });
+            const VirtualModules = builder.require('webpack-virtual-modules');
+            const clientPersistPlugin = new VirtualModules({ [moduleName]: '{}' });
+            const serverPersistPlugin = new VirtualModules({ [moduleName]: '{}' });
             persistPlugins = { client: clientPersistPlugin, server: serverPersistPlugin };
           }
         }
@@ -47,7 +49,7 @@ export default class ApolloPlugin implements ConfigPlugin {
               test: /\.(graphql|gql)$/,
               exclude: /node_modules/,
               use: [{ loader: 'graphql-tag/loader', options: spin.createConfig(builder, 'graphqlTag', {}) }].concat(
-                persistGraphQL ? ['persistgraphql-webpack-plugin/graphql-loader'] : ([] as any[])
+                persistGraphQL ? ['persistgraphql-webpack-plugin/graphql-loader'] : [] as any[]
               )
             }
           ]

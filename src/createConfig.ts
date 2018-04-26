@@ -87,6 +87,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
     const overrides = fs.existsSync(overridesConfig) ? builder.require('./' + overridesConfig) : {};
 
     builder.depPlatforms = overrides.dependencyPlatforms || builder.depPlatforms || {};
+    builder.dllExcludes = builder.dllExcludes || [];
     builder.plugins.forEach((plugin: ConfigPlugin) => plugin.configure(builder, spin));
 
     const strategy = {

@@ -132,7 +132,14 @@ const getDepsForNode = (spin: Spin, builder: Builder): string[] => {
   const deps = [];
   for (const key of Object.keys(pkg.dependencies)) {
     const val = builder.depPlatforms[key];
+    let excluded = false;
+    for (const regexp of builder.dllExcludes) {
+      if (new RegExp(regexp).test(key)) {
+        excluded = true;
+      }
+    }
     if (
+      !excluded &&
       key.indexOf('@types') !== 0 &&
       (!val || (val.constructor === Array && val.indexOf(builder.parent.name) >= 0) || val === builder.parent.name)
     ) {
@@ -184,6 +191,11 @@ const createConfig = (builder: Builder, spin: Spin) => {
     }
   };
 
+  const webpackVer = builder.require('webpack/package.json').version.split('.')[0];
+
+  if (webpackVer >= 4) {
+    baseConfig.mode = !spin.dev ? 'production' : 'development';
+  }
   if (builder.sourceMap) {
     baseConfig.devtool = spin.dev ? '#cheap-module-source-map' : '#nosources-source-map';
     baseConfig.output = {

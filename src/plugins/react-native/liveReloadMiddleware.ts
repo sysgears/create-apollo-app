@@ -1,3 +1,5 @@
+import { hookSync } from '../../webpackHooks';
+
 function notifyWatcher(watcher) {
   const headers = {
     'Content-Type': 'application/json; charset=UTF-8'
@@ -11,7 +13,7 @@ export default function liveReloadMiddleware(compiler) {
   let watchers = [];
   let notify = false;
 
-  compiler.plugin('done', () => {
+  hookSync(compiler, 'done', () => {
     watchers.forEach(watcher => {
       notifyWatcher(watcher);
     });

@@ -20,6 +20,7 @@ import { ConcatSource, RawSource } from 'webpack-sources';
 import { Builder, Builders } from './Builder';
 import liveReloadMiddleware from './plugins/react-native/liveReloadMiddleware';
 import Spin from './Spin';
+import { hookAsync, hookSync } from './webpackHooks';
 
 const SPIN_DLL_VERSION = 1;
 const BACKEND_CHANGE_MSG = 'backend_change';
@@ -127,7 +128,7 @@ class MobileAssetsPlugin {
   }
 
   public apply(compiler) {
-    compiler.plugin('after-compile', (compilation, callback) => {
+    hookAsync(compiler, 'after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
           if (file.endsWith('.bundle')) {
@@ -196,8 +197,14 @@ const startServerWebpack = (spin, builder) => {
     const compiler = webpack(config);
 
     if (spin.watch) {
-      compiler.plugin('compilation', compilation => {
-        compilation.plugin('after-optimize-assets', assets => {
+      hookSync(compiler, 'done', stats => {
+        if (stats.compilation.errors && stats.compilation.errors.length) {
+          stats.compilation.errors.forEach(error => logger.error(error));
+        }
+      });
+
+      hookSync(compiler, 'compilation', compilation => {
+        hookSync(compilation, 'after-optimize-assets', assets => {
           // Patch webpack-generated original source files path, by stripping hash after filename
           const mapKey = _.findKey(assets, (v, k) => k.endsWith('.map'));
           if (mapKey) {
@@ -212,7 +219,7 @@ const startServerWebpack = (spin, builder) => {
 
       compiler.watch({}, reporter);
 
-      compiler.plugin('done', stats => {
+      hookSync(compiler, 'done', stats => {
         if (!stats.compilation.errors.length) {
           const { output } = config;
           startBackend = true;
@@ -321,7 +328,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   const compiler = webpack(config);
   let awaitedAlready = false;
 
-  compiler.plugin('after-emit', (compilation, callback) => {
+  hookAsync(compiler, 'after-emit', (compilation, callback) => {
     if (!awaitedAlready) {
       if (hasBackend || builder.waitOn) {
         let waitOnUrls;
@@ -360,7 +367,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     }
   });
   if (builder.webpackDll && builder.child && platform !== 'web') {
-    compiler.plugin('after-compile', (compilation, callback) => {
+    hookAsync(compiler, 'after-compile', (compilation, callback) => {
       compilation.chunks.forEach(chunk => {
         chunk.files.forEach(file => {
           if (file.endsWith('.bundle')) {
@@ -387,15 +394,15 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   }
 
   if (builder.webpackDll && builder.child && platform === 'web' && !builder.ssr) {
-    compiler.plugin('after-compile', (compilation, callback) => {
+    hookAsync(compiler, 'after-compile', (compilation, callback) => {
       compilation.assets[vendorHashesJson.name] = vendorSource;
       if (builder.sourceMap) {
         compilation.assets[vendorHashesJson.name + '.map'] = vendorMap;
       }
       callback();
     });
-    compiler.plugin('compilation', compilation => {
-      compilation.plugin('html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
+    hookSync(compiler, 'compilation', compilation => {
+      hookAsync(compilation, 'html-webpack-plugin-before-html-processing', (htmlPluginData, callback) => {
         htmlPluginData.assets.js.unshift('/' + vendorHashesJson.name);
         callback(null, htmlPluginData);
       });
@@ -404,7 +411,10 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
 
   let frontendFirstStart = true;
 
-  compiler.plugin('done', stats => {
+  hookSync(compiler, 'done', stats => {
+    if (stats.compilation.errors && stats.compilation.errors.length) {
+      stats.compilation.errors.forEach(error => logger.error(error));
+    }
     const dir = configOutputPath;
     mkdirp.sync(dir);
     if (stats.compilation.assets['assets.json']) {
@@ -440,7 +450,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
 
     serverInstance = new WebpackDevServer(compiler, {
       ...config.devServer,
-      reporter: ({ state, stats }) => {
+      reporter: (opts1, opts2) => {
+        const opts = opts1.stats ? opts1 : opts2;
+        const { state, stats } = opts;
         if (state) {
           logger('bundle is now VALID.');
         } else {
@@ -690,7 +702,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
       mkdirp.sync(builder.dllBuildDir);
       const compiler = webpack(config);
 
-      compiler.plugin('done', stats => {
+      hookSync(compiler, 'done', stats => {
         try {
           const json = JSON.parse(fs.readFileSync(path.join(builder.dllBuildDir, `${name}_dll.json`)).toString());
           const vendorKey = _.findKey(
