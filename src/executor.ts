@@ -451,7 +451,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     serverInstance = new WebpackDevServer(compiler, {
       ...config.devServer,
       reporter: (opts1, opts2) => {
-        const opts = opts1.stats ? opts1 : opts2;
+        const opts = opts2 || opts1;
         const { state, stats } = opts;
         if (state) {
           logger('bundle is now VALID.');
