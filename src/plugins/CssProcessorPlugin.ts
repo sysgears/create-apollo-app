@@ -50,44 +50,111 @@ export default class CssProcessorPlugin implements ConfigPlugin {
             .concat(ruleList)
         });
       } else if (stack.hasAny('web')) {
-        let ExtractTextPlugin;
-        if (!dev) {
-          ExtractTextPlugin = builder.require('extract-text-webpack-plugin');
-        }
-        createRule = (ext: string, nodeModules: boolean, ruleList: any[]) => {
-          if (!dev && !plugin) {
-            plugin = new ExtractTextPlugin({ filename: `[name].[contenthash].css` });
+        const webpackVer = builder.require('webpack/package.json').version.split('.')[0];
+
+        if (webpackVer < 4) {
+          let ExtractCSSPlugin;
+          if (!dev) {
+            ExtractCSSPlugin = builder.require('extract-text-webpack-plugin');
           }
-          return {
-            test: nodeModules
-              ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
-              : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
-            use: dev
-              ? ([
-                  { loader: 'style-loader', options: spin.createConfig(builder, 'style', {}) },
-                  {
-                    loader: 'css-loader',
-                    options: spin.createConfig(builder, 'css', { ...loaderOptions, importLoaders: 1 })
-                  }
-                ] as any[])
-                  .concat(
-                    postCssLoader && !nodeModules
-                      ? {
-                          loader: postCssLoader,
-                          options: spin.createConfig(
-                            builder,
-                            'postCss',
-                            useDefaultPostCss
-                              ? { ...postCssDefaultConfig(builder), ...loaderOptions }
-                              : { ...loaderOptions }
-                          )
-                        }
-                      : []
-                  )
-                  .concat(ruleList)
-              : plugin.extract({
-                  fallback: 'style-loader',
-                  use: [
+          createRule = (ext: string, nodeModules: boolean, ruleList: any[]) => {
+            if (!dev && !plugin) {
+              plugin = new ExtractCSSPlugin({ filename: `[name].[contenthash].css` });
+            }
+            return {
+              test: nodeModules
+                ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
+                : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
+              use: dev
+                ? ([
+                    { loader: 'style-loader', options: spin.createConfig(builder, 'style', {}) },
+                    {
+                      loader: 'css-loader',
+                      options: spin.createConfig(builder, 'css', { ...loaderOptions, importLoaders: 1 })
+                    }
+                  ] as any[])
+                    .concat(
+                      postCssLoader && !nodeModules
+                        ? {
+                            loader: postCssLoader,
+                            options: spin.createConfig(
+                              builder,
+                              'postCss',
+                              useDefaultPostCss
+                                ? { ...postCssDefaultConfig(builder), ...loaderOptions }
+                                : { ...loaderOptions }
+                            )
+                          }
+                        : []
+                    )
+                    .concat(ruleList)
+                : plugin.extract({
+                    fallback: 'style-loader',
+                    use: [
+                      {
+                        loader: 'css-loader',
+                        options: spin.createConfig(builder, 'css', {
+                          importLoaders: postCssLoader && !nodeModules ? 1 : 0
+                        })
+                      }
+                    ]
+                      .concat(
+                        postCssLoader && !nodeModules
+                          ? {
+                              loader: postCssLoader,
+                              options: spin.createConfig(
+                                builder,
+                                'postCss',
+                                useDefaultPostCss ? postCssDefaultConfig(builder) : {}
+                              )
+                            } as any
+                          : []
+                      )
+                      .concat(ruleList ? ruleList.map(rule => rule.loader) : [])
+                  })
+            };
+          };
+        } else {
+          let ExtractCSSPlugin;
+          if (!dev) {
+            ExtractCSSPlugin = builder.require('mini-css-extract-plugin');
+          }
+          createRule = (ext: string, nodeModules: boolean, ruleList: any[]) => {
+            if (!dev && !plugin) {
+              plugin = new ExtractCSSPlugin({
+                chunkFilename: '[id].css',
+                filename: `[name].[contenthash].css`
+              });
+            }
+            return {
+              test: nodeModules
+                ? new RegExp(`^.*\\/node_modules\\/.*\\.${ext}$`)
+                : new RegExp(`^(?!.*\\/node_modules\\/).*\\.${ext}$`),
+              use: dev
+                ? ([
+                    { loader: 'style-loader', options: spin.createConfig(builder, 'style', {}) },
+                    {
+                      loader: 'css-loader',
+                      options: spin.createConfig(builder, 'css', { ...loaderOptions, importLoaders: 1 })
+                    }
+                  ] as any[])
+                    .concat(
+                      postCssLoader && !nodeModules
+                        ? {
+                            loader: postCssLoader,
+                            options: spin.createConfig(
+                              builder,
+                              'postCss',
+                              useDefaultPostCss
+                                ? { ...postCssDefaultConfig(builder), ...loaderOptions }
+                                : { ...loaderOptions }
+                            )
+                          }
+                        : []
+                    )
+                    .concat(ruleList)
+                : [
+                    { loader: ExtractCSSPlugin.loader, options: spin.createConfig(builder, 'mini-css-extract', {}) },
                     {
                       loader: 'css-loader',
                       options: spin.createConfig(builder, 'css', {
@@ -97,20 +164,20 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                   ]
                     .concat(
                       postCssLoader && !nodeModules
-                        ? ({
+                        ? {
                             loader: postCssLoader,
                             options: spin.createConfig(
                               builder,
                               'postCss',
                               useDefaultPostCss ? postCssDefaultConfig(builder) : {}
                             )
-                          } as any)
+                          } as any
                         : []
                     )
                     .concat(ruleList ? ruleList.map(rule => rule.loader) : [])
-                })
+            };
           };
-        };
+        }
       }
 
       if (createRule && stack.hasAny('css')) {

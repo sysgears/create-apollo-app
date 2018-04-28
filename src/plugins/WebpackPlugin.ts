@@ -109,7 +109,9 @@ const createPlugins = (builder: Builder, spin: Spin) => {
           );
         }
 
-        if (!spin.dev) {
+        const webpackVer = builder.require('webpack/package.json').version.split('.')[0];
+
+        if (webpackVer < 4 && !spin.dev) {
           plugins.push(
             new webpack.optimize.CommonsChunkPlugin({
               name: 'vendor',
@@ -343,6 +345,22 @@ const createConfig = (builder: Builder, spin: Spin) => {
           port: webpackDevPort
         }
       };
+      if (webpackVer >= 4 && !spin.dev) {
+        config = {
+          ...config,
+          optimization: {
+            splitChunks: {
+              cacheGroups: {
+                commons: {
+                  test: /[\\/]node_modules[\\/]/,
+                  name: 'vendor',
+                  chunks: 'all'
+                }
+              }
+            }
+          }
+        };
+      }
       if (builder.devProxy) {
         const proxyUrl =
           typeof builder.devProxy === 'string'

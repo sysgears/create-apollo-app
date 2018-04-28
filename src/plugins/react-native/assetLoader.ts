@@ -50,7 +50,7 @@ module.exports = async function assetLoader() {
 
   const callback = this.async();
   const query = this.query;
-  const options = this.options[query.config] || {};
+  const options = this.options ? this.options[query.config] || {} : {};
   const requireRelative = createRequire(query.cwd);
   const size = requireRelative('image-size');
   const hasha = requireRelative('hasha');

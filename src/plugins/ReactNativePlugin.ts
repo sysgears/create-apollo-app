@@ -94,7 +94,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
                 options: spin.createConfig(builder, 'asset', {
                   platform: stack.platform,
                   root: builder.require.cwd,
-                  cwd: spin.cwd,
+                  cwd: builder.require.cwd,
                   bundle: false
                 })
               }
