@@ -17,6 +17,7 @@ const registerBabel = (builder: Builder) => {
       retainLines: true,
       sourceMaps: 'inline'
     });
+    require('babel-polyfill');
 
     babelRegisterDone = true;
   }
@@ -104,7 +105,7 @@ export default class ReactNativePlugin implements ConfigPlugin {
         resolve: {
           plugins: [
             new HasteResolver({
-              directories: [builder.require.resolve('react-native')]
+              directories: [path.dirname(builder.require.resolve('react-native/package.json'))]
             }),
             new AssetResolver({
               platform: stack.platform,
