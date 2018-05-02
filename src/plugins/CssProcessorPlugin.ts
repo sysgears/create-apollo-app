@@ -190,7 +190,9 @@ export default class CssProcessorPlugin implements ConfigPlugin {
       }
 
       if (createRule && stack.hasAny('less')) {
-        const lessRule = [{ loader: 'less-loader', options: spin.createConfig(builder, 'less', { ...loaderOptions }) }];
+        const lessLoaderVer = builder.require('less-loader/package.json').version.split('.')[0];
+        const options = lessLoaderVer >= 4 ? { javascriptEnabled: true, ...loaderOptions } : { ...loaderOptions };
+        const lessRule = [{ loader: 'less-loader', options: spin.createConfig(builder, 'less', options) }];
         rules.push(createRule('less', false, lessRule), createRule('less', true, lessRule));
       }
 
