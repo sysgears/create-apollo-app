@@ -419,15 +419,16 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     mkdirp.sync(dir);
     if (stats.compilation.assets['assets.json']) {
       const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
+      const prefix = compiler.hooks ? compiler.outputPath : '';
       _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
         const bundleJs = assets.constructor === Array ? assets[0] : assets;
-        assetsMap[`${bundle}.js`] = bundleJs;
+        assetsMap[`${bundle}.js`] = prefix + bundleJs;
         if (assets.length > 1) {
-          assetsMap[`${bundle}.js.map`] = `${bundleJs}.map`;
+          assetsMap[`${bundle}.js.map`] = prefix + `${bundleJs}.map`;
         }
       });
       if (builder.webpackDll) {
-        assetsMap['vendor.js'] = vendorHashesJson.name;
+        assetsMap['vendor.js'] = prefix + vendorHashesJson.name;
       }
       fs.writeFileSync(path.join(dir, 'assets.json'), JSON.stringify(assetsMap));
     }
