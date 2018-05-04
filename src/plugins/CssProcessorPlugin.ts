@@ -110,7 +110,14 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                             } as any
                           : []
                       )
-                      .concat(ruleList ? ruleList.map(rule => rule.loader) : [])
+                      .concat(
+                        ruleList
+                          ? ruleList.map(rule => {
+                              const { sourceMap, ...options } = rule.options;
+                              return { loader: rule.loader, options };
+                            })
+                          : []
+                      )
                   })
             };
           };
@@ -174,7 +181,14 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                           } as any
                         : []
                     )
-                    .concat(ruleList ? ruleList.map(rule => rule.loader) : [])
+                    .concat(
+                      ruleList
+                        ? ruleList.map(rule => {
+                            const { sourceMap, ...options } = rule.options;
+                            return { loader: rule.loader, options };
+                          })
+                        : []
+                    )
             };
           };
         }
