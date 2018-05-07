@@ -419,7 +419,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     mkdirp.sync(dir);
     if (stats.compilation.assets['assets.json']) {
       const assetsMap = JSON.parse(stats.compilation.assets['assets.json'].source());
-      const prefix = compiler.hooks ? compiler.outputPath : '';
+      const prefix = compiler.outputPath;
       _.each(stats.toJson().assetsByChunkName, (assets, bundle) => {
         const bundleJs = assets.constructor === Array ? assets[0] : assets;
         assetsMap[`${bundle}.js`] = prefix + bundleJs;
