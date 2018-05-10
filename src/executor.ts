@@ -543,7 +543,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
           }
           origWriteHead.apply(res, parms);
         };
-        if (req.path !== '/onchange') {
+        if (debug.enabled && req.path !== '/onchange') {
           logger.debug(`Dev mobile packager request: ${debug.enabled ? req.url : req.path}`);
         }
         next();
@@ -792,17 +792,25 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
 
 const deviceLoggers = {};
 
-const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string, packagerPort) => {
-  const { Config, Project, ProjectSettings, ProjectUtils } = builder.require('xdl');
+const mirrorExpoLogs = (builder: Builder, projectRoot: string) => {
+  const { ProjectUtils } = builder.require('xdl');
+
   deviceLoggers[projectRoot] = minilog('expo-for-' + builder.name);
 
   if (!ProjectUtils.logWithLevel._patched) {
     const origExpoLogger = ProjectUtils.logWithLevel;
     ProjectUtils.logWithLevel = (projRoot, level, object, msg, id) => {
+      let json;
+      if (msg[0] === '{') {
+        json = JSON.parse(msg);
+      }
       if (level === 'error') {
-        const json = JSON.parse(msg);
         const info = object.includesStack ? json.message + '\n' + json.stack : json.message;
         deviceLoggers[projRoot].log(info.replace(/\\n/g, '\n'));
+      } else if (json) {
+        if (msg.message.indexOf('"Warning: isMounted(...) is deprecated') < 0) {
+          deviceLoggers[projRoot].log(msg.message);
+        }
       } else {
         deviceLoggers[projRoot].log(msg);
       }
@@ -810,6 +818,12 @@ const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string
     };
     ProjectUtils.logWithLevel._patched = true;
   }
+};
+
+const startExpoServer = async (spin: Spin, builder: Builder, projectRoot: string, packagerPort) => {
+  const { Config, Project, ProjectSettings } = builder.require('xdl');
+
+  mirrorExpoLogs(builder, projectRoot);
 
   Config.validation.reactNativeVersionWarnings = false;
   Config.developerTool = 'crna';
