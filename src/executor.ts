@@ -808,9 +808,7 @@ const mirrorExpoLogs = (builder: Builder, projectRoot: string) => {
         const info = object.includesStack ? json.message + '\n' + json.stack : json.message;
         deviceLoggers[projRoot].log(info.replace(/\\n/g, '\n'));
       } else if (json) {
-        if (msg.message.indexOf('"Warning: isMounted(...) is deprecated') < 0) {
-          deviceLoggers[projRoot].log(msg.message);
-        }
+        deviceLoggers[projRoot].log(msg.message);
       } else {
         deviceLoggers[projRoot].log(msg);
       }
