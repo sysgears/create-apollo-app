@@ -21,8 +21,8 @@ export default class BuilderDiscoverer {
   }
 
   public discover(): Builders {
-    const packagesPaths = this._detectPaths();
-    return packagesPaths.reduce((res: any, pathName: string) => {
+    const packageRootPaths = this._detectRootPaths();
+    return packageRootPaths.reduce((res: any, pathName: string) => {
       return { ...res, ...this._discoverRecursively(pathName) };
     }, {});
   }
@@ -52,7 +52,7 @@ export default class BuilderDiscoverer {
     return builders;
   }
 
-  private _detectPaths(): string[] {
+  private _detectRootPaths(): string[] {
     const rootConfig = JSON.parse(fs.readFileSync(`${this.cwd}/package.json`, 'utf8'));
     return rootConfig.workspaces && rootConfig.workspaces.length
       ? _.flatten(rootConfig.workspaces.map((ws: string) => glob.sync(ws))).map((ws: string) => path.join(this.cwd, ws))
