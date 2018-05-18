@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import { glob } from 'glob';
+import * as _ from 'lodash';
 import * as path from 'path';
 
 import { Builder, Builders } from './Builder';
@@ -19,7 +21,10 @@ export default class BuilderDiscoverer {
   }
 
   public discover(): Builders {
-    return this._discoverRecursively(this.cwd);
+    const packageRootPaths = this._detectRootPaths();
+    return packageRootPaths.reduce((res: any, pathName: string) => {
+      return { ...res, ...this._discoverRecursively(pathName) };
+    }, {});
   }
 
   private _discoverRecursively(dir: string): Builders {
@@ -45,5 +50,12 @@ export default class BuilderDiscoverer {
     }
 
     return builders;
+  }
+
+  private _detectRootPaths(): string[] {
+    const rootConfig = JSON.parse(fs.readFileSync(`${this.cwd}/package.json`, 'utf8'));
+    return rootConfig.workspaces && rootConfig.workspaces.length
+      ? _.flatten(rootConfig.workspaces.map((ws: string) => glob.sync(ws))).map((ws: string) => path.join(this.cwd, ws))
+      : [this.cwd];
   }
 }

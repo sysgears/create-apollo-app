@@ -53,7 +53,7 @@ const createConfig = (cwd: string, cmd: string, argv: any, builderName?: string)
   const builderDiscoverer = new BuilderDiscoverer(spin, plugins, argv);
   const role = cmd === 'exp' ? 'build' : cmd;
 
-  const discoveredBuilders = builderDiscoverer.discover() || {};
+  const discoveredBuilders = builderDiscoverer.discover();
   if (!discoveredBuilders) {
     throw new Error('Cannot find spinjs config');
   }
