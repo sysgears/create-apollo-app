@@ -24,20 +24,8 @@ const templates: Template[] = [
   }, */
   {
     title: '@server: Apollo GraphQL Node Express server in TypeScript',
-    files: ['single', 'server'],
-    filesRoot,
-    dependencies: [
-      '@jsapp/preset-apollo',
-      'apollo-server-express',
-      'body-parser',
-      'cors',
-      'express',
-      'graphql',
-      'graphql-tools',
-      'open',
-      'subscriptions-transport-ws'
-    ],
-    devDependencies: ['@types/cors', '@types/express', '@types/graphql', '@types/webpack-env', '@types/ws']
+    files: ['server'],
+    filesRoot
   } /*,
   {
     title: '@web: Apollo GraphQL React web frontend in TypeScript',
