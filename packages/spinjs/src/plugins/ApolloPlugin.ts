@@ -49,7 +49,7 @@ export default class ApolloPlugin implements ConfigPlugin {
               test: /\.(graphql|gql)$/,
               exclude: /node_modules/,
               use: [{ loader: 'graphql-tag/loader', options: spin.createConfig(builder, 'graphqlTag', {}) }].concat(
-                persistGraphQL ? ['persistgraphql-webpack-plugin/graphql-loader'] : [] as any[]
+                persistGraphQL ? ['persistgraphql-webpack-plugin/graphql-loader'] : ([] as any[])
               )
             }
           ]

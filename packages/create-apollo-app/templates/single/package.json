@@ -1,0 +1,10 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "spin start",
+    "build": "spin build",
+    "test": "spin test"
+  }
+}

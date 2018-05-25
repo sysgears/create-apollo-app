@@ -100,14 +100,14 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                     ]
                       .concat(
                         postCssLoader && !nodeModules
-                          ? {
+                          ? ({
                               loader: postCssLoader,
                               options: spin.createConfig(
                                 builder,
                                 'postCss',
                                 useDefaultPostCss ? postCssDefaultConfig(builder) : {}
                               )
-                            } as any
+                            } as any)
                           : []
                       )
                       .concat(
@@ -171,14 +171,14 @@ export default class CssProcessorPlugin implements ConfigPlugin {
                   ]
                     .concat(
                       postCssLoader && !nodeModules
-                        ? {
+                        ? ({
                             loader: postCssLoader,
                             options: spin.createConfig(
                               builder,
                               'postCss',
                               useDefaultPostCss ? postCssDefaultConfig(builder) : {}
                             )
-                          } as any
+                          } as any)
                         : []
                     )
                     .concat(

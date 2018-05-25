@@ -9,7 +9,7 @@
       "node_modules",
       "dist",
       "lib",
-      "src/plugins/angular/*.ts"
+      "packages/create-apollo-app/templates/**/*"
     ]
   },
   "rules": {
@@ -17,6 +17,7 @@
       "printWidth": 120,
       "singleQuote": true
     }],
+    "max-classes-per-file": false,
     "ban": false,
     "class-name": true,
     "eofline": true,
@@ -43,7 +44,7 @@
     "no-bitwise": true,
     "no-conditional-assignment": true,
     "no-consecutive-blank-lines": false,
-    "no-console": [true, "log", "debug", "info", "time", "timeEnd", "trace"],
+    "no-console": false,
     "no-construct": true,
     "no-debugger": true,
     "no-duplicate-variable": true,

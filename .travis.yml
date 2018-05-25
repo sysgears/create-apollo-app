@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - "node"
+dist: trusty
+sudo: required
+install:
+  - yarn
+os:
+  - linux
+script:
+  - yarn build
+  - yarn test

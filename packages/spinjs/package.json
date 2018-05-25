@@ -6,7 +6,7 @@
     "clean": "rimraf ./lib",
     "build": "tsc",
     "watch": "tsc -w",
-    "lint": "tslint --fix -p tsconfig.json --type-check",
+    "lint": "tslint --fix -p tsconfig.json -c tslint.json",
     "tests": " ",
     "test": "yarn tests && yarn lint",
     "precommit": "lint-staged",

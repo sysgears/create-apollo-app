@@ -365,7 +365,9 @@ const createConfig = (builder: Builder, spin: Spin) => {
         const proxyUrl =
           typeof builder.devProxy === 'string'
             ? builder.devProxy
-            : builder.backendUrl ? `http://localhost:${url.parse(builder.backendUrl).port}` : `http://localhost:8080`;
+            : builder.backendUrl
+              ? `http://localhost:${url.parse(builder.backendUrl).port}`
+              : `http://localhost:8080`;
         config.devServer.proxy = {
           '!/*.hot-update.{json,js}': {
             target: proxyUrl,
