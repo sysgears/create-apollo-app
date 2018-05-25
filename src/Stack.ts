@@ -3,15 +3,17 @@ export default class Stack {
   public platform: string;
 
   constructor(...stack) {
-    this.technologies = stack.reduce((acc, tech) => {
-      if (!tech) {
-        return acc;
-      } else if (tech.constructor === Array) {
-        return acc.concat(tech);
-      } else {
-        return acc.concat(tech.split(':'));
-      }
-    }, []);
+    this.technologies = stack
+      .reduce((acc, tech) => {
+        if (!tech) {
+          return acc;
+        } else if (tech.constructor === Array) {
+          return acc.concat(tech);
+        } else {
+          return acc.concat(tech.split(':'));
+        }
+      }, [])
+      .filter((v, i, a) => a.indexOf(v) === i);
     if (this.hasAny('server')) {
       this.platform = 'server';
     } else if (this.hasAny('web')) {

@@ -6,6 +6,7 @@ import { Builder, Builders } from './Builder';
 import { ConfigPlugin } from './ConfigPlugin';
 import createRequire, { RequireFunction } from './createRequire';
 import EnhancedError from './EnhancedError';
+import inferConfig from './inferConfig';
 import Spin from './Spin';
 import Stack from './Stack';
 
@@ -28,7 +29,7 @@ export default class ConfigReader {
           try {
             configObject = JSON.parse(fs.readFileSync(filePath).toString());
             if (path.basename(filePath) === 'package.json') {
-              configObject = configObject.spin;
+              configObject = configObject.spin || inferConfig(configObject, filePath);
             }
           } catch (e) {
             throw new EnhancedError(`Error parsing ${path.resolve(filePath)}`, e);

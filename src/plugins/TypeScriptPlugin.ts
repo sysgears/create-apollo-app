@@ -11,19 +11,27 @@ export default class TypeScriptPlugin implements ConfigPlugin {
     const stack = builder.stack;
 
     if (stack.hasAll(['ts', 'webpack'])) {
+      const atl = builder.require.probe('awesome-typescript-loader') ? 'awesome-typescript-loader' : undefined;
       const jsRuleFinder = new JSRuleFinder(builder);
       const tsRule = jsRuleFinder.findAndCreateTSRule();
       tsRule.test = /^(?!.*[\\\/]node_modules[\\\/]).*\.ts$/;
       tsRule.use = [
-        {
-          loader: 'awesome-typescript-loader',
-          options: spin.createConfig(builder, 'awesomeTypescript', { ...builder.tsLoaderOptions })
-        }
+        atl
+          ? {
+              loader: atl,
+              options: spin.createConfig(builder, 'awesomeTypescript', { ...builder.tsLoaderOptions })
+            }
+          : {
+              loader: 'ts-loader',
+              options: spin.createConfig(builder, 'tsLoader', { silent: true, ...builder.tsLoaderOptions })
+            }
       ];
 
-      builder.config = spin.merge(builder.config, {
-        plugins: [new (builder.require('awesome-typescript-loader')).CheckerPlugin()]
-      });
+      if (atl) {
+        builder.config = spin.merge(builder.config, {
+          plugins: [new (builder.require('awesome-typescript-loader')).CheckerPlugin()]
+        });
+      }
 
       builder.config.resolve.extensions = ['.']
         .map(prefix => jsRuleFinder.extensions.map(ext => prefix + ext))

@@ -52,13 +52,13 @@ process.on('exit', () => {
 
 const spawnServer = (cwd, args: any[], options: { nodeDebugger: boolean; serverPath: string }, logger) => {
   server = spawn('node', [...args], { stdio: [0, 1, 2], cwd });
-  logger(`Spawning ${['node', ...args].join(' ')}`);
+  logger.info(`Spawning ${['node', ...args].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
       // App requested full reload
       startBackend = true;
     }
-    logger('Backend has been stopped');
+    logger.info('Backend has been stopped');
     server = undefined;
     runServer(cwd, options.serverPath, options.nodeDebugger, logger);
   });
@@ -70,7 +70,7 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
   }
   if (startBackend) {
     startBackend = false;
-    logger('Starting backend');
+    logger.info('Starting backend');
 
     if (!nodeDebugOpt) {
       if (!nodeDebugger) {
@@ -99,13 +99,13 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
 
 const webpackReporter = (spin: Spin, builder: Builder, outputPath: string, log, err?, stats?) => {
   if (err) {
-    log(err.stack);
+    log.error(err.stack);
     throw new Error('Build error');
   }
   if (stats) {
     const str = stats.toString(builder.config.stats);
     if (str.length > 0) {
-      log(str);
+      log.info(str);
     }
 
     if (builder.writeStats) {
@@ -159,6 +159,9 @@ const startClientWebpack = (hasBackend, spin, builder) => {
   frontendVirtualModules.push(clientVirtualModules);
 
   const logger = minilog(`webpack-for-${config.name}`);
+  if (builder.silent) {
+    logger.suggest.deny(/.*/, 'warn');
+  }
   try {
     const reporter = (...args) => webpackReporter(spin, builder, configOutputPath, logger, ...args);
 
@@ -174,7 +177,7 @@ const startClientWebpack = (hasBackend, spin, builder) => {
       compiler.run(reporter);
     }
   } catch (err) {
-    logger(err.message, err.stack);
+    logger.error(err.message, err.stack);
   }
 };
 
@@ -189,6 +192,9 @@ const increaseBackendReloadCount = () => {
 const startServerWebpack = (spin, builder) => {
   const config = builder.config;
   const logger = minilog(`webpack-for-${config.name}`);
+  if (builder.silent) {
+    logger.suggest.deny(/.*/, 'warn');
+  }
 
   try {
     const webpack = builder.require('webpack');
@@ -247,7 +253,7 @@ const startServerWebpack = (spin, builder) => {
       compiler.run(reporter);
     }
   } catch (err) {
-    logger(err.message, err.stack);
+    logger.error(err.message, err.stack);
   }
 };
 
@@ -455,9 +461,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
         const opts = opts2 || opts1;
         const { state, stats } = opts;
         if (state) {
-          logger('bundle is now VALID.');
+          logger.info('bundle is now VALID.');
         } else {
-          logger('bundle is now INVALID.');
+          logger.info('bundle is now INVALID.');
         }
         reporter(null, stats);
       }
@@ -514,9 +520,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
       _.merge({}, config.devServer, {
         reporter(mwOpts, { state, stats }) {
           if (state) {
-            logger('bundle is now VALID.');
+            logger.info('bundle is now VALID.');
           } else {
-            logger('bundle is now INVALID.');
+            logger.info('bundle is now INVALID.');
           }
           reporter(null, stats);
         }
@@ -626,7 +632,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     }
   }
 
-  logger(`Webpack ${config.name} dev server listening on http://localhost:${config.devServer.port}`);
+  logger.info(`Webpack ${config.name} dev server listening on http://localhost:${config.devServer.port}`);
   serverInstance.listen(config.devServer.port, () => {
     if (platform !== 'web') {
       wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
@@ -695,6 +701,9 @@ const buildDll = (spin: Spin, builder: Builder) => {
   return new Promise(done => {
     const name = `vendor_${builder.stack.platform}`;
     const logger = minilog(`webpack-for-${config.name}`);
+    if (builder.silent) {
+      logger.suggest.deny(/.*/, 'warn');
+    }
     const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
     if (!isDllValid(spin, builder, logger)) {
@@ -796,6 +805,9 @@ const mirrorExpoLogs = (builder: Builder, projectRoot: string) => {
   const { ProjectUtils } = builder.require('xdl');
 
   deviceLoggers[projectRoot] = minilog('expo-for-' + builder.name);
+  if (builder.silent) {
+    deviceLoggers[projectRoot].suggest.deny(/.*/, 'warn');
+  }
 
   if (!ProjectUtils.logWithLevel._patched) {
     const origExpoLogger = ProjectUtils.logWithLevel;

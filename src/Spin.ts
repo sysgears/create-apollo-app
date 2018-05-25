@@ -15,9 +15,9 @@ export default class Spin {
   constructor(cwd, cmd) {
     this.cmd = cmd;
     this.cwd = cwd;
-    this.dev = this.cmd === 'watch' || this.cmd === 'test';
+    this.dev = ['watch', 'start', 'test'].indexOf(this.cmd) >= 0;
     this.test = this.cmd === 'test';
-    this.watch = this.cmd === 'watch';
+    this.watch = ['watch', 'start'].indexOf(this.cmd) >= 0;
   }
 
   public createConfig(builder: Builder, tool: string, config): Configuration {

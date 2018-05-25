@@ -10,7 +10,7 @@ const logger = minilog('spin');
 try {
   const argv = yargs
     .command('build', 'compiles package for usage in production')
-    .command('watch', 'launches package in development mode with hot code reload')
+    .command(['watch', 'start'], 'launches package in development mode with hot code reload')
     .command('exp', 'launches server for exp and exp tool')
     .command('test [mocha-webpack options]', 'runs package tests')
     .demandCommand(1, '')
@@ -33,13 +33,16 @@ try {
     yargs.showHelp();
   } else {
     const cwd = process.cwd();
-    if (cmd === 'watch' || cmd === 'build' || cmd === 'test' || cmd === 'exp') {
+    if (['exp', 'build', 'test', 'watch', 'start'].indexOf(cmd) >= 0) {
       config = createConfig(cwd, cmd, argv);
     }
 
     if (cmd === 'init') {
       init();
     } else {
+      if (Object.keys(config.builders).length === 0) {
+        throw new Error('No spinjs builders found, exiting.');
+      }
       execute(cmd, argv, config.builders, config.spin);
     }
   }

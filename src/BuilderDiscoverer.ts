@@ -32,7 +32,7 @@ export default class BuilderDiscoverer {
     if (this.argv.c) {
       builders = this.configReader.readConfig(path.join(dir, this.argv.c));
     } else {
-      const candidates = ['package.json', '.spinrc.json', '.spinrc', '.spinrc.js'];
+      const candidates = ['.spinrc.json', '.spinrc', '.spinrc.js', 'package.json'];
       for (const fileName of candidates) {
         builders = this.configReader.readConfig(path.join(dir, fileName));
         if (builders) {
