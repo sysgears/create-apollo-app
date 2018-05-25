@@ -37,17 +37,28 @@ export default async (appName, template) => {
     writeTemplates(appName, '', path.join(template.filesRoot, templatePath), '', { name: appName });
   });
 
-  await new Promise(resolve => {
-    const yarn = spawn('yarnpkg', ['--cwd', appName, 'add'].concat(template.dependencies), { stdio: 'inherit' });
-    yarn.on('close', resolve);
-  });
-
-  await new Promise(resolve => {
-    const yarn = spawn('yarnpkg', ['--cwd', appName, 'add', '-D'].concat(template.devDependencies), {
-      stdio: 'inherit'
+  if (template.dependencies) {
+    await new Promise(resolve => {
+      const yarn = spawn('yarnpkg', ['--cwd', appName, 'add'].concat(template.dependencies), { stdio: 'inherit' });
+      yarn.on('close', resolve);
     });
-    yarn.on('close', resolve);
-  });
+  }
+
+  if (template.devDependencies) {
+    await new Promise(resolve => {
+      const yarn = spawn('yarnpkg', ['--cwd', appName, 'add', '-D'].concat(template.devDependencies), {
+        stdio: 'inherit'
+      });
+      yarn.on('close', resolve);
+    });
+  }
+
+  if (!template.dependencies) {
+    await new Promise(resolve => {
+      const yarn = spawn('yarnpkg', ['--cwd', appName, 'install']);
+      yarn.on('close', resolve);
+    });
+  }
 
   console.log(`App ${chalk.green(appName)} generated successfully! Execute commands below to start it:\n`);
   console.log(chalk.yellow(`cd ${appName}`));

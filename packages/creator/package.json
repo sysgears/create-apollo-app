@@ -1,6 +1,6 @@
 {
   "name": "@jsapp/creator",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JSApp creator core",
   "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
