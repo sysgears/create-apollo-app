@@ -1,6 +1,6 @@
 {
   "name": "create-apollo-app",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Apollo GraphQL apps creator",
   "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
@@ -23,7 +23,8 @@
     "create-apollo-app.js",
     "lib/*.js",
     "lib/*.d.ts",
-    "lib/*.map"
+    "lib/*.map",
+    "templates"
   ],
   "devDependencies": {
     "@types/node": "^7.0.18",
