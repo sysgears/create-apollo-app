@@ -1,6 +1,6 @@
 {
   "name": "@jsapp/preset-apollo",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Apollo Preset for JSApp",
   "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
@@ -31,7 +31,7 @@
     "eslint-plugin-react": "^7.7.0",
     "extract-text-webpack-plugin": "^3.0.2",
     "file-loader": "^1.1.6",
-    "graphql": "^0.12.3",
+    "graphql": "^0.13.0",
     "graphql-tag": "^2.6.1",
     "html-webpack-plugin": "^2.30.1",
     "minimist": "^1.2.0",
