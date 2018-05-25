@@ -8,7 +8,7 @@ Create new GraphQL app quickly.
 ## Usage
 
 ```bash
-npx create-apollo-app my-app
+yarn create apollo-app my-app
 cd my-app
 yarn start
 ```
