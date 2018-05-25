@@ -12,10 +12,15 @@ const getDeps = (packageJsonPath: string, requireDep: RequireFunction, deps: Dep
   let result = { ...deps };
   for (const dep of pkgDeps) {
     if (!dep.startsWith('.') && !result[dep]) {
-      const depPkg = requireDep.resolve(dep + '/package.json');
-      result[dep] = depPkg;
-      const subDeps = getDeps(depPkg, requireDep, result);
-      result = { ...result, ...subDeps };
+      let depPkg;
+      try {
+        depPkg = requireDep.resolve(dep + '/package.json');
+      } catch (e) {}
+      if (depPkg) {
+        result[dep] = depPkg;
+        const subDeps = getDeps(depPkg, requireDep, result);
+        result = { ...result, ...subDeps };
+      }
     }
   }
   return result;

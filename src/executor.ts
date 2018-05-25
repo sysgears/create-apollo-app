@@ -158,7 +158,7 @@ const startClientWebpack = (hasBackend, spin, builder) => {
   config.plugins.push(clientVirtualModules);
   frontendVirtualModules.push(clientVirtualModules);
 
-  const logger = minilog(`webpack-for-${config.name}`);
+  const logger = minilog(`${config.name}-webpack`);
   if (builder.silent) {
     logger.suggest.deny(/.*/, 'warn');
   }
@@ -191,7 +191,7 @@ const increaseBackendReloadCount = () => {
 
 const startServerWebpack = (spin, builder) => {
   const config = builder.config;
-  const logger = minilog(`webpack-for-${config.name}`);
+  const logger = minilog(`${config.name}-webpack`);
   if (builder.silent) {
     logger.suggest.deny(/.*/, 'warn');
   }
@@ -205,7 +205,7 @@ const startServerWebpack = (spin, builder) => {
     if (spin.watch) {
       hookSync(compiler, 'done', stats => {
         if (stats.compilation.errors && stats.compilation.errors.length) {
-          stats.compilation.errors.forEach(error => logger.error(error));
+          stats.compilation.errors.forEach(error => logger.error(error.message));
         }
       });
 
@@ -419,7 +419,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
 
   hookSync(compiler, 'done', stats => {
     if (stats.compilation.errors && stats.compilation.errors.length) {
-      stats.compilation.errors.forEach(error => logger.error(error));
+      stats.compilation.errors.forEach(error => logger.error(error.message));
     }
     const dir = configOutputPath;
     mkdirp.sync(dir);
@@ -700,7 +700,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
   const config = builder.child.config;
   return new Promise(done => {
     const name = `vendor_${builder.stack.platform}`;
-    const logger = minilog(`webpack-for-${config.name}`);
+    const logger = minilog(`${config.name}-webpack`);
     if (builder.silent) {
       logger.suggest.deny(/.*/, 'warn');
     }
