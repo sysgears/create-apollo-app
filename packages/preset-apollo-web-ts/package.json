@@ -1,0 +1,43 @@
+{
+  "name": "@jsapp/preset-apollo-web-ts",
+  "version": "0.0.1",
+  "description": "Apollo Web Preset for JSApp",
+  "repository": "https://github.com/sysgears/jsapp.git",
+  "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
+  "main": "./index.js",
+  "license": "MIT",
+  "files": [
+    "./index.js"
+  ],
+  "bin": {
+    "jsapp": "./index.js"
+  },
+  "peerDependencies": {
+    "@jsapp/preset-apollo-ts": "0.0.x"
+  },
+  "dependencies": {
+    "autoprefixer": "^7.2.5",
+    "css-loader": "^0.28.9",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "file-loader": "^1.1.6",
+    "html-webpack-plugin": "^2.30.1",
+    "postcss-loader": "2.0.10",
+    "sass-loader": "7.0.1",
+    "style-loader": "0.19.1",
+    "webpack-dev-server": "^2.11.2",
+    "webpack-manifest-plugin": "1.3.2"
+  },
+  "browserslist": {
+    "development": [
+      "last 2 chrome versions",
+      "last 2 firefox versions",
+      "last 2 edge versions"
+    ],
+    "production": [
+      ">1%",
+      "last 4 versions",
+      "Firefox ESR",
+      "not ie < 11"
+    ]
+  }
+}
