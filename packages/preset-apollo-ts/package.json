@@ -1,6 +1,6 @@
 {
   "name": "@jsapp/preset-apollo-ts",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Apollo Preset for JSApp",
   "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
@@ -28,7 +28,7 @@
     "prettier": "^1.12.1",
     "sass-loader": "7.0.1",
     "source-map-support": "^0.5.6",
-    "spinjs": "^0.4.132",
+    "spinjs": "^0.4.134",
     "style-loader": "0.19.1",
     "ts-loader": "^2.3.7",
     "tslint": "^5.10.0",
