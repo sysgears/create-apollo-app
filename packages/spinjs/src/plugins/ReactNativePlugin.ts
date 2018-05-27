@@ -11,12 +11,14 @@ let babelRegisterDone = false;
 
 const registerBabel = (builder: Builder) => {
   if (!babelRegisterDone) {
+    // tslint:disable-next-line
     require('babel-register')({
       presets: ['env', 'flow'],
       ignore: /node_modules(?!\/(haul|react-native))/,
       retainLines: true,
       sourceMaps: 'inline'
     });
+    // tslint:disable-next-line
     require('babel-polyfill');
 
     babelRegisterDone = true;

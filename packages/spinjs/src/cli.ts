@@ -3,7 +3,6 @@ import * as yargs from 'yargs';
 
 import createConfig from './createConfig';
 import execute from './executor';
-import init from './init';
 
 minilog.enable();
 const logger = minilog('spin');
@@ -37,14 +36,10 @@ try {
       config = createConfig(cwd, cmd, argv);
     }
 
-    if (cmd === 'init') {
-      init();
-    } else {
-      if (Object.keys(config.builders).length === 0) {
-        throw new Error('No spinjs builders found, exiting.');
-      }
-      execute(cmd, argv, config.builders, config.spin);
+    if (Object.keys(config.builders).length === 0) {
+      throw new Error('No spinjs builders found, exiting.');
     }
+    execute(cmd, argv, config.builders, config.spin);
   }
 } catch (e) {
   logger.error(e);
