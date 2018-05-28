@@ -1,5 +1,5 @@
 import { Server } from 'http';
-import * as open from 'open';
+import * as opn from 'opn';
 
 import startServer from './server';
 
@@ -23,7 +23,7 @@ try {
       console.log(`GraphQL Server is now running on http://localhost:${PORT}`);
 
       if (module.hot) {
-        open(`http://localhost:${PORT}/graphiql`);
+        opn(`http://localhost:${PORT}/graphiql`);
       }
     }
     server = serverInstance;

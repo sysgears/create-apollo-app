@@ -1,0 +1,30 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "spin start",
+    "build": "spin build",
+    "test": "spin test",
+    "eject": "spin eject"
+  },
+  "dependencies": {
+    "@jsapp/preset-apollo-web-ts": "0.0.x",
+    "apollo-boost": "^0.1.6",
+    "graphql": "^0.13.2",
+    "raf": "^3.4.0",
+    "react": "^16.4.0",
+    "react-apollo": "^2.1.4",
+    "react-dom": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/graphql": "^0.13.1",
+    "@types/prop-types": "^15.5.3",
+    "@types/react": "^16.3.14",
+    "@types/react-dom": "^16.0.5",
+    "@types/webpack-env": "^1.13.6"
+  },
+  "resolutions": {
+    "@types/react": "16.3.14"
+  }
+}

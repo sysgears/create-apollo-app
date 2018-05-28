@@ -26,12 +26,12 @@ const templates: Template[] = [
     title: '@server: Apollo GraphQL Node Express server in TypeScript',
     files: ['server'],
     filesRoot
-  } /*,
+  },
   {
     title: '@web: Apollo GraphQL React web frontend in TypeScript',
     filesRoot,
-    files: []
-  },
+    files: ['web']
+  } /*,
   {
     title: '@mobile: Apollo GraphQL React Native mobile frontend in TypeScript',
     filesRoot,

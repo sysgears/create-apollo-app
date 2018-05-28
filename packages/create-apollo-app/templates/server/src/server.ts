@@ -34,7 +34,7 @@ export default async (port: number): Promise<Server> => {
           '# Welcome to your own GraphQL server!\n#\n' +
           '# Press Play button above to execute GraphQL query\n#\n' +
           '# You can start editing source code and see results immediately\n\n' +
-          'query salutation($subject:String) {\n  salutation(subject: $subject)\n}',
+          'query hello($subject:String) {\n  hello(subject: $subject)\n}',
         variables: { subject: 'World' }
       })
     );

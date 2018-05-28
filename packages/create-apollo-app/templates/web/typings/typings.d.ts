@@ -1,5 +1,3 @@
-declare module 'opn';
-
 declare module '*.graphql' {
   // tslint:disable-next-line
   import { DocumentNode } from "graphql";

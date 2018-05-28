@@ -1,12 +1,19 @@
 {
   "name": "create-apollo-app",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Apollo GraphQL apps creator",
-  "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sysgears/jsapp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sysgears/jsapp/issues"
+  },
+  "homepage": "https://github.com/sysgears/jsapp/packages/create-apollo-app#readme",
   "scripts": {
     "clean": "rm -rf ./lib",
     "build": "tsc -p tsconfig.build.json",
