@@ -7,6 +7,7 @@ import * as Debug from 'debug';
 import * as detectPort from 'detect-port';
 import * as fs from 'fs';
 import * as http from 'http';
+import * as humps from 'humps';
 import * as ip from 'ip';
 import * as _ from 'lodash';
 import * as minilog from 'minilog';
@@ -160,7 +161,7 @@ const startClientWebpack = (hasBackend, spin, builder) => {
 
   const logger = minilog(`${config.name}-webpack`);
   if (builder.silent) {
-    logger.suggest.deny(/.*/, 'warn');
+    logger.suggest.deny(/.*/, 'debug');
   }
   try {
     const reporter = (...args) => webpackReporter(spin, builder, configOutputPath, logger, ...args);
@@ -193,7 +194,7 @@ const startServerWebpack = (spin, builder) => {
   const config = builder.config;
   const logger = minilog(`${config.name}-webpack`);
   if (builder.silent) {
-    logger.suggest.deny(/.*/, 'warn');
+    logger.suggest.deny(/.*/, 'debug');
   }
 
   try {
@@ -258,7 +259,7 @@ const startServerWebpack = (spin, builder) => {
 };
 
 const openFrontend = (spin, builder, logger) => {
-  const openurl = builder.require('openurl');
+  const opn = builder.require('opn');
   try {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
@@ -266,7 +267,7 @@ const openFrontend = (spin, builder, logger) => {
       if (containerized() || builder.openBrowser === false) {
         logger.info(`App is running at, Local: ${localUrl} LAN: ${lanUrl}`);
       } else {
-        openurl.open(localUrl);
+        opn(localUrl);
       }
     } else if (builder.stack.hasAny('react-native')) {
       startExpoProject(spin, builder, logger);
@@ -287,7 +288,6 @@ const debugMiddleware = (req, res, next) => {
 
 const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder, reporter, logger) => {
   const webpack = builder.require('webpack');
-  const waitOn = builder.require('wait-on');
 
   const config = builder.config;
   const platform = builder.stack.platform;
@@ -301,7 +301,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   let vendorMap;
 
   if (builder.webpackDll && builder.child) {
-    const name = `vendor_${platform}`;
+    const name = `vendor_${humps.camelize(builder.name)}`;
     const jsonPath = path.join(builder.dllBuildDir, `${name}_dll.json`);
     const json = JSON.parse(fs.readFileSync(path.resolve('./' + jsonPath)).toString());
 
@@ -351,6 +351,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
           const waitNotifier = setInterval(() => {
             logger.debug(`still waiting for ${waitOnUrls} after ${Date.now() - waitStart}ms...`);
           }, 10000);
+          const waitOn = builder.require('wait-on');
           waitOn({ resources: waitOnUrls }, err => {
             clearInterval(waitNotifier);
             awaitedAlready = true;
@@ -418,9 +419,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
   let frontendFirstStart = true;
 
   hookSync(compiler, 'done', stats => {
-    if (stats.compilation.errors && stats.compilation.errors.length) {
-      stats.compilation.errors.forEach(error => logger.error(error.message));
-    }
+    // if (stats.compilation.errors && stats.compilation.errors.length) {
+    //   stats.compilation.errors.forEach(error => logger.error(error.message));
+    // }
     const dir = configOutputPath;
     mkdirp.sync(dir);
     if (stats.compilation.assets['assets.json']) {
@@ -461,9 +462,9 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
         const opts = opts2 || opts1;
         const { state, stats } = opts;
         if (state) {
-          logger.info('bundle is now VALID.');
+          logger.debug('bundle is now VALID.');
         } else {
-          logger.info('bundle is now INVALID.');
+          logger.debug('bundle is now INVALID.');
         }
         reporter(null, stats);
       }
@@ -632,7 +633,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
     }
   }
 
-  logger.info(`Webpack ${config.name} dev server listening on http://localhost:${config.devServer.port}`);
+  logger.info(`Webpack dev server listening on http://localhost:${config.devServer.port}`);
   serverInstance.listen(config.devServer.port, () => {
     if (platform !== 'web') {
       wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
@@ -648,7 +649,7 @@ const startWebpackDevServer = (hasBackend: boolean, spin: Spin, builder: Builder
 };
 
 const isDllValid = (spin, builder, logger): boolean => {
-  const name = `vendor_${builder.stack.platform}`;
+  const name = `vendor_${humps.camelize(builder.name)}`;
   try {
     const hashesPath = path.join(builder.dllBuildDir, `${name}_dll_hashes.json`);
     if (!fs.existsSync(hashesPath)) {
@@ -699,10 +700,10 @@ const buildDll = (spin: Spin, builder: Builder) => {
   const webpack = builder.require('webpack');
   const config = builder.child.config;
   return new Promise(done => {
-    const name = `vendor_${builder.stack.platform}`;
+    const name = `vendor_${humps.camelize(builder.name)}`;
     const logger = minilog(`${config.name}-webpack`);
     if (builder.silent) {
-      logger.suggest.deny(/.*/, 'warn');
+      logger.suggest.deny(/.*/, 'debug');
     }
     const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
@@ -806,7 +807,7 @@ const mirrorExpoLogs = (builder: Builder, projectRoot: string) => {
 
   deviceLoggers[projectRoot] = minilog('expo-for-' + builder.name);
   if (builder.silent) {
-    deviceLoggers[projectRoot].suggest.deny(/.*/, 'warn');
+    deviceLoggers[projectRoot].suggest.deny(/.*/, 'debug');
   }
 
   if (!ProjectUtils.logWithLevel._patched) {

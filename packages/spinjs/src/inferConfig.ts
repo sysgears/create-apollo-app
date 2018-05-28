@@ -54,8 +54,11 @@ export default (pkg: any, packageJsonPath: string): any => {
   const deps = getDeps(packageJsonPath, requireDep, {});
 
   const stack = [];
-  if (deps['body-parser']) {
+  if (deps['apollo-server-express']) {
     stack.push('server');
+  }
+  if (deps['webpack-dev-server']) {
+    stack.push('web');
   }
   if (deps['babel-core']) {
     stack.push('es6');
@@ -64,8 +67,23 @@ export default (pkg: any, packageJsonPath: string): any => {
   if (deps.typescript) {
     stack.push('ts');
   }
-  if (deps['apollo-server-express']) {
+  if (deps['apollo-server-express'] || deps['react-apollo'] || deps['apollo-boost'] || deps['apollo-link']) {
     stack.push('apollo');
+  }
+  if (deps.react) {
+    stack.push('react');
+  }
+  if (deps['styled-components']) {
+    stack.push('styled-components');
+  }
+  if (deps['css-loader']) {
+    stack.push('css');
+  }
+  if (deps['sass-loader']) {
+    stack.push('sass');
+  }
+  if (deps['less-loader']) {
+    stack.push('less');
   }
   if (deps.webpack) {
     stack.push('webpack');

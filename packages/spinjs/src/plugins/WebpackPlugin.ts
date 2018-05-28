@@ -1,3 +1,4 @@
+import * as humps from 'humps';
 import * as ip from 'ip';
 import * as path from 'path';
 import * as url from 'url';
@@ -46,7 +47,7 @@ const createPlugins = (builder: Builder, spin: Spin) => {
   }
 
   if (stack.hasAny('dll')) {
-    const name = `vendor_${builder.parent.name}`;
+    const name = `vendor_${humps.camelize(builder.parent.name)}`;
     plugins = [
       new webpack.DefinePlugin({
         'process.env.NODE_ENV': `"${buildNodeEnv}"`,
@@ -260,7 +261,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
   }
 
   if (stack.hasAny('dll')) {
-    const name = `vendor_${builder.parent.name}`;
+    const name = `vendor_${humps.camelize(builder.parent.name)}`;
     config = {
       ...config,
       entry: {

@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.135",
+  "version": "0.4.136",
   "main": "lib/index.js",
   "scripts": {
     "clean": "rimraf ./lib",
@@ -12,6 +12,14 @@
     "precommit": "lint-staged",
     "prepare": "yarn clean && yarn build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sysgears/jsapp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sysgears/jsapp/issues"
+  },
+  "homepage": "https://github.com/sysgears/jsapp/packages/spinjs#readme",
   "files": [
     "react-native-polyfills",
     "src",
