@@ -2,11 +2,18 @@
   "name": "@jsapp/creator",
   "version": "0.0.2",
   "description": "JSApp creator core",
-  "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sysgears/jsapp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sysgears/jsapp/issues"
+  },
+  "homepage": "https://github.com/sysgears/jsapp/packages/creator#readme",
   "scripts": {
     "clean": "rimraf ./lib",
     "build": "tsc -p tsconfig.build.json",
