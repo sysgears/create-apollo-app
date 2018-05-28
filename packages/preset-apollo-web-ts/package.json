@@ -1,26 +1,26 @@
 {
   "name": "@jsapp/preset-apollo-web-ts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Apollo Web Preset for JSApp",
-  "repository": "https://github.com/sysgears/jsapp.git",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
-  "main": "./index.js",
   "license": "MIT",
-  "files": [
-    "./index.js"
-  ],
-  "bin": {
-    "jsapp": "./index.js"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sysgears/jsapp.git"
   },
-  "peerDependencies": {
-    "@jsapp/preset-apollo-ts": "0.0.x"
+  "bugs": {
+    "url": "https://github.com/sysgears/jsapp/issues"
   },
+  "homepage": "https://github.com/sysgears/jsapp/packages/preset-apollo-web-ts#readme",
   "dependencies": {
+    "@jsapp/preset-apollo-ts": "0.0.x",
     "autoprefixer": "^7.2.5",
     "css-loader": "^0.28.9",
     "extract-text-webpack-plugin": "^3.0.2",
     "file-loader": "^1.1.6",
     "html-webpack-plugin": "^2.30.1",
+    "less": "^3.0.2",
+    "less-loader": "^4.1.0",
     "postcss-loader": "2.0.10",
     "sass-loader": "7.0.1",
     "style-loader": "0.19.1",
