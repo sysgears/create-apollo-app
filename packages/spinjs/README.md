@@ -1,4 +1,4 @@
-<p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/spinjs/master/logo.svg"></a></p>
+<p align="center"><a href="#"><img width="150" src="https://rawgit.com/sysgears/jsapp/master/packages/spinjs/logo.svg"></a></p>
 
 ## spinjs - the best build tool - is the one that don't need build rules
 
