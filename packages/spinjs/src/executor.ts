@@ -53,7 +53,7 @@ process.on('exit', () => {
 
 const spawnServer = (cwd, args: any[], options: { nodeDebugger: boolean; serverPath: string }, logger) => {
   server = spawn('node', [...args], { stdio: [0, 1, 2], cwd });
-  logger.info(`Spawning ${['node', ...args].join(' ')}`);
+  logger.debug(`Spawning ${['node', ...args].join(' ')}`);
   server.on('exit', code => {
     if (code === 250) {
       // App requested full reload
@@ -71,7 +71,7 @@ const runServer = (cwd, serverPath, nodeDebugger, logger) => {
   }
   if (startBackend) {
     startBackend = false;
-    logger.info('Starting backend');
+    logger.debug('Starting backend');
 
     if (!nodeDebugOpt) {
       if (!nodeDebugger) {
@@ -708,7 +708,7 @@ const buildDll = (spin: Spin, builder: Builder) => {
     const reporter = (...args) => webpackReporter(spin, builder, config.output.path, logger, ...args);
 
     if (!isDllValid(spin, builder, logger)) {
-      logger.info(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
+      logger.debug(`Generating ${name} DLL bundle with modules:\n${JSON.stringify(config.entry.vendor)}`);
 
       mkdirp.sync(builder.dllBuildDir);
       const compiler = webpack(config);
