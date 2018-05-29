@@ -33,25 +33,17 @@ for (const dir of entryDirs) {
   entryCandidates = entryCandidates.concat(entryExts.map(ext => path.join(dir, 'index.' + ext)));
 }
 
-const isJsApp = (pkg: any): boolean => {
-  let result = false;
-  if (pkg.dependencies) {
-    const keys = Object.keys(pkg.dependencies);
-    for (const key of keys) {
-      if (key.startsWith('@jsapp')) {
-        result = true;
-      }
-    }
-  }
-  return result;
-};
+const isSpinApp = (pkg: any): boolean =>
+  Object.keys(pkg.dependencies || {})
+    .concat(Object.keys(pkg.devDependencies || {}))
+    .indexOf('spinjs') >= 0;
 
 export default (pkg: any, packageJsonPath: string): any => {
-  if (!isJsApp(pkg)) {
+  if (!isSpinApp(pkg)) {
     return undefined;
   }
   const requireDep = createRequire(path.dirname(packageJsonPath));
-  const deps = getDeps(packageJsonPath, requireDep, {});
+  const deps = { ...getDeps(packageJsonPath, requireDep, {}), ...(pkg.devDependencies || {}) };
 
   const stack = [];
   if (deps['apollo-server-express']) {
