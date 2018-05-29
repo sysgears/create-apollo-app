@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "apollo-boost": "^0.1.6",
+    "graphql": "^0.13.2",
     "raf": "^3.4.0",
     "react": "^16.4.0",
     "react-apollo": "^2.1.4",
