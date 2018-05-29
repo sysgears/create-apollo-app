@@ -3,18 +3,21 @@ import * as minimist from 'minimist';
 import 'source-map-support/register';
 import * as validatePackageName from 'validate-npm-package-name';
 
+import { RelativePath } from '.';
 import chooseTemplate from './chooseTemplate';
 import generateApp from './generateApp';
 import GeneratorError from './GeneratorError';
+export * from './helpers';
 
 export interface Template {
-  filesRoot: string;
-  files: string[];
+  files: RelativePath[];
   title: string;
   workspaces?: boolean;
   dependencies?: string[];
   devDependencies?: string[];
 }
+
+export type ReadFile = (filePath: RelativePath) => string;
 
 const showUsage = (command: string): void => {
   console.log(`Usage: ${chalk.cyan(command)} ${chalk.green('app_name[@optional_template_id]')}`);
@@ -39,7 +42,7 @@ interface TemplateMap {
   [id: string]: Template;
 }
 
-const run = async (templateMap: TemplateMap, args: any) => {
+const run = async (templateMap: TemplateMap, readFile: ReadFile, args: any) => {
   try {
     const [appName, argTemplateId] = args._[0].split('@');
     validateAppName(appName);
@@ -51,7 +54,7 @@ const run = async (templateMap: TemplateMap, args: any) => {
     if (!template) {
       throw new GeneratorError(`Template ${chalk.blueBright('@' + templateId)} not found`);
     }
-    await generateApp(appName, template);
+    await generateApp(appName, template, readFile);
   } catch (e) {
     if (e.name === 'GeneratorError') {
       console.error(e.message);
@@ -61,7 +64,7 @@ const run = async (templateMap: TemplateMap, args: any) => {
   }
 };
 
-export default (templates: Template[], command: string, argv: string[]) => {
+export default (templates: Template[], readFile: ReadFile, command: string, argv: string[]) => {
   const templateList = templates.map(template => ({ ...template, id: template.title.split(':')[0].substring(1) }));
   const templateMap = templateList.reduce((result, item) => ({ ...result, [item.id]: item }), {});
 
@@ -74,6 +77,6 @@ export default (templates: Template[], command: string, argv: string[]) => {
     console.log(`${chalk.green('app_name')} argument is required`);
     process.exit(1);
   } else {
-    run(templateMap, args);
+    run(templateMap, readFile, args);
   }
 };

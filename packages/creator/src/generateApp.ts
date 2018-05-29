@@ -4,23 +4,7 @@ import * as fs from 'fs';
 import * as mustache from 'mustache';
 import * as path from 'path';
 
-const writeTemplates = (appName: string, appRoot: string, templateRoot: string, templatePath: string, values: any) => {
-  const src = path.join(templateRoot, templatePath);
-  const stats = fs.statSync(src);
-  if (stats.isDirectory()) {
-    fs
-      .readdirSync(src)
-      .forEach(file =>
-        writeTemplates(appName, path.join(appRoot, templatePath), path.join(templateRoot, templatePath), file, values)
-      );
-  } else if (stats.isFile()) {
-    const srcTemplate = fs.readFileSync(src, 'utf8');
-    const dst = path.join(appName, appRoot, templatePath);
-    mkdirp(path.dirname(dst));
-    mustache.parse(srcTemplate, ['<%', '%>']);
-    fs.writeFileSync(dst, mustache.render(srcTemplate, values));
-  }
-};
+import { ReadFile, Template } from './index';
 
 const mkdirp = target =>
   target.split(path.sep).reduce((curPath, dir) => {
@@ -31,11 +15,15 @@ const mkdirp = target =>
     return curPath;
   }, '');
 
-export default async (appName, template) => {
+export default async (appName: string, template: Template, readFile: ReadFile) => {
   mkdirp(appName);
 
-  template.files.forEach(templatePath => {
-    writeTemplates(appName, '', path.join(template.filesRoot, templatePath), '', { name: appName });
+  template.files.forEach(filePath => {
+    const srcTemplate = readFile(filePath);
+    const dst = path.join(appName, filePath.relPath);
+    mkdirp(path.dirname(dst));
+    mustache.parse(srcTemplate, ['{;', ';}']);
+    fs.writeFileSync(dst, mustache.render(srcTemplate, { name: appName }));
   });
 
   if (template.dependencies) {
