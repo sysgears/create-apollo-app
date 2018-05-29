@@ -17,6 +17,7 @@ const writeTemplates = (appName: string, appRoot: string, templateRoot: string, 
     const srcTemplate = fs.readFileSync(src, 'utf8');
     const dst = path.join(appName, appRoot, templatePath);
     mkdirp(path.dirname(dst));
+    mustache.parse(srcTemplate, ['<%', '%>']);
     fs.writeFileSync(dst, mustache.render(srcTemplate, values));
   }
 };
