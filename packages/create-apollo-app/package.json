@@ -59,7 +59,7 @@
     ]
   },
   "dependencies": {
-    "@jsapp/creator": "^0.0.2",
+    "@jsapp/creator": "^0.0.3",
     "source-map-support": "^0.5.6"
   }
 }
