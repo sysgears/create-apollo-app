@@ -1,0 +1,10 @@
+{
+  "!presets": ["webpack"],
+  "devDependencies": {
+    "ts-loader": "^2.3.7",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.5.0",
+    "tslint-plugin-prettier": "^1.3.0",
+    "typescript": "^2.8.3"
+  }
+}

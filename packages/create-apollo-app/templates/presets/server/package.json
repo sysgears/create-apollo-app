@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "dotenv": "^5.0.0",
+    "dotenv-expand": "^4.2.0",
+    "graphql-tools": "^3.0.2",
+    "source-map-support": "^0.5.6"
+  }
+}

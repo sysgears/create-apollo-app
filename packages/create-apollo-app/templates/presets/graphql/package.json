@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "graphql": "^0.13.2"
+  },
+  "devDependencies": {
+    "@types/graphql": "^0.13.1",
+    "graphql-tag": "^2.6.1"
+  }
+}

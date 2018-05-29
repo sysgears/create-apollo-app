@@ -1,7 +1,5 @@
-import { Template } from '@jsapp/creator';
-import * as path from 'path';
+import { getRelFilePaths, Template } from '@jsapp/creator';
 
-const filesRoot = path.join(__dirname, '../templates');
 const templates: Template[] = [
   /*  {
     title: '@server-web: Apollo GraphQL Node Express server and web frontend in TypeScript',
@@ -24,13 +22,11 @@ const templates: Template[] = [
   }, */
   {
     title: '@server: Apollo GraphQL Node Express server in TypeScript',
-    files: ['server'],
-    filesRoot
+    files: getRelFilePaths(__dirname + '/../templates/server')
   },
   {
     title: '@web: Apollo GraphQL React web frontend in TypeScript',
-    filesRoot,
-    files: ['web']
+    files: getRelFilePaths(__dirname + '/../templates/web')
   } /*,
   {
     title: '@mobile: Apollo GraphQL React Native mobile frontend in TypeScript',
