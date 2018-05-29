@@ -1,6 +1,6 @@
 {
   "name": "create-apollo-app",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Apollo GraphQL apps creator",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
   "main": "lib/index.js",
