@@ -27,12 +27,11 @@ const templates: Template[] = [
   {
     title: '@web: Apollo GraphQL React web frontend in TypeScript',
     files: getRelFilePaths(__dirname + '/../templates/web')
-  } /*,
+  },
   {
     title: '@mobile: Apollo GraphQL React Native mobile frontend in TypeScript',
-    filesRoot,
-    files: []
-  } */
+    files: getRelFilePaths(__dirname + '/../templates/mobile')
+  }
 ];
 
 export default templates;

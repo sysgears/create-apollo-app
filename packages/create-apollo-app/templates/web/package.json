@@ -1,8 +1,8 @@
 {
-  "name": "{;name;}",
+  "name": "{;slug;}",
   "version": "0.1.0",
   "private": true,
-  "!presets": ["ts", "react", "graphql"],
+  "!presets": ["ts", "react", "web", "graphql"],
   "scripts": {
     "start": "spin start",
     "build": "spin build",

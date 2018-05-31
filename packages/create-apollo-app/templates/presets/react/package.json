@@ -1,5 +1,4 @@
 {
-  "!presets": ["web"],
   "dependencies": {
     "raf": "^3.4.0",
     "react": "^16.4.0",
