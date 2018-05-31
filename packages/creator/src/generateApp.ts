@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
+import { camelize } from 'humps';
 import * as mustache from 'mustache';
 import * as path from 'path';
 
@@ -23,7 +24,14 @@ export default async (appName: string, template: Template, readFile: ReadFile) =
     const dst = path.join(appName, filePath.relPath);
     mkdirp(path.dirname(dst));
     mustache.parse(srcTemplate, ['{;', ';}']);
-    fs.writeFileSync(dst, mustache.render(srcTemplate, { name: appName }));
+    fs.writeFileSync(
+      dst,
+      mustache.render(srcTemplate, {
+        slug: appName,
+        camelSlug: camelize(appName),
+        name: appName.replace('-', ' ').replace(/\b\w/g, w => w.toUpperCase())
+      })
+    );
   });
 
   if (template.dependencies) {

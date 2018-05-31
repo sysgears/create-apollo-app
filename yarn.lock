@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@types/humps@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@types/humps/-/humps-1.1.2.tgz#fbcaf596d20ff2ed78f8f511c5d6a943b51101d6"
+
 "@types/inquirer@^0.0.35":
   version "0.0.35"
   resolved "https://registry.yarnpkg.com/@types/inquirer/-/inquirer-0.0.35.tgz#e054657cf2d10963823957d4d06ec244f05c65be"
@@ -922,10 +926,6 @@ connect-cors@^0.5.6:
 console-control-strings@^1.0.0, console-control-strings@~1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/console-control-strings/-/console-control-strings-1.1.0.tgz#3d7cf4464db6446ea644bf4b39507f9851008e8e"
-
-containerized@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/containerized/-/containerized-1.0.2.tgz#dfed3149eab5042ef0b06e851c7d8f4dc6750d88"
 
 content-type-parser@^1.0.1:
   version "1.0.2"
@@ -2113,6 +2113,10 @@ is-descriptor@^1.0.0, is-descriptor@^1.0.2:
     is-accessor-descriptor "^1.0.0"
     is-data-descriptor "^1.0.0"
     kind-of "^6.0.2"
+
+is-docker@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/is-docker/-/is-docker-1.1.0.tgz#f04374d4eee5310e9a8e113bf1495411e46176a1"
 
 is-dotfile@^1.0.0:
   version "1.0.3"
