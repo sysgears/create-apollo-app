@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "types": ["graphql", "prop-types", "react", "react-native", "zen-observable"],
     "baseUrl": ".",
     "outDir": "build",
     "module": "es6",
@@ -18,6 +17,7 @@
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*.ts", "typings/*.d.ts"],
   "exclude": [

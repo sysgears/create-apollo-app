@@ -1,14 +1,10 @@
 import Expo, { Constants } from 'expo';
 import React from 'react';
-import PropTypes from 'prop-types';
 import { View } from 'react-native';
 import App from './App';
 
 // we don't want this to require transformation
 class AwakeInDevApp extends React.Component {
-  static propTypes = {
-    exp: PropTypes.object
-  };
   state = {
     isReady: false
   };
