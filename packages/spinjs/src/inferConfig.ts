@@ -45,11 +45,24 @@ export default (pkg: any, packageJsonPath: string): any => {
   const requireDep = createRequire(path.dirname(packageJsonPath));
   const deps = { ...getDeps(packageJsonPath, requireDep, {}), ...(pkg.devDependencies || {}) };
 
+  let entry;
+  for (const entryPath of entryCandidates) {
+    if (fs.existsSync(path.join(requireDep.cwd, entryPath))) {
+      entry = entryPath;
+      break;
+    }
+  }
+  if (!entry) {
+    throw new Error('Cannot find entry file, tried: ' + entryCandidates);
+  }
+
   const stack = [];
   if (deps['apollo-server-express']) {
     stack.push('server');
   }
-  if (deps['webpack-dev-server']) {
+  if (deps['react-native']) {
+    stack.push('android');
+  } else if (deps['webpack-dev-server']) {
     stack.push('web');
   }
   if (deps['babel-core']) {
@@ -64,6 +77,9 @@ export default (pkg: any, packageJsonPath: string): any => {
   }
   if (deps.react) {
     stack.push('react');
+  }
+  if (deps['react-native']) {
+    stack.push('react-native');
   }
   if (deps['styled-components']) {
     stack.push('styled-components');
@@ -81,29 +97,48 @@ export default (pkg: any, packageJsonPath: string): any => {
     stack.push('webpack');
   }
 
-  let entry;
-  for (const entryPath of entryCandidates) {
-    if (fs.existsSync(entryPath)) {
-      entry = entryPath;
-      break;
-    }
-  }
-  if (!entry) {
-    throw new Error('Cannot find entry file, tried: ' + entryCandidates);
-  }
-
-  const builder = {
+  let config;
+  const builderDefaults = {
     entry,
-    stack,
     silent: true,
     nodeDebugger: false
   };
+  if (stack.indexOf('react-native') >= 0) {
+    const builderAndroid = {
+      stack,
+      ...builderDefaults
+    };
 
-  const config = {
-    builders: {
-      [pkg.name]: builder
-    }
-  };
+    const iosStack = [...stack];
+    iosStack[stack.indexOf('android')] = 'ios';
+    const builderIOS = {
+      stack: iosStack,
+      ...builderDefaults
+    };
+
+    config = {
+      builders: {
+        [pkg.name + '-android']: builderAndroid,
+        [pkg.name + '-ios']: builderIOS
+      },
+      options: {
+        defines: {
+          __DEV__: process.env.NODE_ENV !== 'production'
+        }
+      }
+    };
+  } else {
+    const builder = {
+      stack,
+      ...builderDefaults
+    };
+
+    config = {
+      builders: {
+        [pkg.name]: builder
+      }
+    };
+  }
 
   return config;
 };

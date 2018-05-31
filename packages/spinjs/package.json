@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.138",
+  "version": "0.4.139",
   "main": "lib/index.js",
   "scripts": {
     "clean": "rimraf ./lib",
@@ -62,12 +62,12 @@
   },
   "dependencies": {
     "connect-cors": "^0.5.6",
-    "containerized": "^1.0.2",
     "debug": "^3.1.0",
     "detect-port": "^1.2.2",
     "glob": "^7.1.2",
     "humps": "^2.0.1",
     "ip": "^1.1.5",
+    "is-docker": "^1.1.0",
     "lodash": "^4.17.4",
     "minilog": "^3.1.0",
     "mkdirp": "^0.5.1",

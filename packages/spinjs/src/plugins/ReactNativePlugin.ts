@@ -9,17 +9,17 @@ import UPFinder from './shared/UPFinder';
 
 let babelRegisterDone = false;
 
-const registerBabel = (builder: Builder) => {
+const registerBabel = (builder: Builder): void => {
   if (!babelRegisterDone) {
     // tslint:disable-next-line
-    require('babel-register')({
-      presets: ['env', 'flow'],
-      ignore: /node_modules(?!\/(haul|react-native))/,
+    builder.require('babel-register')({
+      presets: [builder.require.resolve('babel-preset-react-native'), builder.require.resolve('babel-preset-flow')],
+      ignore: /node_modules\/(?!haul|react-native)/,
       retainLines: true,
       sourceMaps: 'inline'
     });
     // tslint:disable-next-line
-    require('babel-polyfill');
+    builder.require('babel-polyfill');
 
     babelRegisterDone = true;
   }

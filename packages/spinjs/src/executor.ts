@@ -1,7 +1,6 @@
 import { exec, spawn } from 'child_process';
 import * as cluster from 'cluster';
 import * as cors from 'connect-cors';
-import * as containerized from 'containerized';
 import * as crypto from 'crypto';
 import * as Debug from 'debug';
 import * as detectPort from 'detect-port';
@@ -9,6 +8,7 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as humps from 'humps';
 import * as ip from 'ip';
+import * as isDocker from 'is-docker';
 import * as _ from 'lodash';
 import * as minilog from 'minilog';
 import * as mkdirp from 'mkdirp';
@@ -264,7 +264,7 @@ const openFrontend = (spin, builder, logger) => {
     if (builder.stack.hasAny('web')) {
       const lanUrl = `http://${ip.address()}:${builder.config.devServer.port}`;
       const localUrl = `http://localhost:${builder.config.devServer.port}`;
-      if (containerized() || builder.openBrowser === false) {
+      if (isDocker() || builder.openBrowser === false) {
         logger.info(`App is running at, Local: ${localUrl} LAN: ${lanUrl}`);
       } else {
         opn(localUrl);
@@ -771,14 +771,20 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
     fs.readFileSync(builder.require.resolve('react-native/package.json'))
   );
   fs.writeFileSync(path.join(reactNativeDir, 'local-cli/cli.js'), '');
+
+  const reactDir = path.join(dir, 'node_modules', 'react');
+  mkdirp.sync(reactDir);
+  fs.writeFileSync(path.join(reactDir, 'package.json'), fs.readFileSync(builder.require.resolve('react/package.json')));
+
   const pkg = JSON.parse(fs.readFileSync(builder.require.resolve('./package.json')).toString());
   const origDeps = pkg.dependencies;
-  pkg.dependencies = { 'react-native': origDeps['react-native'] };
+  delete pkg.devDependencies;
+  pkg.dependencies = { react: origDeps.react, 'react-native': origDeps['react-native'] };
   if (platform !== 'all') {
     pkg.name = pkg.name + '-' + platform;
   }
   pkg.main = `index.mobile`;
-  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg));
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg, null, 2));
   const appJson = JSON.parse(fs.readFileSync(builder.require.resolve('./app.json')).toString());
   [
     'expo.icon',
@@ -794,9 +800,9 @@ const setupExpoDir = (spin: Spin, builder: Builder, dir, platform) => {
     'expo.android.splash.xxhdpi',
     'expo.android.splash.xxxhdpi'
   ].forEach(keyPath => copyExpoImage(builder.require.cwd, dir, appJson, keyPath));
-  fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson));
+  fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify(appJson, null, 2));
   if (platform !== 'all') {
-    fs.writeFileSync(path.join(dir, '.exprc'), JSON.stringify({ manifestPort: expoPorts[platform] }));
+    fs.writeFileSync(path.join(dir, '.exprc'), JSON.stringify({ manifestPort: expoPorts[platform] }, null, 2));
   }
 };
 
@@ -806,9 +812,6 @@ const mirrorExpoLogs = (builder: Builder, projectRoot: string) => {
   const { ProjectUtils } = builder.require('xdl');
 
   deviceLoggers[projectRoot] = minilog('expo-for-' + builder.name);
-  if (builder.silent) {
-    deviceLoggers[projectRoot].suggest.deny(/.*/, 'debug');
-  }
 
   if (!ProjectUtils.logWithLevel._patched) {
     const origExpoLogger = ProjectUtils.logWithLevel;
@@ -867,7 +870,7 @@ const startExpoProject = async (spin: Spin, builder: Builder, logger: any) => {
     qr.generate(address, code => {
       logger.info('\n' + code);
     });
-    if (!containerized()) {
+    if (!isDocker()) {
       if (platform === 'android') {
         const { success, error } = await Android.openProjectAsync(projectRoot);
 
