@@ -23,7 +23,7 @@ export default class Stack {
     } else if (this.hasAny('ios')) {
       this.platform = 'ios';
     } else {
-      throw new Error(`stack should include one of 'server', 'web', 'android', 'ios'`);
+      throw new Error(`stack should include one of 'server', 'web', 'android', 'ios', stack: ${this.technologies}`);
     }
   }
 
