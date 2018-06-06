@@ -1,0 +1,13 @@
+{
+  "name": "{;slug;}",
+  "private": true,
+  "scripts": {
+    "start": "spin start",
+    "build": "spin build",
+    "test": "spin test",
+    "eject": "spin eject"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

@@ -2,23 +2,35 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { start } from 'repl';
 
-export interface RelativePath {
-  rootPath: string;
+export interface TemplatePath {
+  srcRoot: string;
+  dstRoot: string;
   relPath: string;
 }
 
-export const getRelFilePaths = (rootPath: string, relPath: string = '.'): RelativePath[] => {
-  const curPath = path.join(rootPath, relPath);
-  const stats = fs.statSync(curPath);
-  const result: RelativePath[] = [];
+export const getTemplateFilePaths = (options: TemplatePath | TemplatePath[] | string): TemplatePath[] => {
+  const result: TemplatePath[] = [];
 
-  if (stats.isDirectory()) {
-    fs.readdirSync(curPath).forEach(nextPath => {
-      result.push.apply(result, getRelFilePaths(rootPath, path.relative(rootPath, path.join(curPath, nextPath))));
-    });
-  } else if (stats.isFile()) {
-    result.push({ rootPath, relPath });
-  }
+  [].concat(options).forEach(curOpts => {
+    curOpts = typeof curOpts === 'string' ? { srcRoot: curOpts, dstRoot: '.', relPath: '.' } : curOpts;
+    const curPath = path.join(curOpts.srcRoot, curOpts.relPath);
+    const stats = fs.statSync(curPath);
+
+    if (stats.isDirectory()) {
+      fs.readdirSync(curPath).forEach(nextPath => {
+        result.push.apply(
+          result,
+          getTemplateFilePaths({
+            srcRoot: curOpts.srcRoot,
+            dstRoot: curOpts.dstRoot,
+            relPath: path.relative(curOpts.srcRoot, path.join(curPath, nextPath))
+          })
+        );
+      });
+    } else if (stats.isFile()) {
+      result.push({ srcRoot: curOpts.srcRoot, relPath: curOpts.relPath, dstRoot: curOpts.dstRoot });
+    }
+  });
 
   return result;
 };
@@ -52,18 +64,24 @@ const mergePkgObjs = (dst: any, src: any): any => {
   return result;
 };
 
-const readPackage = (filePath: RelativePath, presetsRoot: string): any => {
-  const json = JSON.parse(fs.readFileSync(path.join(filePath.rootPath, filePath.relPath), 'utf8'));
+const readPackage = (pkgTemplatePath: TemplatePath, presetsRoot: string): any => {
+  const json = JSON.parse(fs.readFileSync(path.join(pkgTemplatePath.srcRoot, pkgTemplatePath.relPath), 'utf8'));
   const presets = json['!presets'];
   let tmp = {};
   if (presets) {
     presets.forEach(preset => {
-      tmp = mergePkgObjs(tmp, readPackage({ rootPath: presetsRoot, relPath: preset + '/package.json' }, presetsRoot));
+      tmp = mergePkgObjs(
+        tmp,
+        readPackage(
+          { srcRoot: presetsRoot, dstRoot: pkgTemplatePath.dstRoot, relPath: preset + '/package.json' },
+          presetsRoot
+        )
+      );
     });
     delete json['!presets'];
   }
   return mergePkgObjs(json, tmp);
 };
 
-export const mergePkgJson = (filePath: RelativePath, presetsRoot: string): string =>
+export const mergePkgJson = (filePath: TemplatePath, presetsRoot: string): string =>
   JSON.stringify(readPackage(filePath, presetsRoot), null, 2);

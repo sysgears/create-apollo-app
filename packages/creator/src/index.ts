@@ -3,21 +3,22 @@ import * as minimist from 'minimist';
 import 'source-map-support/register';
 import * as validatePackageName from 'validate-npm-package-name';
 
-import { RelativePath } from '.';
+import { TemplatePath } from '.';
 import chooseTemplate from './chooseTemplate';
-import generateApp from './generateApp';
+import generateApp, { TemplateWriter } from './generateApp';
 import GeneratorError from './GeneratorError';
 export * from './helpers';
+export * from './generateApp';
 
 export interface Template {
-  files: RelativePath[];
+  files: TemplatePath[];
   title: string;
   workspaces?: boolean;
   dependencies?: string[];
   devDependencies?: string[];
 }
 
-export type ReadFile = (filePath: RelativePath) => string;
+export type ReadFile = (filePath: TemplatePath) => string;
 
 const showUsage = (command: string): void => {
   console.log(`Usage: ${chalk.cyan(command)} ${chalk.green('app_name[@optional_template_id]')}`);
@@ -42,7 +43,7 @@ interface TemplateMap {
   [id: string]: Template;
 }
 
-const run = async (templateMap: TemplateMap, readFile: ReadFile, args: any) => {
+const run = async (templateMap: TemplateMap, templateWriter: TemplateWriter, args: any) => {
   try {
     const [appName, argTemplateId] = args._[0].split('@');
     validateAppName(appName);
@@ -54,7 +55,7 @@ const run = async (templateMap: TemplateMap, readFile: ReadFile, args: any) => {
     if (!template) {
       throw new GeneratorError(`Template ${chalk.blueBright('@' + templateId)} not found`);
     }
-    await generateApp(appName, template, readFile);
+    await generateApp(appName, template, templateWriter);
   } catch (e) {
     if (e.name === 'GeneratorError') {
       console.error(e.message);
@@ -64,7 +65,7 @@ const run = async (templateMap: TemplateMap, readFile: ReadFile, args: any) => {
   }
 };
 
-export default (templates: Template[], readFile: ReadFile, command: string, argv: string[]) => {
+export default (templates: Template[], templateWriter: TemplateWriter, command: string, argv: string[]) => {
   const templateList = templates.map(template => ({ ...template, id: template.title.split(':')[0].substring(1) }));
   const templateMap = templateList.reduce((result, item) => ({ ...result, [item.id]: item }), {});
 
@@ -77,6 +78,6 @@ export default (templates: Template[], readFile: ReadFile, command: string, argv
     console.log(`${chalk.green('app_name')} argument is required`);
     process.exit(1);
   } else {
-    run(templateMap, readFile, args);
+    run(templateMap, templateWriter, args);
   }
 };

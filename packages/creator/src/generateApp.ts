@@ -5,7 +5,7 @@ import { camelize } from 'humps';
 import * as mustache from 'mustache';
 import * as path from 'path';
 
-import { ReadFile, Template } from './index';
+import { ReadFile, Template, TemplatePath } from './index';
 
 const mkdirp = target =>
   target.split(path.sep).reduce((curPath, dir) => {
@@ -16,23 +16,29 @@ const mkdirp = target =>
     return curPath;
   }, '');
 
-export default async (appName: string, template: Template, readFile: ReadFile) => {
+export type TemplateWriter = (
+  files: TemplatePath[],
+  writeFile: (relPath: TemplatePath, contents: string) => void
+) => void;
+
+export default async (appName: string, template: Template, templateWriter: TemplateWriter) => {
   mkdirp(appName);
 
-  template.files.forEach(filePath => {
-    const srcTemplate = readFile(filePath);
-    const dst = path.join(appName, filePath.relPath);
+  const writeFile = (filePath: TemplatePath, contents: string) => {
+    const dst = path.join(appName, filePath.dstRoot, filePath.relPath);
     mkdirp(path.dirname(dst));
-    mustache.parse(srcTemplate, ['{;', ';}']);
+    mustache.parse(contents, ['{;', ';}']);
     fs.writeFileSync(
       dst,
-      mustache.render(srcTemplate, {
+      mustache.render(contents, {
         slug: appName,
         camelSlug: camelize(appName),
         name: appName.replace('-', ' ').replace(/\b\w/g, w => w.toUpperCase())
       })
     );
-  });
+  };
+
+  templateWriter(template.files, writeFile);
 
   if (template.dependencies) {
     await new Promise(resolve => {
