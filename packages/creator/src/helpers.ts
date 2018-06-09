@@ -2,33 +2,37 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { start } from 'repl';
 
-export interface TemplatePath {
+export interface DirRoots {
   srcRoot: string;
   dstRoot: string;
-  relPath: string;
 }
 
-export const getTemplateFilePaths = (options: TemplatePath | TemplatePath[] | string): TemplatePath[] => {
-  const result: TemplatePath[] = [];
+export interface TemplateFilePaths {
+  [relativePath: string]: DirRoots[];
+}
 
-  [].concat(options).forEach(curOpts => {
-    curOpts = typeof curOpts === 'string' ? { srcRoot: curOpts, dstRoot: '.', relPath: '.' } : curOpts;
-    const curPath = path.join(curOpts.srcRoot, curOpts.relPath);
-    const stats = fs.statSync(curPath);
+export const getTemplateFilePaths = (options: DirRoots[] | string, startFile: string = '.'): TemplateFilePaths => {
+  const result: TemplateFilePaths = {};
+
+  [].concat(options).forEach(dirRoots => {
+    dirRoots = typeof dirRoots === 'string' ? { srcRoot: dirRoots, dstRoot: '.' } : dirRoots;
+    const absPath = path.join(dirRoots.srcRoot, startFile);
+    const stats = fs.statSync(absPath);
 
     if (stats.isDirectory()) {
-      fs.readdirSync(curPath).forEach(nextPath => {
-        result.push.apply(
-          result,
-          getTemplateFilePaths({
-            srcRoot: curOpts.srcRoot,
-            dstRoot: curOpts.dstRoot,
-            relPath: path.relative(curOpts.srcRoot, path.join(curPath, nextPath))
-          })
-        );
+      fs.readdirSync(absPath).forEach(relPath => {
+        const templatePaths = getTemplateFilePaths(dirRoots, path.join(startFile, relPath));
+        for (const filePath of Object.keys(templatePaths)) {
+          result[filePath] = !result[filePath]
+            ? templatePaths[filePath]
+            : result[filePath].concat(templatePaths[filePath]);
+        }
       });
     } else if (stats.isFile()) {
-      result.push({ srcRoot: curOpts.srcRoot, relPath: curOpts.relPath, dstRoot: curOpts.dstRoot });
+      if (!result[startFile]) {
+        result[startFile] = [];
+      }
+      result[startFile].push(dirRoots);
     }
   });
 
@@ -64,24 +68,18 @@ const mergePkgObjs = (dst: any, src: any): any => {
   return result;
 };
 
-const readPackage = (pkgTemplatePath: TemplatePath, presetsRoot: string): any => {
-  const json = JSON.parse(fs.readFileSync(path.join(pkgTemplatePath.srcRoot, pkgTemplatePath.relPath), 'utf8'));
+const readPackage = (pkgTemplatePath: string, presetsRoot: string): any => {
+  const json = JSON.parse(fs.readFileSync(pkgTemplatePath, 'utf8'));
   const presets = json['!presets'];
   let tmp = {};
   if (presets) {
     presets.forEach(preset => {
-      tmp = mergePkgObjs(
-        tmp,
-        readPackage(
-          { srcRoot: presetsRoot, dstRoot: pkgTemplatePath.dstRoot, relPath: preset + '/package.json' },
-          presetsRoot
-        )
-      );
+      tmp = mergePkgObjs(tmp, readPackage(path.join(presetsRoot, preset, 'package.json'), presetsRoot));
     });
     delete json['!presets'];
   }
   return mergePkgObjs(json, tmp);
 };
 
-export const mergePkgJson = (filePath: TemplatePath, presetsRoot: string): string =>
-  JSON.stringify(readPackage(filePath, presetsRoot), null, 2);
+export const mergePkgJson = (pkgTemplatePath: string, presetsRoot: string): string =>
+  JSON.stringify(readPackage(pkgTemplatePath, presetsRoot), null, 2);

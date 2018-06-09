@@ -1,12 +1,11 @@
-import { getTemplateFilePaths, Template, TemplatePath } from '@jsapp/creator';
+import { DirRoots, getTemplateFilePaths, Template, TemplateFilePaths } from '@jsapp/creator';
 
-const getWorkspaceRelFiles = (packages: string[]): TemplatePath[] =>
+const getWorkspaceRelFiles = (packages: string[]): TemplateFilePaths =>
   getTemplateFilePaths(
-    ([{ srcRoot: __dirname + '/../templates/workspace', dstRoot: '.', relPath: '.' }] as TemplatePath[]).concat(
+    ([{ srcRoot: __dirname + '/../templates/workspace', dstRoot: '.' }] as DirRoots[]).concat(
       packages.map(name => ({
         srcRoot: __dirname + '/../templates/' + name,
-        dstRoot: 'packages/' + name,
-        relPath: '.'
+        dstRoot: 'packages/' + name
       }))
     )
   );

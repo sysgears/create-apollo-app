@@ -3,7 +3,8 @@ import * as minimist from 'minimist';
 import 'source-map-support/register';
 import * as validatePackageName from 'validate-npm-package-name';
 
-import { TemplatePath } from '.';
+import { appendFileSync } from 'fs';
+import { TemplateFilePaths } from '.';
 import chooseTemplate from './chooseTemplate';
 import generateApp, { TemplateWriter } from './generateApp';
 import GeneratorError from './GeneratorError';
@@ -11,14 +12,17 @@ export * from './helpers';
 export * from './generateApp';
 
 export interface Template {
-  files: TemplatePath[];
+  files: TemplateFilePaths;
   title: string;
   workspaces?: boolean;
   dependencies?: string[];
   devDependencies?: string[];
 }
 
-export type ReadFile = (filePath: TemplatePath) => string;
+enum PackageKind {
+  Workspace = 'workspace',
+  Package = 'package'
+}
 
 const showUsage = (command: string): void => {
   console.log(`Usage: ${chalk.cyan(command)} ${chalk.green('app_name[@optional_template_id]')}`);

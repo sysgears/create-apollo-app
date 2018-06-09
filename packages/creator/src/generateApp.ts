@@ -5,7 +5,7 @@ import { camelize } from 'humps';
 import * as mustache from 'mustache';
 import * as path from 'path';
 
-import { ReadFile, Template, TemplatePath } from './index';
+import { Template, TemplateFilePaths } from './index';
 
 const mkdirp = target =>
   target.split(path.sep).reduce((curPath, dir) => {
@@ -17,15 +17,17 @@ const mkdirp = target =>
   }, '');
 
 export type TemplateWriter = (
-  files: TemplatePath[],
-  writeFile: (relPath: TemplatePath, contents: string) => void
+  files: TemplateFilePaths,
+  writeFile: (filePath: string, contents: string) => void
 ) => void;
+
+export type WriteFile = (filePath: string, contents: string) => void;
 
 export default async (appName: string, template: Template, templateWriter: TemplateWriter) => {
   mkdirp(appName);
 
-  const writeFile = (filePath: TemplatePath, contents: string) => {
-    const dst = path.join(appName, filePath.dstRoot, filePath.relPath);
+  const writeFile: WriteFile = (filePath, contents) => {
+    const dst = path.join(appName, filePath);
     mkdirp(path.dirname(dst));
     mustache.parse(contents, ['{;', ';}']);
     fs.writeFileSync(
