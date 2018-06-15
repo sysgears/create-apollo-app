@@ -18,15 +18,16 @@ const mkdirp = target =>
 
 export type TemplateWriter = (
   files: TemplateFilePaths,
-  writeFile: (filePath: string, contents: string) => void
+  writeFile: (filePath: string, contents: string) => void,
+  vars?: any
 ) => void;
 
-export type WriteFile = (filePath: string, contents: string) => void;
+export type WriteFile = (filePath: string, contents: string, vars?: any) => void;
 
 export default async (appName: string, template: Template, templateWriter: TemplateWriter) => {
   mkdirp(appName);
 
-  const writeFile: WriteFile = (filePath, contents) => {
+  const writeFile: WriteFile = (filePath, contents, vars) => {
     const dst = path.join(appName, filePath);
     mkdirp(path.dirname(dst));
     mustache.parse(contents, ['{;', ';}']);
@@ -35,7 +36,8 @@ export default async (appName: string, template: Template, templateWriter: Templ
       mustache.render(contents, {
         slug: appName,
         camelSlug: camelize(appName),
-        name: appName.replace('-', ' ').replace(/\b\w/g, w => w.toUpperCase())
+        name: appName.replace('-', ' ').replace(/\b\w/g, w => w.toUpperCase()),
+        ...vars
       })
     );
   };
