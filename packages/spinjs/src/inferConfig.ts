@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import createRequire, { RequireFunction } from './createRequire';
+import upDirs from './upDirs';
 
 interface Dependencies {
   [x: string]: string;
@@ -30,24 +31,35 @@ const entryExts = ['js', 'jsx', 'ts', 'tsx'];
 const entryDirs = ['.', 'src'];
 let entryCandidates = [];
 for (const dir of entryDirs) {
-  entryCandidates = entryCandidates.concat(entryExts.map(ext => path.join(dir, 'index.' + ext)));
+  entryCandidates = entryCandidates.concat(entryExts.map(ext => './' + path.join(dir, 'index.' + ext)));
 }
 
-const isSpinApp = (pkg: any): boolean =>
-  Object.keys(pkg.dependencies || {})
-    .concat(Object.keys(pkg.devDependencies || {}))
-    .indexOf('spinjs') >= 0;
+const isSpinApp = (pkg: any): boolean => {
+  return (
+    Object.keys(pkg.dependencies || {})
+      .concat(Object.keys(pkg.devDependencies || {}))
+      .indexOf('spinjs') >= 0 ||
+    (pkg.scripts && pkg.scripts.build && pkg.scripts.build.indexOf('spin build') >= 0)
+  );
+};
 
-export default (pkg: any, packageJsonPath: string): any => {
+export default (pkg: any, pkgJsonPath): any => {
   if (!isSpinApp(pkg)) {
     return undefined;
   }
-  const requireDep = createRequire(path.dirname(packageJsonPath));
-  const deps = { ...getDeps(packageJsonPath, requireDep, {}), ...(pkg.devDependencies || {}) };
+  const pkgPathList = upDirs(path.dirname(pkgJsonPath), 'package.json');
+  let deps: any = {};
+  for (const pkgPath of pkgPathList) {
+    if (fs.existsSync(pkgPath)) {
+      const pkgJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      const requireDep = createRequire(path.dirname(pkgPath));
+      deps = { ...deps, ...getDeps(pkgPath, requireDep, {}), ...(pkgJson.devDependencies || {}) };
+    }
+  }
 
   let entry;
   for (const entryPath of entryCandidates) {
-    if (fs.existsSync(path.join(requireDep.cwd, entryPath))) {
+    if (fs.existsSync(path.join(path.dirname(pkgJsonPath), entryPath))) {
       entry = entryPath;
       break;
     }
@@ -62,7 +74,7 @@ export default (pkg: any, packageJsonPath: string): any => {
   }
   if (deps['react-native']) {
     stack.push('android');
-  } else if (deps['webpack-dev-server']) {
+  } else if (deps['react-dom']) {
     stack.push('web');
   }
   if (deps['babel-core']) {
