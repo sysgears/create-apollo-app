@@ -49,7 +49,7 @@ const sortObject = <T>(obj: T): T =>
 const writeWsPkgJson = (files: TemplateFilePaths, writeFile: WriteFile) => {
   const relPath = 'package.json';
   const dirRootSet = files[relPath];
-  if (dirRootSet && dirRootSet.length > 1 && dirRootSet[0].dstRoot === '.') {
+  if (dirRootSet.length > 1 && dirRootSet[0].dstRoot === '.') {
     const wsPkg = JSON.parse(fs.readFileSync(path.join(dirRootSet[0].srcRoot, relPath), 'utf8'));
     for (const dirRoots of dirRootSet) {
       const pkg = JSON.parse(mergePkgJson(path.join(dirRoots.srcRoot, relPath), __dirname + '/../templates/presets/'));
@@ -64,6 +64,11 @@ const writeWsPkgJson = (files: TemplateFilePaths, writeFile: WriteFile) => {
       wsPkg.devDependencies = sortObject(wsPkg.devDependencies);
     }
     writeFile(relPath, JSON.stringify(wsPkg, null, 2));
+  } else {
+    const pkg = JSON.parse(
+      mergePkgJson(path.join(dirRootSet[0].srcRoot, relPath), __dirname + '/../templates/presets/')
+    );
+    writeFile(relPath, JSON.stringify(pkg, null, 2));
   }
 };
 
@@ -97,7 +102,7 @@ const writeTsJson = (relPath: string, files: TemplateFilePaths, writeFile: Write
 };
 
 const templateWriter: TemplateWriter = (files: TemplateFilePaths, writeFile: WriteFile) => {
-  const isWorkspace = files['package.json'][0].dstRoot === '.';
+  const isWorkspace = files['package.json'].length > 1 && files['package.json'][0].dstRoot === '.';
   writeWsGitignore(files, writeFile);
   writeWsPkgJson(files, writeFile);
   writeTsJson('tsconfig.json', files, writeFile);
