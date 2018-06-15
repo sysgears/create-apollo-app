@@ -1,5 +1,7 @@
 import { Server } from 'http';
+{;^isWorkspace;}
 import * as opn from 'opn';
+{;/isWorkspace;}
 
 import startServer from './server';
 
@@ -21,10 +23,12 @@ try {
   startServer(PORT).then(serverInstance => {
     if (!module.hot || !module.hot.data) {
       console.log(`GraphQL Server is now running on http://localhost:${PORT}`);
+      {;^isWorkspace;}
 
       if (module.hot) {
         opn(`http://localhost:${PORT}/graphiql`);
       }
+      {;/isWorkspace;}
     }
     server = serverInstance;
   });

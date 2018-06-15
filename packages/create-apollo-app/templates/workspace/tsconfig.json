@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "outDir": "build",
-    "module": "esnext",
+    "module": "es6",
     "target": "es5",
     "lib": ["esnext", "es6"],
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react",
     "moduleResolution": "node",
-    "rootDir": "src",
+    "module": "esnext",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
@@ -18,10 +16,5 @@
     "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": true,
     "skipLibCheck": true
-  },
-  "include": ["src/**/*.ts", "typings/*.d.ts"],
-  "exclude": [
-    "node_modules",
-    "build"
-  ]
+  }
 }

@@ -53,6 +53,7 @@ const writeWsPkgJson = (files: TemplateFilePaths, writeFile: WriteFile) => {
     const wsPkg = JSON.parse(fs.readFileSync(path.join(dirRootSet[0].srcRoot, relPath), 'utf8'));
     for (const dirRoots of dirRootSet) {
       const pkg = JSON.parse(mergePkgJson(path.join(dirRoots.srcRoot, relPath), __dirname + '/../templates/presets/'));
+      pkg.name += '-' + path.basename(dirRoots.srcRoot);
       if (pkg.devDependencies) {
         wsPkg.devDependencies = { ...(wsPkg.devDependencies || {}), ...pkg.devDependencies };
         delete pkg.devDependencies;
@@ -66,20 +67,49 @@ const writeWsPkgJson = (files: TemplateFilePaths, writeFile: WriteFile) => {
   }
 };
 
-const templateWriter: TemplateWriter = (
-  files: TemplateFilePaths,
-  writeFile: (filePath: string, contents: string) => void
-) => {
+const writeTsJson = (relPath: string, files: TemplateFilePaths, writeFile: WriteFile) => {
+  const dirRootSet = files[relPath];
+  if (dirRootSet && dirRootSet.length > 0) {
+    const wsConfig = JSON.parse(fs.readFileSync(path.join(dirRootSet[0].srcRoot, relPath), 'utf8'));
+    writeFile(path.join(dirRootSet[0].dstRoot, relPath), JSON.stringify(wsConfig, null, 2));
+    for (const dirRoots of dirRootSet.slice(1)) {
+      const config = JSON.parse(fs.readFileSync(path.join(dirRoots.srcRoot, relPath), 'utf8'));
+      const result = { extends: '../../' + relPath };
+      for (const key of Object.keys(config)) {
+        if (JSON.stringify(wsConfig[key]) !== JSON.stringify(config[key])) {
+          if (wsConfig[key]) {
+            for (const option of Object.keys(config[key])) {
+              const wsValue = wsConfig[key][option];
+              const value = config[key][option];
+              if (JSON.stringify(value) !== JSON.stringify(wsValue)) {
+                result[key] = result[key] || {};
+                result[key][option] = config[key][option];
+              }
+            }
+          } else {
+            result[key] = config[key];
+          }
+        }
+      }
+      writeFile(path.join(dirRoots.dstRoot, relPath), JSON.stringify(result, null, 2));
+    }
+  }
+};
+
+const templateWriter: TemplateWriter = (files: TemplateFilePaths, writeFile: WriteFile) => {
+  const isWorkspace = files['package.json'][0].dstRoot === '.';
   writeWsGitignore(files, writeFile);
   writeWsPkgJson(files, writeFile);
+  writeTsJson('tsconfig.json', files, writeFile);
+  writeTsJson('tslint.json', files, writeFile);
   for (const relPath of Object.keys(files)) {
-    if (['.gitignore', 'package.json'].indexOf(relPath) < 0) {
+    if (['.gitignore', 'package.json', 'tsconfig.json', 'tslint.json'].indexOf(relPath) < 0) {
       for (const dirRoots of files[relPath]) {
         const contents =
           path.basename(relPath) === 'package.json'
             ? mergePkgJson(path.join(dirRoots.srcRoot, relPath), __dirname + '/../templates/presets/')
             : fs.readFileSync(path.join(dirRoots.srcRoot, relPath), 'utf8');
-        writeFile(path.join(dirRoots.dstRoot, relPath), contents);
+        writeFile(path.join(dirRoots.dstRoot, relPath), contents, { isWorkspace });
       }
     }
   }
