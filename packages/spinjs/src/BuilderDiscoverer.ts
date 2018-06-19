@@ -28,6 +28,10 @@ export default class BuilderDiscoverer {
   }
 
   private _discoverRecursively(dir: string): Builders {
+    if (path.basename(dir) === '.expo') {
+      return undefined;
+    }
+
     let builders: Builders;
     if (this.argv.c) {
       builders = this.configReader.readConfig(path.join(dir, this.argv.c));
