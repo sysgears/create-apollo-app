@@ -1,6 +1,6 @@
 {
   "name": "spinjs",
-  "version": "0.4.142",
+  "version": "0.4.143",
   "main": "lib/index.js",
   "scripts": {
     "clean": "rimraf ./lib",

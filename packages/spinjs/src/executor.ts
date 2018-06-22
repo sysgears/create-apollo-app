@@ -1050,12 +1050,7 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
       for (const name of Object.keys(builders)) {
         builder = builders[name];
         if (builder.roles.indexOf('test') >= 0) {
-          const testArgs = [
-            '--include',
-            'babel-polyfill',
-            '--webpack-config',
-            builder.require.resolve('spinjs/webpack.config.js')
-          ];
+          const testArgs = ['--webpack-config', builder.require.resolve('spinjs/webpack.config.js')];
           if (builder.stack.hasAny('react')) {
             const majorVer = builder.require('react/package.json').version.split('.')[0];
             const reactVer = majorVer >= 16 ? majorVer : 15;
