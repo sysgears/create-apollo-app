@@ -372,7 +372,8 @@ const createConfig = (builder: Builder, spin: Spin) => {
         config.devServer.proxy = {
           '!/*.hot-update.{json,js}': {
             target: proxyUrl,
-            logLevel: 'info'
+            logLevel: 'info',
+            ws: true
           }
         };
       }
