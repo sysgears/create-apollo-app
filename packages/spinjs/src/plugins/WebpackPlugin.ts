@@ -370,7 +370,7 @@ const createConfig = (builder: Builder, spin: Spin) => {
               ? `http://localhost:${url.parse(builder.backendUrl).port}`
               : `http://localhost:8080`;
         config.devServer.proxy = {
-          '!/*.hot-update.{json,js}': {
+          '!(/sockjs-node/**/*|/*.hot-update.{json,js})': {
             target: proxyUrl,
             logLevel: 'info',
             ws: true
