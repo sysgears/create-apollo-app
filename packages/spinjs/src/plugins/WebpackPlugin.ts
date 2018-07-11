@@ -307,6 +307,10 @@ const createConfig = (builder: Builder, spin: Spin) => {
           filename: '[name].js',
           path: path.join(builder.require.cwd, builder.buildDir || builder.backendBuildDir || 'build/server'),
           publicPath: '/'
+        },
+        node: {
+          __dirname: true,
+          __filename: true
         }
       };
       if (builder.sourceMap && spin.dev) {
