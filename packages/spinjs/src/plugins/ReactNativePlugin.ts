@@ -11,10 +11,18 @@ let babelRegisterDone = false;
 
 const registerBabel = (builder: Builder): void => {
   if (!babelRegisterDone) {
+    const isBabel7 = !!builder.require.probe('@babel/core');
+    const babelRegister = isBabel7 ? '@babel/register' : 'babel-register';
+    const reactNativePreset = !!builder.require.probe('metro-react-native-babel-preset')
+      ? 'metro-react-native-babel-preset'
+      : 'babel-preset-react-native';
     // tslint:disable-next-line
-    builder.require('babel-register')({
-      presets: [builder.require.resolve('babel-preset-react-native'), builder.require.resolve('babel-preset-flow')],
-      ignore: /node_modules\/(?!haul|react-native)/,
+    builder.require(babelRegister ? '@babel/register' : 'babel-register')({
+      presets: [
+        builder.require.resolve(reactNativePreset),
+        builder.require.resolve(isBabel7 ? '@babel/preset-flow' : 'babel-preset-flow')
+      ],
+      ignore: [/node_modules\/(?!haul|react-native)/],
       retainLines: true,
       sourceMaps: 'inline'
     });

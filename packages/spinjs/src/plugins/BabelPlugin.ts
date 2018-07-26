@@ -34,7 +34,7 @@ export default class BabelPlugin implements ConfigPlugin {
               builder.cache === true || (builder.cache === 'auto' && spin.dev) ? '.cache' : builder.cache,
               'babel-loader'
             );
-      const babelrc = new UPFinder(builder).find(['.babelrc', '.babelrc.js']);
+      const babelrc = new UPFinder(builder).find(['.babelrc', '.babelrc.js', 'babel.config.js']);
       jsRule.use = {
         loader: builder.require.probe('heroku-babel-loader') ? 'heroku-babel-loader' : 'babel-loader',
         options: !!babelrc
