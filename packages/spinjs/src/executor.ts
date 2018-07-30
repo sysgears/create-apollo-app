@@ -115,6 +115,7 @@ const webpackReporter = (spin: Spin, builder: Builder, outputPath: string, log, 
     }
   }
   if (!spin.watch && cluster.isWorker) {
+    log.info('Build process finished, exitting...');
     process.exit(0);
   }
 };
@@ -1122,7 +1123,7 @@ const execute = (cmd: string, argv: any, builders: Builders, spin: Spin) => {
         }
 
         cluster.on('exit', (worker, code, signal) => {
-          debug(`Worker ${workerBuilders[worker.process.pid].id} died`);
+          spinLogger.warn(`Worker ${workerBuilders[worker.process.pid].id} died, code: ${code}, signal: ${signal}`);
         });
       });
     }
