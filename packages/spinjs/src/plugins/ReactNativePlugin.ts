@@ -17,7 +17,7 @@ const registerBabel = (builder: Builder): void => {
       ? 'metro-react-native-babel-preset'
       : 'babel-preset-react-native';
     // tslint:disable-next-line
-    builder.require(babelRegister ? '@babel/register' : 'babel-register')({
+    builder.require(babelRegister)({
       presets: [
         builder.require.resolve(reactNativePreset),
         builder.require.resolve(isBabel7 ? '@babel/preset-flow' : 'babel-preset-flow')
