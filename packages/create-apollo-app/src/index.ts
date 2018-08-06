@@ -54,14 +54,18 @@ const writeWsPkgJson = (files: TemplateFilePaths, writeFile: WriteFile) => {
     for (const dirRoots of dirRootSet) {
       const pkg = JSON.parse(mergePkgJson(path.join(dirRoots.srcRoot, relPath), __dirname + '/../templates/presets/'));
       pkg.name += '-' + path.basename(dirRoots.srcRoot);
-      if (pkg.devDependencies) {
-        wsPkg.devDependencies = { ...(wsPkg.devDependencies || {}), ...pkg.devDependencies };
-        delete pkg.devDependencies;
+      for (const section of ['devDependencies', 'resolutions']) {
+        if (pkg[section]) {
+          wsPkg[section] = { ...(wsPkg[section] || {}), ...pkg[section] };
+          delete pkg[section];
+        }
       }
       writeFile(path.join(dirRoots.dstRoot, relPath), JSON.stringify(pkg, null, 2));
     }
-    if (wsPkg.devDependencies) {
-      wsPkg.devDependencies = sortObject(wsPkg.devDependencies);
+    for (const section of ['devDependencies', 'resolutions']) {
+      if (wsPkg[section]) {
+        wsPkg[section] = sortObject(wsPkg[section]);
+      }
     }
     writeFile(relPath, JSON.stringify(wsPkg, null, 2));
   } else {
