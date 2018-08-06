@@ -11,7 +11,7 @@ let babelRegisterDone = false;
 
 const registerBabel = (builder: Builder): void => {
   if (!babelRegisterDone) {
-    const isBabel7 = !!builder.require.probe('@babel/core');
+    const isBabel7 = !!builder.require.probe('@babel/core') && !!builder.require.probe('@babel/preset-flow');
     const babelRegister = isBabel7 ? '@babel/register' : 'babel-register';
     const reactNativePreset = !!builder.require.probe('metro-react-native-babel-preset')
       ? 'metro-react-native-babel-preset'
