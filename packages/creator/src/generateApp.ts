@@ -62,7 +62,7 @@ export default async (appName: string, template: Template, templateWriter: Templ
 
   if (!template.dependencies) {
     await new Promise(resolve => {
-      const yarn = spawn('yarnpkg', ['--cwd', appName, 'install']);
+      const yarn = spawn('yarnpkg', ['--cwd', appName, 'install'], { stdio: 'inherit' });
       yarn.on('close', resolve);
     });
   }
