@@ -4,8 +4,7 @@
   "scripts": {
     "start": "spin start",
     "build": "spin build",
-    "test": "spin test",
-    "eject": "spin eject"
+    "test": "spin test"
   },
   "workspaces": [
     "packages/*"
