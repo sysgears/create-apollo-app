@@ -1,6 +1,6 @@
 {
   "name": "@jsapp/creator",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "JSApp creator core",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
   "main": "lib/index.js",

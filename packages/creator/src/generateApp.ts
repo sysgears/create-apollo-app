@@ -7,6 +7,8 @@ import * as path from 'path';
 
 import { Template, TemplateFilePaths } from './index';
 
+const IS_WINDOWS = /^win/.test(process.platform);
+
 const mkdirp = target =>
   target.split(path.sep).reduce((curPath, dir) => {
     curPath += dir + path.sep;
@@ -44,16 +46,18 @@ export default async (appName: string, template: Template, templateWriter: Templ
 
   templateWriter(template.files, writeFile);
 
+  const yarnCmd = 'yarnpkg' + (IS_WINDOWS ? '.cmd' : '');
+
   if (template.dependencies) {
     await new Promise(resolve => {
-      const yarn = spawn('yarnpkg', ['--cwd', appName, 'add'].concat(template.dependencies), { stdio: 'inherit' });
+      const yarn = spawn(yarnCmd, ['--cwd', appName, 'add'].concat(template.dependencies), { stdio: 'inherit' });
       yarn.on('close', resolve);
     });
   }
 
   if (template.devDependencies) {
     await new Promise(resolve => {
-      const yarn = spawn('yarnpkg', ['--cwd', appName, 'add', '-D'].concat(template.devDependencies), {
+      const yarn = spawn(yarnCmd, ['--cwd', appName, 'add', '-D'].concat(template.devDependencies), {
         stdio: 'inherit'
       });
       yarn.on('close', resolve);
@@ -62,7 +66,7 @@ export default async (appName: string, template: Template, templateWriter: Templ
 
   if (!template.dependencies) {
     await new Promise(resolve => {
-      const yarn = spawn('yarnpkg', ['--cwd', appName, 'install'], { stdio: 'inherit' });
+      const yarn = spawn(yarnCmd, ['--cwd', appName, 'install'], { stdio: 'inherit' });
       yarn.on('close', resolve);
     });
   }
