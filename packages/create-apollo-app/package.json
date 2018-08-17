@@ -1,6 +1,6 @@
 {
   "name": "create-apollo-app",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Apollo GraphQL apps creator",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
   "main": "lib/index.js",
@@ -59,7 +59,7 @@
     ]
   },
   "dependencies": {
-    "@jsapp/creator": ">= 0.0.8",
+    "@jsapp/creator": ">= 0.0.9",
     "source-map-support": "^0.5.6"
   }
 }
