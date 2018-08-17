@@ -1,6 +1,6 @@
 {
   "name": "@jsapp/creator",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "JSApp creator core",
   "author": "Victor Vlasenko <victor.vlasenko@sysgears.com>",
   "main": "lib/index.js",
@@ -36,7 +36,7 @@
     "inquirer": "^5.2.0",
     "inquirer-autocomplete-prompt": "^0.12.2",
     "minimist": "^1.2.0",
-    "mustache": "^2.3.0",
+    "mustache": "2.3.0",
     "source-map-support": "^0.5.6",
     "validate-npm-package-name": "^3.0.0"
   },
