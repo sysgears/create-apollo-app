@@ -12,28 +12,27 @@ const getWorkspaceRelFiles = (packages: string[]): TemplateFilePaths =>
 
 const templates: Template[] = [
   {
-    title: '@server-web: Apollo GraphQL Node Express server and web frontend in TypeScript',
+    title: '@server-web: TypeScript, Apollo (GraphQL), Express server, React for web',
     files: getWorkspaceRelFiles(['server', 'web'])
   },
   {
-    title: '@server-mobile: Apollo GraphQL Node Express server and React Native mobile frontend in TypeScript',
+    title: '@server-mobile: TypeScript, Apollo (GraphQL), Express server, React Native for mobile',
     files: getWorkspaceRelFiles(['server', 'mobile'])
   },
   {
-    title:
-      '@universal: Apollo GraphQL Node Express server, React web frontend and React Native mobile frontend in TypeScript',
+    title: '@universal: TypeScript, Apollo (GraphQL), Express server, React for web, React Native for mobile',
     files: getWorkspaceRelFiles(['server', 'web', 'mobile'])
   },
   {
-    title: '@server: Apollo GraphQL Node Express server in TypeScript',
+    title: '@server: TypeScript, Apollo (GraphQL), Express server',
     files: getTemplateFilePaths(__dirname + '/../templates/server')
   },
   {
-    title: '@web: Apollo GraphQL React web frontend in TypeScript',
+    title: '@web: TypeScript, Apollo (GraphQL), React web app',
     files: getTemplateFilePaths(__dirname + '/../templates/web')
   },
   {
-    title: '@mobile: Apollo GraphQL React Native mobile frontend in TypeScript',
+    title: '@mobile: TypeScript, Apollo (GraphQL), React Native for mobile',
     files: getTemplateFilePaths(__dirname + '/../templates/mobile')
   }
 ];
