@@ -57,12 +57,12 @@ From this point onward, we'll use Yarn in our examples for running the project.
 During installation, the terminal will prompt the following six options:
 
 ```
-❯ @server-web: Apollo GraphQL Node Express server and web frontend in TypeScript
-  @server-mobile: Apollo GraphQL Node Express server and React Native mobile frontend in TypeScript
-  @universal: Apollo GraphQL Node Express server, React web frontend and React Native mobile frontend in TypeScript
-  @server: Apollo GraphQL Node Express server in TypeScript
-  @web: Apollo GraphQL React web frontend in TypeScript
-  @mobile: Apollo GraphQL React Native mobile frontend in TypeScript
+❯ @server-web: TypeScript, Apollo (GraphQL), Express server, React for web
+  @server-mobile: TypeScript, Apollo (GraphQL), Express server, React Native for mobile
+  @universal: TypeScript, Apollo (GraphQL), Express server, React for web, React Native for mobile
+  @server: TypeScript, Apollo (GraphQL), Express server
+  @web: TypeScript, Apollo (GraphQL), React web app
+  @mobile: TypeScript, Apollo (GraphQL), React Native for mobile
 ```
 
 You can select the necessary project template using the arrow keys on your keyboard. Alternatively, you can start typing
