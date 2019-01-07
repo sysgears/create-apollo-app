@@ -1,23 +1,26 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "outDir": "build",
-    "module": "esnext",
     "target": "es5",
-    "lib": ["esnext", "es6"],
-    "sourceMap": true,
-    "allowJs": true,
+    "module": "es6",
     "moduleResolution": "node",
-    "rootDir": "src",
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowJs": true,
+    "noUnusedLocals": true,
+    "jsx": "react",
+    "lib": ["es2015", "dom", "esnext"],
     "noImplicitAny": true,
-    "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedLocals": true
+    "allowSyntheticDefaultImports": true,
+    "pretty": true,
+    "removeComments": true,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "typings/*.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "typings/*.d.ts"
+  ],
   "exclude": [
     "node_modules",
     "build"

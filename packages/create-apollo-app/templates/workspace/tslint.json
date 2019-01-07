@@ -11,6 +11,8 @@
     ]
   },
   "rules": {
+    "object-literal-sort-keys": false,
+    "interface-name": [true, "never-prefix"],
     "prettier": [true, {
       "printWidth": 120,
       "singleQuote": true

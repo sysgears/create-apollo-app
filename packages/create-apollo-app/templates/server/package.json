@@ -1,7 +1,7 @@
 {
   "name": "{;slug;}",
   "version": "0.1.0",
-  "!presets": ["ts", "server", "graphql"],
+  "!presets": ["ts", "babel", "server", "graphql"],
   "private": true,
   "scripts": {
     "start": "spin start",
@@ -9,12 +9,13 @@
     "test": "spin test"
   },
   "dependencies": {
-    "apollo-server-express": "^1.3.6",
+    "apollo-server-express": "2.3.1",
+    "apollo-server-module-graphiql": "1.3.4",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
-    "express": "^4.16.3",
+    "express": "^4.16.4",
     "opn": "^5.3.0",
-    "subscriptions-transport-ws": "^0.9.9"
+    "subscriptions-transport-ws": "^0.9.15"
   },
   "devDependencies": {
     "@types/cors": "^2.8.4",

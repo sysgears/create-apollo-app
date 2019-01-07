@@ -2,46 +2,29 @@
   "name": "{;slug;}",
   "version": "0.1.0",
   "private": true,
-  "!presets": ["ts", "react", "graphql"],
+  "!presets": ["ts", "babel", "react", "graphql"],
   "scripts": {
     "start": "spin start",
     "build": "spin build",
     "test": "spin test"
   },
   "dependencies": {
-    "apollo-boost": "^0.1.6",
-    "expo": "^27.0.2",
-    "react-native": "0.55.3"
+    "apollo-boost": "0.1.23",
+    "expo": "31.0.2",
+    "react-native": "0.57.1"
   },
   "devDependencies": {
-    "@types/graphql": "^0.13.1",
-    "@types/react": "^16.3.14",
+    "@types/expo": "^30.0.0",
+    "@types/expo__vector-icons": "^6.2.3",
     "@types/react-native": "^0.55.16",
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^8.0.3",
-    "babel-loader": "^7.1.2",
-    "babel-plugin-styled-components": "^1.3.0",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-decorators-legacy": "^1.3.4",
-    "babel-plugin-transform-react-remove-prop-types": "^0.4.12",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-flow": "^6.23.0",
-    "babel-preset-minify": "^0.4.0",
-    "babel-preset-react": "^6.24.1",
-    "babel-preset-react-native": "^4.0.0",
-    "babel-preset-stage-0": "^6.24.1",
-    "babel-register": "^6.26.0",
     "compression": "^1.7.1",
     "connect": "^3.6.5",
-    "exp": "^54.0.1",
-    "haul": "1.0.0-beta.14",
-    "http-proxy-middleware": "^0.18.0",
+    "exp": "^57.2.1",
+    "haul": "^1.0.0-rc.9",
+    "http-proxy-middleware": "^0.19.0",
     "ip": "^1.1.5",
-    "webpack-dev-middleware": "^2.0.6",
-    "webpack-hot-middleware": "^2.21.0",
-    "xdl": "^50.0.0"
+    "webpack-dev-middleware": "^3.5.0",
+    "webpack-hot-middleware": "^2.24.3",
+    "xdl": "^49.2.0"
   }
 }

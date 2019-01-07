@@ -1,19 +1,28 @@
-import Expo, { Constants } from 'expo';
+import * as Expo from 'expo';
 import React from 'react';
 import { View } from 'react-native';
 import App from './App';
 
-// we don't want this to require transformation
-class AwakeInDevApp extends React.Component {
-  state = {
-    isReady: false
-  };
+interface AwakeInDevAppProps {
+  exp: any;
+}
 
-  async componentWillMount() {
+interface AwakeInDevAppState {
+  isReady: boolean;
+}
+
+// we don't want this to require transformation
+class AwakeInDevApp extends React.Component<AwakeInDevAppProps, AwakeInDevAppState> {
+  constructor(props: AwakeInDevAppProps) {
+    super(props);
+    this.state = { isReady: false };
+  }
+
+  public async componentDidMount() {
     this.setState({ isReady: true });
   }
 
-  render() {
+  public render() {
     if (!this.state.isReady) {
       return <Expo.AppLoading />;
     }
@@ -23,7 +32,7 @@ class AwakeInDevApp extends React.Component {
       {
         style: {
           flex: 1,
-          marginTop: Constants.statusBarHeight
+          marginTop: Expo.Constants.statusBarHeight
         }
       },
       React.createElement(App, this.props),
