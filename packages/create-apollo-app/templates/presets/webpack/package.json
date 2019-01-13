@@ -3,7 +3,7 @@
     "@types/webpack-env": "^1.13.6",
     "cache-loader": "^1.2.2",
     "prettier": "^1.15.3",
-    "spinjs": "^0.4.176",
+    "spinjs": "^0.4.178",
     "webpack": "4.28.3",
     "webpack-virtual-modules": "0.1.10"
   }
