@@ -1,10 +1,10 @@
 {
   "dependencies": {
-    "graphql-tools": "4.0.3"
+    "graphql-tools": "4.0.4"
   },
   "devDependencies": {
-    "dotenv": "^5.0.0",
+    "dotenv": "^6.2.0",
     "dotenv-expand": "^4.2.0",
-    "source-map-support": "^0.5.6"
+    "source-map-support": "^0.5.10"
   }
 }

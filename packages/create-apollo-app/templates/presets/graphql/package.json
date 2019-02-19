@@ -3,7 +3,7 @@
     "graphql": "14.0.2"
   },
   "devDependencies": {
-    "@types/graphql": "14.0.4",
-    "graphql-tag": "2.10.0"
+    "@types/graphql": "14.0.7",
+    "graphql-tag": "2.10.1"
   }
 }

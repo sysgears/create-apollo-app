@@ -5,25 +5,26 @@
   "!presets": ["ts", "babel", "react", "graphql"],
   "scripts": {
     "start": "spin start",
+    "android": "spin -d web -d ios -e android start",
+    "ios": "spin -d web -d ios -e android start",
     "build": "spin build",
     "test": "spin test"
   },
   "dependencies": {
-    "apollo-boost": "0.1.23",
-    "expo": "31.0.2",
-    "react-native": "0.57.1"
+    "apollo-boost": "0.1.28",
+    "expo": "32.0.6",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-32.0.0.tar.gz"
   },
   "devDependencies": {
-    "@types/expo": "^30.0.0",
-    "@types/expo__vector-icons": "^6.2.3",
-    "@types/react-native": "^0.55.16",
+    "@types/expo": "32.0.2",
+    "@types/expo__vector-icons": "9.0.1",
+    "@types/react-native": "0.57.37",
     "compression": "^1.7.1",
     "connect": "^3.6.5",
     "exp": "^57.2.1",
     "haul": "^1.0.0-rc.9",
     "http-proxy-middleware": "^0.19.0",
-    "ip": "^1.1.5",
-    "webpack-dev-middleware": "^3.5.0",
+    "webpack-dev-middleware": "^3.5.2",
     "webpack-hot-middleware": "^2.24.3",
     "xdl": "^49.2.0"
   }
