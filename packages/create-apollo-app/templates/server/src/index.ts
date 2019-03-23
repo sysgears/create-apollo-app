@@ -1,6 +1,6 @@
 import { Server } from 'http';
 {;^isWorkspace;}
-import * as opn from 'opn';
+import opn from 'opn';
 {;/isWorkspace;}
 
 import startServer from './server';
@@ -16,22 +16,31 @@ try {
       if (server) {
         server.close();
       }
-      data.reloaded = true;
+      data.hotReloaded = true;
+    });
+    module.hot.addStatusHandler(status => {
+      if (status === 'fail') {
+        process.exit(250);
+      }
     });
   }
 
+  const firstStartInDevMode =
+    module.hot && process.env.LAST_EXIT_CODE === '0' && (!module.hot.data || !module.hot.data.hotReloaded);
+
   startServer(PORT).then(serverInstance => {
-    if (!module.hot || !module.hot.data) {
+    if (!module.hot || firstStartInDevMode) {
       console.log(`GraphQL Server is now running on http://localhost:${PORT}`);
       {;^isWorkspace;}
-
-      if (module.hot) {
-        opn(`http://localhost:${PORT}/graphiql`);
+      if (firstStartInDevMode) {
+        opn(`http://localhost:${PORT}/api/swagger`);
       }
       {;/isWorkspace;}
     }
+
     server = serverInstance;
   });
 } catch (e) {
   console.error(e);
+  process.exit(1);
 }

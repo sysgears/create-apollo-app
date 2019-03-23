@@ -4,9 +4,8 @@
   "!presets": ["ts", "babel", "server", "graphql"],
   "private": true,
   "scripts": {
-    "start": "spin start",
-    "build": "spin build",
-    "test": "spin test"
+    "start": "zen start",
+    "build": "zen build"
   },
   "dependencies": {
     "apollo-server-express": "2.4.2",
@@ -14,12 +13,14 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "express": "^4.16.4",
+    "graphql-tools": "4.0.4",
     "opn": "^5.3.0",
     "subscriptions-transport-ws": "^0.9.15"
   },
   "devDependencies": {
     "@types/cors": "^2.8.4",
     "@types/express": "^4.11.1",
+    "@types/opn": "5.1.0",
     "@types/ws": "^5.1.1"
   }
 }

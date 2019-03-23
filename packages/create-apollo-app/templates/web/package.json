@@ -4,9 +4,8 @@
   "private": true,
   "!presets": ["ts", "babel", "react", "web", "graphql"],
   "scripts": {
-    "start": "spin start",
-    "build": "spin build",
-    "test": "spin test"
+    "start": "zen start",
+    "build": "zen build"
   },
   "dependencies": {
     "apollo-boost": "^0.1.23"

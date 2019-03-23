@@ -1,4 +1,4 @@
-import { DirRoots, getTemplateFilePaths, Template, TemplateFilePaths } from '@jsapp/creator';
+import { DirRoots, getTemplateFilePaths, Template, TemplateFilePaths } from '@larix/generator';
 
 const getWorkspaceRelFiles = (packages: string[]): TemplateFilePaths =>
   getTemplateFilePaths(

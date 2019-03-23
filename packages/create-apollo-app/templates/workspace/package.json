@@ -2,11 +2,10 @@
   "name": "{;slug;}",
   "private": true,
   "scripts": {
-    "start": "spin start -d android -d ios",
-    "android": "spin start -e android -d ios -d web",
-    "ios": "spin start -e ios -d android -d web",
-    "build": "spin build",
-    "test": "spin test"
+    "start": "zen start -d android -d ios",
+    "android": "zen start -e android -d ios -d web",
+    "ios": "zen start -e ios -d android -d web",
+    "build": "zen build"
   },
   "workspaces": [
     "packages/*"

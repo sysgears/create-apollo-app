@@ -1,7 +1,4 @@
 {
-  "dependencies": {
-    "graphql-tools": "4.0.4"
-  },
   "devDependencies": {
     "dotenv": "^6.2.0",
     "dotenv-expand": "^4.2.0",
