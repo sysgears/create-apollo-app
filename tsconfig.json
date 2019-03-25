@@ -10,12 +10,13 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "pretty": true,
-    "removeComments": true
+    "removeComments": true,
+    "rootDir": "src",
+    "outDir": "lib"
   },
   "include": [
-    "**/typings.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "node_modules"
