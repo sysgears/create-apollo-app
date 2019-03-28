@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "apollo-client": "2.4.13",
+    "apollo-client": "2.5.1",
     "raf": "^3.4.1",
     "react": "16.8.2",
     "react-apollo": "2.4.1",

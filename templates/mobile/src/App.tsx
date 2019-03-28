@@ -49,11 +49,11 @@ const ServerHello = () => (
   </Query>
 );
 
-interface IAppProps {
+interface AppProps {
   exp: any;
 }
 
-const App = (props: IAppProps) => {
+const App = (props: AppProps) => {
   const apiUrl =
     process.env.NODE_ENV !== 'production'
       ? `http://${url.parse(props.exp.manifest.bundleUrl).hostname}:8080/graphql`

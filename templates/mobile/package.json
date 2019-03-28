@@ -4,13 +4,13 @@
   "private": true,
   "!presets": ["ts", "babel", "react", "graphql"],
   "scripts": {
-    "start": "zen start",
+    "start": "zen -e android start",
     "android": "zen -d web -d ios -e android start",
     "ios": "zen -d web -d ios -e android start",
     "build": "zen build"
   },
   "dependencies": {
-    "apollo-boost": "0.1.28",
+    "apollo-boost": "0.3.1",
     "expo": "32.0.6",
     "react-native": "https://github.com/expo/react-native/archive/sdk-32.0.0.tar.gz"
   },

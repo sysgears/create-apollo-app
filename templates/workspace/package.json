@@ -2,7 +2,7 @@
   "name": "{;slug;}",
   "private": true,
   "scripts": {
-    "start": "zen start -d android -d ios",
+    "start": "zen start -e android -d ios",
     "android": "zen start -e android -d ios -d web",
     "ios": "zen start -e ios -d android -d web",
     "build": "zen build"
