@@ -100,6 +100,16 @@ yarn start
 A development build will be generated. You can start changing the source code in the project files located in the
 `packages/server/src/` and `packages/web/src/` directories.
 
+**NOTE**: If you want to add CSS, SCSS, Sass, or Less to the frontend React application, you need to add the PostCSS 
+configuration file `postcss.config.js` under the `{app-root}/src` for the `@web` template or the 
+`{app-root}/packages/web/src` folder for the `@server-web` and `@universal` templates. 
+
+The PostCSS configuration file can be empty, like this: 
+
+```js
+module.exports = {};
+````
+
 The client-side application will be automatically opened in your default browser at [http://localhost:3000](http://localhost:3000).
 The server-side GraphQL application runs on [http://localhost:8080](http://localhost:8080).
 
