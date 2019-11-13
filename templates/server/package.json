@@ -1,5 +1,5 @@
 {
-  "name": "{;slug;}",
+  "name": "//{slug//}",
   "version": "0.1.0",
   "!presets": ["ts", "babel", "server", "graphql"],
   "private": true,

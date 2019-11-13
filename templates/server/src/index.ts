@@ -1,7 +1,7 @@
 import { Server } from 'http';
-{;^isWorkspace;}
+//{^isWorkspace//}
 import opn from 'opn';
-{;/isWorkspace;}
+//{/isWorkspace//}
 
 import startServer from './server';
 
@@ -31,11 +31,11 @@ try {
   startServer(PORT).then(serverInstance => {
     if (!module.hot || firstStartInDevMode) {
       console.log(`GraphQL Server is now running on http://localhost:${PORT}`);
-      {;^isWorkspace;}
+      //{^isWorkspace//}
       if (firstStartInDevMode) {
         opn(`http://localhost:${PORT}/api/swagger`);
       }
-      {;/isWorkspace;}
+      //{/isWorkspace//}
     }
 
     server = serverInstance;

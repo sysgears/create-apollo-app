@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "{;name;}",
+    "name": "//{name//}",
     "version": "0.1.0",
-    "slug": "{;slug;}",
+    "slug": "//{slug//}",
     "sdkVersion": "32.0.0",
     "ios": {
-      "bundleIdentifier": "com.{;camelSlug;}"
+      "bundleIdentifier": "com.//{camelSlug//}"
     },
     "android": {
-      "package": "com.{;camelSlug;}"
+      "package": "com.//{camelSlug//}"
     }
   }
 }
