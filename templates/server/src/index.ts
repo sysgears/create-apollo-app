@@ -33,7 +33,7 @@ try {
       console.log(`GraphQL Server is now running on http://localhost:${PORT}`);
       //{^isWorkspace//}
       if (firstStartInDevMode) {
-        opn(`http://localhost:${PORT}/graphql`);
+        opn(`http://localhost:${PORT}/graphiql`);
       }
       //{/isWorkspace//}
     }
